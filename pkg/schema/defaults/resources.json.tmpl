@@ -1,0 +1,10 @@
+{
+    "ephemeralStorage": 512,
+    "memorySize": 128,
+    "timeout": 3,
+    "env": {
+        "GIT_BRANCH": "{{ .Git.Branch }}",
+        "GIT_SHA": "{{ .Git.Sha }}",
+        "GIT_ORIGIN": "{{ .Git.Origin }}"
+    }
+}

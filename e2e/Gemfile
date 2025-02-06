@@ -1,0 +1,15 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem 'awspec', git: 'https://github.com/bkeane/awspec'
+gem 'nokogiri'
+gem 'base64'
+gem 'rspec-retry'
+gem 'pry-byebug'
+gem "git"
+gem 'aws-sdk-core'
+gem 'aws-sdk-sts'
+gem 'aws-sdk-signer'
+gem 'aws-sdk-apigatewayv2'
+gem 'dotenv'

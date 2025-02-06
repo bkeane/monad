@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package monad;
+
+option go_package = "pkg/event";
+
+message DeployRequest {
+    string imageUri = 2;          // Image URI
+}
+
+message DeployResponse {
+    string imageUri = 2;          // Image URI
+    string functionArn = 3;      // Function ARN
+    string policyArn = 4;        // Policy ARN
+    string roleArn = 5;          // Role ARN
+    string eniRoleArn = 6;       // ENI Role ARN
+    string status = 7;           // Status
+}
+
+message DestroyRequest {
+    string imageUri = 2;          // Image URI
+}
+
+message DestroyResponse {
+    string functionArn = 2;      // Function ARN
+    string policyArn = 3;        // Policy ARN
+    string roleArn = 4;          // Role ARN
+    string eniRoleArn = 5;       // ENI Role ARN
+    string status = 6;           // Status
+}
