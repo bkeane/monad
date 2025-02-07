@@ -1,4 +1,4 @@
-export AWS_PROFILE := "personal"
+export AWS_PROFILE := "prod.kaixo.io"
 
 protos := "proto/*.proto"
 

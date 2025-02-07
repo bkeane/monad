@@ -27,8 +27,6 @@ func Init(ctx context.Context, awsconfig aws.Config) *Handler {
 }
 
 func (h *Handler) Event(ctx context.Context, evt json.RawMessage) ([]byte, error) {
-	h.log.Debug().Msg("event handler called")
-
 	msg, substrate, err := substrate.Rx(ctx, h.awsconfig, evt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message from eventbridge event: %w", err)

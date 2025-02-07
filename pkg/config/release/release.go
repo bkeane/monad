@@ -43,6 +43,7 @@ func (r Config) Parse(ctx context.Context, awsconfig aws.Config, imageUri string
 	var err error
 	c := &Config{}
 	c.log = zerolog.Ctx(ctx)
+	c.AwsConfig = awsconfig
 	c.Substrate = substrate
 
 	image, err := c.Substrate.ECR.FetchByUri(ctx, imageUri)

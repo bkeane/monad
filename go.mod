@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.39.0
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.69.11
 	github.com/aws/smithy-go v1.22.2
-	github.com/bkeane/substrate v0.0.0-20250206234804-d2b3cc6be461
+	github.com/bkeane/substrate v0.0.0-20250207070504-abf204e624be
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/go-git/go-git/v5 v5.13.2

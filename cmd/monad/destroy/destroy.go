@@ -18,7 +18,7 @@ type Dockerfile struct {
 }
 
 type Options struct {
-	Substrate   string   `arg:"-s,--substrate" help:"substrate name" default:"platform"`
+	Substrate   string   `arg:"-s,--substrate" help:"substrate name" default:"agar"`
 	Destination []string `arg:"-d,--destination" help:"destroy in these accounts"`
 	Context     string   `arg:"-c,--context" help:"set path context" default:"."`
 }

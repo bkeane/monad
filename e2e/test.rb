@@ -2,10 +2,11 @@
 
 require 'optparse'
 require 'pry'
+
 class TestRunner
   DEFAULT_OPTIONS = {
-    profile: 'personal',
-    substrate: 'ager',
+    profile: 'prod.kaixo.io',
+    substrate: 'agar',
     features: '',
     container: true
   }.freeze

@@ -9,8 +9,6 @@ import (
 )
 
 func (h *Handler) HttpMount(w http.ResponseWriter, r *http.Request) {
-	h.log.Debug().Msg("http handler called")
-
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		WriteResponse(w, http.StatusBadRequest, "failed to read request body")

@@ -67,6 +67,8 @@ github.com/aymanbagabas/go-udiff v0.2.0 h1:TK0fH4MteXUDspT88n8CKzvK0X9O2xu9yQjWp
 github.com/aymanbagabas/go-udiff v0.2.0/go.mod h1:RE4Ex0qsGkTAJoQdQQCA0uG+nAzJO/pI/QwceO5fgrA=
 github.com/bkeane/substrate v0.0.0-20250206234804-d2b3cc6be461 h1:DKMdhOezOVAhEzsRnKyIL+yCDmPVnw+0olUtHhhZfKY=
 github.com/bkeane/substrate v0.0.0-20250206234804-d2b3cc6be461/go.mod h1:BFFDDjHTAKynPnosDE0IdV7uWPSSbm2SUg/lkPIffek=
+github.com/bkeane/substrate v0.0.0-20250207070504-abf204e624be h1:FJrcRDSRIXlRKfM54BNE1P3r51tF+PJTlPmMxwFIlSc=
+github.com/bkeane/substrate v0.0.0-20250207070504-abf204e624be/go.mod h1:BFFDDjHTAKynPnosDE0IdV7uWPSSbm2SUg/lkPIffek=
 github.com/caarlos0/env/v11 v11.3.1 h1:cArPWC15hWmEt+gWk7YBi7lEXTXCvpaSdCiZE2X5mCA=
 github.com/caarlos0/env/v11 v11.3.1/go.mod h1:qupehSf/Y0TUTsxKywqRt/vJjN5nz6vauiYEUUr8P4U=
 github.com/charmbracelet/lipgloss v1.0.0 h1:O7VkGDvqEdGi93X+DeqsQ7PKHDgtQfF8j8/O2qFMQNg=

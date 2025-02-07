@@ -18,8 +18,8 @@ type Dockerfile struct {
 }
 
 type Options struct {
-	Context     string   `arg:"-c,--context" help:"s	et path context" default:"."`
-	Substrate   string   `arg:"-s,--substrate" help:"substrate name" default:"platform"`
+	Context     string   `arg:"-c,--context" help:"set path context" default:"."`
+	Substrate   string   `arg:"-s,--substrate" help:"substrate name" default:"agar"`
 	Destination []string `arg:"-d,--destination" help:"deployment destinations"`
 	Features    []string `arg:"-f,--features" help:"substrate feature flags"`
 }

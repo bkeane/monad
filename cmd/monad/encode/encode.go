@@ -19,7 +19,7 @@ type Dockerfile struct {
 }
 
 type Options struct {
-	Substrate string `arg:"-s,--substrate" help:"substrate hub name" default:"platform"`
+	Substrate string `arg:"-s,--substrate" help:"substrate hub name" default:"agar"`
 	Context   string `arg:"-c,--context" help:"set build context" default:"."`
 	List      bool   `arg:"-l,--list" help:"list available template interpolations."`
 }
