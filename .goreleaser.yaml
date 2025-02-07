@@ -33,7 +33,7 @@ brews:
     repository:
       owner: bkeane
       name: taps
-      token: "{{ secrets.GR_PAT }}"
+      token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
 
 changelog:
   sort: asc
