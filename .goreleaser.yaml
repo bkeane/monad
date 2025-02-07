@@ -28,6 +28,13 @@ archives:
       - goos: windows
         formats: [zip]
 
+brews:
+  - name: monad
+    repository:
+      owner: bkeane
+      name: taps
+      token: "{{ secrets.GR_PAT }}"
+
 changelog:
   sort: asc
   filters:
