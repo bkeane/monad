@@ -3,58 +3,62 @@ package saga
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
-	"github.com/bkeane/monad/pkg/config/release"
+	"github.com/bkeane/monad/pkg/param"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/smithy-go"
-
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Cloudwatch struct {
-	Client  *cloudwatchlogs.Client
-	release release.Config
-	log     *zerolog.Logger
+	config param.Aws
+	path   string
 }
 
-func (c Cloudwatch) Init(ctx context.Context, r release.Config) *Cloudwatch {
+func (s Cloudwatch) Init(ctx context.Context, c param.Aws) *Cloudwatch {
 	return &Cloudwatch{
-		Client:  cloudwatchlogs.NewFromConfig(r.AwsConfig),
-		release: r,
-		log:     zerolog.Ctx(ctx),
+		config: c,
+		path:   filepath.Join("/aws/lambda", c.ResourcePath()),
 	}
 }
 
-func (c *Cloudwatch) Do(ctx context.Context) error {
-	c.log.Info().Msg("ensuring log group exists")
-	if err := c.PutLogGroup(ctx); err != nil {
+func (s *Cloudwatch) Do(ctx context.Context) error {
+	log.Info().
+		Str("arn", s.config.CloudwatchLogGroup()).
+		Int32("retention", s.config.CloudwatchLogRetention()).
+		Msg("ensuring log group exists")
+
+	if err := s.PutLogGroup(ctx); err != nil {
 		return err
 	}
 
-	c.log.Info().Msg("ensuring log group retention policy")
-	if err := c.PutLogGroupRetentionPolicy(ctx, 7); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Cloudwatch) Undo(ctx context.Context) error {
-	c.log.Info().Msg("deleting log group")
-	if err := c.DeleteLogGroup(ctx); err != nil {
+	if err := s.PutLogGroupRetentionPolicy(ctx, s.config.CloudwatchLogRetention()); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Cloudwatch) PutLogGroup(ctx context.Context) error {
+func (s *Cloudwatch) Undo(ctx context.Context) error {
+	log.Info().
+		Str("arn", s.config.CloudwatchLogGroup()).
+		Msg("deleting log group")
+
+	if err := s.DeleteLogGroup(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Cloudwatch) PutLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
-	_, err := c.Client.CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
-		LogGroupName: aws.String("/aws/lambda/" + c.release.ResourceName()),
-		Tags:         c.release.ResourceTags(),
+	_, err := s.config.CloudWatch.Client.CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
+		LogGroupName: aws.String(s.path),
+		Tags:         s.config.Tags(),
 	})
 
 	if errors.As(err, &apiErr) {
@@ -70,8 +74,8 @@ func (c *Cloudwatch) PutLogGroup(ctx context.Context) error {
 }
 
 func (c *Cloudwatch) PutLogGroupRetentionPolicy(ctx context.Context, days int32) error {
-	_, err := c.Client.PutRetentionPolicy(ctx, &cloudwatchlogs.PutRetentionPolicyInput{
-		LogGroupName:    aws.String("/aws/lambda/" + c.release.ResourceName()),
+	_, err := c.config.CloudWatch.Client.PutRetentionPolicy(ctx, &cloudwatchlogs.PutRetentionPolicyInput{
+		LogGroupName:    aws.String(c.path),
 		RetentionInDays: aws.Int32(days),
 	})
 
@@ -80,8 +84,8 @@ func (c *Cloudwatch) PutLogGroupRetentionPolicy(ctx context.Context, days int32)
 
 func (c *Cloudwatch) DeleteLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
-	_, err := c.Client.DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{
-		LogGroupName: aws.String("/aws/lambda/" + c.release.ResourceName()),
+	_, err := c.config.CloudWatch.Client.DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{
+		LogGroupName: aws.String(c.path),
 	})
 
 	if errors.As(err, &apiErr) {

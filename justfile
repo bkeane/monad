@@ -1,7 +1,5 @@
 export AWS_PROFILE := "prod.kaixo.io"
 
-protos := "proto/*.proto"
-
 branch := `git rev-parse --abbrev-ref HEAD`
 sha := `git rev-parse HEAD`
 
@@ -13,19 +11,13 @@ scaffolds := "go python node ruby"
 default:
     @just --list
 
-# generate protobuf
-gen:
-    protoc --go_out=. {{protos}}
-
 # install monad to ~/.local/bin
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
 # login to registry
 login:
-    #! /usr/bin/env bash
-    aws ecr get-login-password --region us-west-2 \
-    | docker login --username AWS --password-stdin 677771948337.dkr.ecr.us-west-2.amazonaws.com
+    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 677771948337.dkr.ecr.us-west-2.amazonaws.com
 
 # init scaffolds
 init:
@@ -38,7 +30,7 @@ init:
 publish:
     #! /usr/bin/env bash
     for scaffold in {{scaffolds}}; do
-        {{monad}} encode --context e2e/stage/$scaffold | {{publish}}
+        {{monad}} compose --context e2e/stage/$scaffold | {{publish}}
     done
 
 # deploy scaffolds

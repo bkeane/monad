@@ -9,7 +9,6 @@ import (
 
 	v5 "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/rs/zerolog/log"
 )
 
 type Git struct {
@@ -23,38 +22,35 @@ type Git struct {
 	Dirty    bool
 }
 
-func (c Git) Parse(path string) (*Git, error) {
-	log.Debug().Msgf("Parsing git repository at path: %s", path)
+func Parse(path string) (Git, error) {
 	var err error
-	g := &Git{}
+	g := Git{}
 
-	fileInfo, err := os.Stat(path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return nil, err
+		return g, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	fileInfo, err := os.Stat(absPath)
+	if err != nil {
+		return g, fmt.Errorf("failed to stat path: %w", err)
 	}
 
 	if !fileInfo.IsDir() {
-		path = filepath.Dir(path)
-	}
-
-	// Get absolute path before setting Base
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
+		absPath = filepath.Dir(absPath)
 	}
 
 	g.Path = absPath
-	// Use the last directory name from the absolute path instead of filepath.Base(path)
 	g.BasePath = filepath.Base(absPath)
 
-	_, repo, err := find(path)
+	_, repo, err := find(absPath)
 	if err != nil {
-		return nil, err
+		return g, fmt.Errorf("failed to find git repository: %w", err)
 	}
 
 	head, err := repo.Head()
 	if err != nil {
-		return nil, err
+		return g, fmt.Errorf("failed to get head: %w", err)
 	}
 
 	g.Sha = sha(head)
@@ -62,7 +58,7 @@ func (c Git) Parse(path string) (*Git, error) {
 	g.Dirty = dirty(repo)
 	g.Origin, err = origin(repo)
 	if err != nil {
-		return nil, err
+		return g, fmt.Errorf("failed to get origin: %w", err)
 	}
 
 	g.Owner = ownerFromOrigin(g.Origin)
