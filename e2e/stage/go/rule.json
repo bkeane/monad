@@ -1,9 +1,0 @@
-{
-    "detail": {
-        "header": {
-            "destination": [
-                "{{.Caller.AccountId}}"
-            ]
-        }
-    }
-}

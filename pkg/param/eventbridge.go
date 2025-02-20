@@ -3,6 +3,7 @@ package param
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
@@ -36,10 +37,10 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 
 		for _, bus := range buses.EventBuses {
 			validBusNames = append(validBusNames, *bus.Name)
-			if *bus.Name == e.BusName {
-				e.BusName = *bus.Name
-				break
-			}
+		}
+
+		if slices.Contains(validBusNames, e.BusName) {
+			return nil
 		}
 
 		log.Error().
