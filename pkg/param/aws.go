@@ -73,7 +73,7 @@ func (c *Aws) ResourcePath() string {
 }
 
 func (c *Aws) CloudwatchLogGroup() string {
-	return fmt.Sprintf("/aws/lambda/%s", c.ResourceName())
+	return fmt.Sprintf("/aws/lambda/%s", c.ResourcePath())
 }
 
 func (c *Aws) CloudwatchLogRetention() int32 {

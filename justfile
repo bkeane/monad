@@ -30,34 +30,26 @@ init:
 publish:
     #! /usr/bin/env bash
     for scaffold in {{scaffolds}}; do
-        {{monad}} compose --context e2e/stage/$scaffold | {{publish}}
+        {{monad}} --chdir e2e/stage/$scaffold compose | {{publish}}
     done
 
 # deploy scaffolds
 deploy:
     #! /usr/bin/env bash
     for scaffold in {{scaffolds}}; do
-        {{monad}} deploy --context e2e/stage/$scaffold -f api -d spoke
+        {{monad}} --chdir e2e/stage/$scaffold deploy --api kaixo --auth aws_iam
     done
 
 # test scaffolds
 test:
-    #! /usr/bin/env bash
-    cd e2e
-    for scaffold in {{scaffolds}}; do
-        bundle exec ruby test.rb stage/$scaffold -p personal -f api
-    done
+    shellspec --chdir e2e
 
 # destroy scaffolds
 destroy:
     #! /usr/bin/env bash
     for scaffold in {{scaffolds}}; do
-        LOG_LEVEL=info {{monad}} destroy --context e2e/stage/$scaffold -d spoke platform
+        {{monad}} --chdir e2e/stage/$scaffold destroy
     done
-
-# tail logs for given scaffold
-tail scaffold:
-    aws logs tail /aws/lambda/monad-{{branch}}-{{scaffold}} --follow
 
 # clean up scaffolds
 clean:

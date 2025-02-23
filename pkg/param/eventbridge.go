@@ -15,8 +15,8 @@ import (
 
 type EventBridge struct {
 	Client       *eventbridge.Client `arg:"-" json:"-"`
-	BusName      string              `arg:"--bus-name" placeholder:"name" help:"eventbridge bus name" default:"default"`
-	RuleTemplate string              `arg:"--bus-rule" placeholder:"template" help:"{} | file://rule.json" default:"no-rule"`
+	BusName      string              `arg:"--bus" placeholder:"name" help:"eventbridge bus name" default:"default"`
+	RuleTemplate string              `arg:"--rule" placeholder:"template" help:"{} | file://rule.json" default:"no-rule"`
 	Region       string              `arg:"--bus-region" placeholder:"name" help:"eventbridge region name" default:"caller-region"`
 }
 

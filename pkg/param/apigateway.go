@@ -15,7 +15,7 @@ type ApiGateway struct {
 	Client       *apigatewayv2.Client `arg:"-" json:"-"`
 	Api          string               `arg:"--api" placeholder:"id|name" help:"api gateway" default:"no-gateway"`
 	Id           string               `arg:"-" json:"-"` // `arg:"--api-id" placeholder:"id" help:"api gateway id" default:"no-gateway-id"`
-	Auth         string               `arg:"--api-auth" placeholder:"id|name" help:"none | aws_iam | NAME | ID" default:"aws_iam"`
+	Auth         string               `arg:"--auth" placeholder:"id|name" help:"none | aws_iam | NAME | ID" default:"aws_iam"`
 	Region       string               `arg:"--api-region" placeholder:"name" help:"api gateway region name" default:"caller-region"`
 	AuthType     string               `arg:"-" json:"-"` // `arg:"--api-auth-type" placeholder:"name" default:"AWS_IAM" help:"NONE | AWS_IAM | CUSTOM | JWT"`
 	AuthorizerId string               `arg:"-" json:"-"` // `arg:"--api-auth-id" placeholder:"id" help:"authorizer id to use" default:"no-authorizer-id"`

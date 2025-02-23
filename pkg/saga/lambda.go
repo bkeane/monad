@@ -99,6 +99,9 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		TracingConfig: &types.TracingConfig{
 			Mode: types.TracingModePassThrough,
 		},
+		LoggingConfig: &types.LoggingConfig{
+			LogGroup: aws.String(s.config.CloudwatchLogGroup()),
+		},
 	}
 
 	update := struct {
@@ -107,13 +110,19 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		Code   *lambda.UpdateFunctionCodeInput
 	}{
 		Config: &lambda.UpdateFunctionConfigurationInput{
-			FunctionName:  create.FunctionName,
-			Role:          create.Role,
-			MemorySize:    create.MemorySize,
-			Timeout:       create.Timeout,
+			FunctionName: create.FunctionName,
+			Role:         create.Role,
+			MemorySize:   create.MemorySize,
+			Timeout:      create.Timeout,
+			EphemeralStorage: &types.EphemeralStorage{
+				Size: create.EphemeralStorage.Size,
+			},
 			VpcConfig:     create.VpcConfig,
 			Environment:   create.Environment,
 			TracingConfig: create.TracingConfig,
+			LoggingConfig: &types.LoggingConfig{
+				LogGroup: create.LoggingConfig.LogGroup,
+			},
 		},
 		Code: &lambda.UpdateFunctionCodeInput{
 			FunctionName:  create.FunctionName,

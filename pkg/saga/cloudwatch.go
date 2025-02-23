@@ -3,7 +3,6 @@ package saga
 import (
 	"context"
 	"errors"
-	"path/filepath"
 
 	"github.com/bkeane/monad/pkg/param"
 
@@ -15,13 +14,11 @@ import (
 
 type Cloudwatch struct {
 	config param.Aws
-	path   string
 }
 
 func (s Cloudwatch) Init(ctx context.Context, c param.Aws) *Cloudwatch {
 	return &Cloudwatch{
 		config: c,
-		path:   filepath.Join("/aws/lambda", c.ResourcePath()),
 	}
 }
 
@@ -57,7 +54,7 @@ func (s *Cloudwatch) Undo(ctx context.Context) error {
 func (s *Cloudwatch) PutLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
 	_, err := s.config.CloudWatch.Client.CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
-		LogGroupName: aws.String(s.path),
+		LogGroupName: aws.String(s.config.CloudwatchLogGroup()),
 		Tags:         s.config.Tags(),
 	})
 
@@ -75,7 +72,7 @@ func (s *Cloudwatch) PutLogGroup(ctx context.Context) error {
 
 func (c *Cloudwatch) PutLogGroupRetentionPolicy(ctx context.Context, days int32) error {
 	_, err := c.config.CloudWatch.Client.PutRetentionPolicy(ctx, &cloudwatchlogs.PutRetentionPolicyInput{
-		LogGroupName:    aws.String(c.path),
+		LogGroupName:    aws.String(c.config.CloudwatchLogGroup()),
 		RetentionInDays: aws.Int32(days),
 	})
 
@@ -85,7 +82,7 @@ func (c *Cloudwatch) PutLogGroupRetentionPolicy(ctx context.Context, days int32)
 func (c *Cloudwatch) DeleteLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
 	_, err := c.config.CloudWatch.Client.DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{
-		LogGroupName: aws.String(c.path),
+		LogGroupName: aws.String(c.config.CloudwatchLogGroup()),
 	})
 
 	if errors.As(err, &apiErr) {
