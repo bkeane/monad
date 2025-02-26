@@ -55,7 +55,6 @@ curl_retry_sigv4_status() {
   curl_retry_status --fail --user "$key:$secret" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $token" "$@"
 }
 
-
 curl_until_failure() {
   local max_attempts=7
   local attempt=1
@@ -73,4 +72,15 @@ curl_until_failure() {
   
   echo "Failed to get 403/401"
   return 1
+}
+
+emit_test_event() {
+  aws events put-events --entries '[
+    {
+      "Source": "shellspec",
+      "DetailType": "TestEvent",
+      "Detail": "{\"Hello\": \"World\"}",
+      "EventBusName": "default"
+    }
+  ]'
 }

@@ -2,7 +2,7 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowAccessLoose",
+            "Sid": "AllowAccessOwnLogs",
             "Effect": "Allow",
             "Action": [
                 "logs:*"
@@ -24,6 +24,7 @@
             "Action": [
                 "iam:ListAttachedRolePolicies",
                 "iam:ListRolePolicies",
+                "iam:GetRole",
                 "iam:GetPolicy",
                 "iam:GetPolicyVersion"
             ],

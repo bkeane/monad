@@ -7,7 +7,9 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY main.py .
 COPY models.py .
+COPY cloudwatch.py .
 
 ENV PORT=8090
 ENV READINESS_CHECK_PATH=/health
+
 ENTRYPOINT ["python", "main.py"]

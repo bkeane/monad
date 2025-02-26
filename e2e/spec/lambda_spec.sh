@@ -127,12 +127,4 @@ Describe "Lambda"
       The status should be success
     End
   End
-
-  Describe "Headers"
-    It "X-Forwarded-Prefix"
-      When call curl_retry_sigv4 "https://${host}/${path}/headers/x-forwarded-prefix"  
-      The output should include "$path"
-      The status should be success
-    End
-  End
 End

@@ -85,7 +85,7 @@ func (g *Git) Validate() error {
 		Str("service", g.Service).
 		Str("branch", g.Branch).
 		Str("sha", g.Sha).
-		Msg("parsed .git")
+		Msg("fetching git")
 
 	return v.ValidateStruct(g,
 		v.Field(&g.Chdir, v.Required),

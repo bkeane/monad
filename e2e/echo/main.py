@@ -4,25 +4,53 @@ from os import getenv, environ
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import ValidationError
 from fastapi.responses import PlainTextResponse
-from models import GetFunctionResponse, GetRoleResponse, ListAttachedRolePoliciesResponse, AttachedPolicy, GetPolicyResponse
+from models import GetFunctionResponse, GetRoleResponse, ListAttachedRolePoliciesResponse, AttachedPolicy, GetPolicyResponse, EventBridgeEvent
+from cloudwatch import get_latest_logs
+import logging
+
+# Configure logging
+logger = logging.getLogger("uvicorn")
 
 app = FastAPI(
     title="Echo",
-    description="Echo is a test service for assisting e2e tests.",
-    version="0.1.0",
+    description="Echo is an introspection service for assisting e2e tests.",
+    version="0.0.1",
     docs_url="/",
+    debug=True
 )
+
+@app.middleware("http")
+async def log_incoming_events(request: Request, call_next):
+    if request.url.path == "/events":
+        body = await request.body()
+        logger.info("EVENT: %s", body.decode('utf-8'))
+    
+    response = await call_next(request)
+    return response
+
+@app.middleware("http")
+async def set_root_path(request: Request, call_next):
+    if request.headers.get("x-forwarded-prefix"):
+        app.root_path = request.headers.get("x-forwarded-prefix")
+    response = await call_next(request)
+    return response
 
 @app.middleware("http")
 async def configure_boto3(request: Request, call_next):
     request.state.function_name = getenv("AWS_LAMBDA_FUNCTION_NAME")
     request.state.lambdac = client('lambda')
     request.state.iamc = client('iam')
+    request.state.logc = client('logs')
     response = await call_next(request)
     return response
 
 @app.get("/health")
 async def health():
+    return {"status": "ok"}
+
+@app.post("/events")
+async def events(event: EventBridgeEvent):
+    logger.info("Received event: %s", event.model_dump_json())
     return {"status": "ok"}
 
 @app.get("/headers")
@@ -188,6 +216,17 @@ async def get_function_configuration_log_group(request: Request) -> str:
     validated = await get_function(request)
     return validated.Configuration.LoggingConfig.LogGroup
 
+@app.get("/function/log_group/tail")
+async def tail_function_log_group(request: Request, n: int = 10, grep: str = None, expect: bool = False) -> list[str]:
+    log_group = await get_function_configuration_log_group(request)
+    logs = get_latest_logs(request.state.logc, log_group, n, request.url.path, grep)
+
+    # If expect is true, return a 404 if no logs are found
+    if expect:
+        if len(logs) == 0:
+            raise HTTPException(status_code=404, detail="log not found")
+        
+    return [log.message for log in logs]
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=int(getenv("PORT","8090")))

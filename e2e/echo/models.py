@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
+from typing import Any
+
 class EphemeralStorage(BaseModel):
     Size: int
 
@@ -55,3 +57,23 @@ class Policy(BaseModel):
 
 class GetPolicyResponse(BaseModel):
     Policy: Policy
+
+class EventBridgeEvent(BaseModel):
+    Version: str
+    Id: str
+    DetailType: str
+    Source: str
+    Account: str
+    Time: str
+    Region: str
+    Resources: list[str]
+    Detail: Any
+
+class LogEvent(BaseModel):
+    message: str
+    timestamp: int
+    ingestionTime: int
+
+class LogEvents(BaseModel):
+    events: list[LogEvent]
+

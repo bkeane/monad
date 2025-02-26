@@ -57,4 +57,23 @@ Describe "Auth"
       End
     End
   End
+
+  Describe "Headers"
+    It "monad deploy --api $API_NAME"
+      When call monad --chdir echo deploy --api $API_NAME
+      The status should be success
+    End
+
+    It "Health"
+      When call curl_retry_sigv4_status "https://${host}/${path}/health"
+      The output should eq "200"
+      The status should be success
+    End
+
+    It "X-Forwarded-Prefix"
+      When call curl_retry_sigv4 "https://${host}/${path}/headers/x-forwarded-prefix"  
+      The output should include "$path"
+      The status should be success
+    End
+  End
 End

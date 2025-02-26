@@ -27,6 +27,10 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 		e.BusName = "default"
 	}
 
+	if e.Region == "" {
+		e.Region = awsconfig.Region
+	}
+
 	if e.BusName != "" {
 		var validBusNames []string
 
@@ -39,16 +43,14 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 			validBusNames = append(validBusNames, *bus.Name)
 		}
 
-		if slices.Contains(validBusNames, e.BusName) {
-			return nil
+		if !slices.Contains(validBusNames, e.BusName) {
+			log.Error().
+				Str("given", e.BusName).
+				Strs("valid_names", validBusNames).
+				Msg("bus name not found")
+
+			return fmt.Errorf("bus name %s not found", e.BusName)
 		}
-
-		log.Error().
-			Str("given", e.BusName).
-			Strs("valid_names", validBusNames).
-			Msg("bus name not found")
-
-		return fmt.Errorf("bus name %s not found", e.BusName)
 	}
 
 	if e.RuleTemplate != "" {
@@ -56,10 +58,12 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 		if err != nil {
 			return fmt.Errorf("failed to read provided rule template")
 		}
+
 		e.RuleTemplate = content
 	}
 
 	return v.ValidateStruct(e,
 		v.Field(&e.BusName, v.Required),
+		v.Field(&e.Region, v.Required),
 	)
 }
