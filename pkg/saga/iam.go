@@ -4,46 +4,57 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bkeane/monad/pkg/config/release"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/smithy-go"
-	"github.com/rs/zerolog"
+	"github.com/bkeane/monad/pkg/param"
+	"github.com/rs/zerolog/log"
 )
 
 type IAM struct {
-	release release.Config
-	iam     *iam.Client
-	log     *zerolog.Logger
+	config param.Aws
 }
 
-func (s IAM) Init(ctx context.Context, r release.Config) *IAM {
+func (s IAM) Init(ctx context.Context, c param.Aws) *IAM {
 	return &IAM{
-		release: r,
-		iam:     iam.NewFromConfig(r.AwsConfig),
-		log:     zerolog.Ctx(ctx),
+		config: c,
 	}
 }
 
 func (s *IAM) Do(ctx context.Context) error {
-	s.log.Info().Msg("ensuring eni role exists")
+	log.Info().
+		Str("name", s.config.EniRoleName()).
+		Str("arn", s.config.EniRoleArn()).
+		Msg("ensuring eni role")
+
 	if err := s.PutEniRole(ctx); err != nil {
 		return err
 	}
 
-	s.log.Info().Msg("ensuring policy exists")
+	log.Info().
+		Str("name", s.config.ResourceName()).
+		Str("arn", s.config.PolicyArn()).
+		Msg("ensuring policy")
+
 	if err := s.PutPolicy(ctx); err != nil {
 		return err
 	}
 
-	s.log.Info().Msg("ensuring role exists")
+	log.Info().
+		Str("name", s.config.ResourceName()).
+		Str("arn", s.config.RoleArn()).
+		Msg("ensuring role")
+
 	if err := s.PutRole(ctx); err != nil {
 		return err
 	}
 
-	s.log.Info().Msg("ensuring role policy attachment")
+	log.Info().
+		Str("role", s.config.RoleArn()).
+		Str("policy", s.config.PolicyArn()).
+		Msg("ensuring role policy attachment")
+
 	if err := s.AttachRolePolicy(ctx); err != nil {
 		return err
 	}
@@ -52,17 +63,29 @@ func (s *IAM) Do(ctx context.Context) error {
 }
 
 func (s *IAM) Undo(ctx context.Context) error {
-	s.log.Info().Msg("deleting role policy attachment")
+	log.Info().
+		Str("role", s.config.RoleArn()).
+		Str("policy", s.config.PolicyArn()).
+		Msg("deleting role policy attachment")
+
 	if err := s.DetachRolePolicy(ctx); err != nil {
 		return err
 	}
 
-	s.log.Info().Msg("deleting role")
+	log.Info().
+		Str("name", s.config.ResourceName()).
+		Str("arn", s.config.RoleArn()).
+		Msg("deleting role")
+
 	if err := s.DeleteRole(ctx); err != nil {
 		return err
 	}
 
-	s.log.Info().Msg("deleting policy")
+	log.Info().
+		Str("name", s.config.ResourceName()).
+		Str("arn", s.config.PolicyArn()).
+		Msg("deleting policy")
+
 	if err := s.DeletePolicy(ctx); err != nil {
 		return err
 	}
@@ -75,13 +98,13 @@ func (s *IAM) Undo(ctx context.Context) error {
 func (s *IAM) PutPolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
-	policyDocument, err := s.release.PolicyDocument()
+	policyDocument, err := s.config.PolicyDocument()
 	if err != nil {
 		return err
 	}
 
 	var tagSlice []types.Tag
-	for key, value := range s.release.ResourceTags() {
+	for key, value := range s.config.Tags() {
 		tagSlice = append(tagSlice, types.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
@@ -89,30 +112,30 @@ func (s *IAM) PutPolicy(ctx context.Context) error {
 	}
 
 	create := &iam.CreatePolicyInput{
-		PolicyName:     aws.String(s.release.ResourceName()),
+		PolicyName:     aws.String(s.config.ResourceName()),
 		PolicyDocument: aws.String(policyDocument),
 	}
 
 	update := &iam.CreatePolicyVersionInput{
-		PolicyArn:      aws.String(s.release.PolicyArn()),
+		PolicyArn:      aws.String(s.config.PolicyArn()),
 		PolicyDocument: aws.String(policyDocument),
 		SetAsDefault:   true,
 	}
 
 	tag := &iam.TagPolicyInput{
-		PolicyArn: aws.String(s.release.PolicyArn()),
+		PolicyArn: aws.String(s.config.PolicyArn()),
 		Tags:      tagSlice,
 	}
 
-	_, err = s.iam.CreatePolicy(ctx, create)
+	_, err = s.config.Iam.Client.CreatePolicy(ctx, create)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "EntityAlreadyExists":
-			if err := s.GCPolicyVersions(ctx, s.release.PolicyArn()); err != nil {
+			if err := s.GCPolicyVersions(ctx, s.config.PolicyArn()); err != nil {
 				return err
 			}
 
-			_, err = s.iam.CreatePolicyVersion(ctx, update)
+			_, err = s.config.Iam.Client.CreatePolicyVersion(ctx, update)
 			if err != nil {
 				return err
 			}
@@ -122,7 +145,7 @@ func (s *IAM) PutPolicy(ctx context.Context) error {
 		}
 	}
 
-	_, err = s.iam.TagPolicy(ctx, tag)
+	_, err = s.config.Iam.Client.TagPolicy(ctx, tag)
 	if err != nil {
 		return err
 	}
@@ -134,31 +157,31 @@ func (s *IAM) PutPolicy(ctx context.Context) error {
 func (s *IAM) PutEniRole(ctx context.Context) error {
 	var apiErr smithy.APIError
 
-	roleDocument, err := s.release.RoleDocument()
+	roleDocument, err := s.config.RoleDocument()
 	if err != nil {
 		return err
 	}
 
 	create := &iam.CreateRoleInput{
-		RoleName:                 aws.String(s.release.EniRoleName()),
+		RoleName:                 aws.String(s.config.EniRoleName()),
 		AssumeRolePolicyDocument: aws.String(roleDocument),
 	}
 
 	update := &iam.UpdateAssumeRolePolicyInput{
-		RoleName:       aws.String(s.release.EniRoleName()),
+		RoleName:       aws.String(s.config.EniRoleName()),
 		PolicyDocument: aws.String(roleDocument),
 	}
 
 	attach := &iam.AttachRolePolicyInput{
-		RoleName:  aws.String(s.release.EniRoleName()),
-		PolicyArn: aws.String(s.release.EniRolePolicyArn()),
+		RoleName:  aws.String(s.config.EniRoleName()),
+		PolicyArn: aws.String(s.config.EniRolePolicyArn()),
 	}
 
-	_, err = s.iam.CreateRole(ctx, create)
+	_, err = s.config.Iam.Client.CreateRole(ctx, create)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "EntityAlreadyExists":
-			_, err = s.iam.UpdateAssumeRolePolicy(ctx, update)
+			_, err = s.config.Iam.Client.UpdateAssumeRolePolicy(ctx, update)
 			if err != nil {
 				return err
 			}
@@ -167,7 +190,7 @@ func (s *IAM) PutEniRole(ctx context.Context) error {
 		}
 	}
 
-	_, err = s.iam.AttachRolePolicy(ctx, attach)
+	_, err = s.config.Iam.Client.AttachRolePolicy(ctx, attach)
 	if err != nil {
 		return err
 	}
@@ -178,13 +201,13 @@ func (s *IAM) PutEniRole(ctx context.Context) error {
 func (s *IAM) PutRole(ctx context.Context) error {
 	var apiErr smithy.APIError
 
-	roleDocument, err := s.release.RoleDocument()
+	roleDocument, err := s.config.RoleDocument()
 	if err != nil {
 		return err
 	}
 
 	var tagSlice []types.Tag
-	for key, value := range s.release.ResourceTags() {
+	for key, value := range s.config.Tags() {
 		tagSlice = append(tagSlice, types.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
@@ -192,25 +215,25 @@ func (s *IAM) PutRole(ctx context.Context) error {
 	}
 
 	create := &iam.CreateRoleInput{
-		RoleName:                 aws.String(s.release.RoleName()),
+		RoleName:                 aws.String(s.config.ResourceName()),
 		AssumeRolePolicyDocument: aws.String(roleDocument),
 	}
 
 	update := &iam.UpdateAssumeRolePolicyInput{
-		RoleName:       aws.String(s.release.RoleName()),
+		RoleName:       aws.String(s.config.ResourceName()),
 		PolicyDocument: aws.String(roleDocument),
 	}
 
 	tag := &iam.TagRoleInput{
-		RoleName: aws.String(s.release.RoleName()),
+		RoleName: aws.String(s.config.ResourceName()),
 		Tags:     tagSlice,
 	}
 
-	_, err = s.iam.CreateRole(ctx, create)
+	_, err = s.config.Iam.Client.CreateRole(ctx, create)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "EntityAlreadyExists":
-			_, err = s.iam.UpdateAssumeRolePolicy(ctx, update)
+			_, err = s.config.Iam.Client.UpdateAssumeRolePolicy(ctx, update)
 			if err != nil {
 				return err
 			}
@@ -219,7 +242,7 @@ func (s *IAM) PutRole(ctx context.Context) error {
 		}
 	}
 
-	_, err = s.iam.TagRole(ctx, tag)
+	_, err = s.config.Iam.Client.TagRole(ctx, tag)
 	if err != nil {
 		return err
 	}
@@ -229,11 +252,11 @@ func (s *IAM) PutRole(ctx context.Context) error {
 
 func (s *IAM) AttachRolePolicy(ctx context.Context) error {
 	attach := &iam.AttachRolePolicyInput{
-		PolicyArn: aws.String(s.release.PolicyArn()),
-		RoleName:  aws.String(s.release.RoleName()),
+		PolicyArn: aws.String(s.config.PolicyArn()),
+		RoleName:  aws.String(s.config.ResourceName()),
 	}
 
-	_, err := s.iam.AttachRolePolicy(ctx, attach)
+	_, err := s.config.Iam.Client.AttachRolePolicy(ctx, attach)
 	if err != nil {
 		return err
 	}
@@ -247,11 +270,11 @@ func (s *IAM) DetachRolePolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	detach := &iam.DetachRolePolicyInput{
-		PolicyArn: aws.String(s.release.PolicyArn()),
-		RoleName:  aws.String(s.release.RoleName()),
+		PolicyArn: aws.String(s.config.PolicyArn()),
+		RoleName:  aws.String(s.config.ResourceName()),
 	}
 
-	_, err := s.iam.DetachRolePolicy(ctx, detach)
+	_, err := s.config.Iam.Client.DetachRolePolicy(ctx, detach)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":
@@ -269,10 +292,10 @@ func (s *IAM) DeleteRole(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	delete := &iam.DeleteRoleInput{
-		RoleName: aws.String(s.release.RoleName()),
+		RoleName: aws.String(s.config.ResourceName()),
 	}
 
-	_, err := s.iam.DeleteRole(ctx, delete)
+	_, err := s.config.Iam.Client.DeleteRole(ctx, delete)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":
@@ -289,14 +312,14 @@ func (s *IAM) DeletePolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	delete := &iam.DeletePolicyInput{
-		PolicyArn: aws.String(s.release.PolicyArn()),
+		PolicyArn: aws.String(s.config.PolicyArn()),
 	}
 
-	if err := s.GCPolicyVersions(ctx, s.release.PolicyArn()); err != nil {
+	if err := s.GCPolicyVersions(ctx, s.config.PolicyArn()); err != nil {
 		return err
 	}
 
-	_, err := s.iam.DeletePolicy(ctx, delete)
+	_, err := s.config.Iam.Client.DeletePolicy(ctx, delete)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":
@@ -318,7 +341,7 @@ func (s *IAM) GCPolicyVersions(ctx context.Context, policyArn string) error {
 		PolicyArn: aws.String(policyArn),
 	}
 
-	policyVersions, err := s.iam.ListPolicyVersions(ctx, index)
+	policyVersions, err := s.config.Iam.Client.ListPolicyVersions(ctx, index)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":
@@ -335,7 +358,7 @@ func (s *IAM) GCPolicyVersions(ctx context.Context, policyArn string) error {
 				VersionId: version.VersionId,
 			}
 
-			if _, err = s.iam.DeletePolicyVersion(ctx, delete); err != nil {
+			if _, err = s.config.Iam.Client.DeletePolicyVersion(ctx, delete); err != nil {
 				if errors.As(err, &apiErr) {
 					switch apiErr.ErrorCode() {
 					case "NoSuchEntity":

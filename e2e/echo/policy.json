@@ -1,0 +1,37 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowAccessOwnLogs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:*"
+            ],
+            "Resource": "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*"
+        },
+        {
+            "Sid": "AllowLambdaIntrospection",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:GetFunction",
+                "lambda:GetFunctionConfiguration"
+            ],
+            "Resource": "{{.FunctionArn}}"
+        },
+        {
+            "Sid": "AllowIAMIntrospection",
+            "Effect": "Allow",
+            "Action": [
+                "iam:ListAttachedRolePolicies",
+                "iam:ListRolePolicies",
+                "iam:GetRole",
+                "iam:GetPolicy",
+                "iam:GetPolicyVersion"
+            ],
+            "Resource": [
+                "{{.PolicyArn}}",
+                "{{.RoleArn}}"
+            ]
+        }
+    ]
+}
