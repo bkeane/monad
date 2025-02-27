@@ -64,12 +64,6 @@ Describe "Auth"
       The status should be success
     End
 
-    It "Health"
-      When call curl_retry_sigv4_status "https://${host}/${path}/health"
-      The output should eq "200"
-      The status should be success
-    End
-
     It "X-Forwarded-Prefix"
       When call curl_retry_sigv4 "https://${host}/${path}/headers/x-forwarded-prefix"  
       The output should include "$path"

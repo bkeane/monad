@@ -38,7 +38,6 @@ curl_retry_oauth() {
   curl_retry --header "Authorization: Bearer $(fetch_bearer_token)" "$@"
 }
 
-# For testing auth swapping
 curl_retry_status() {
   curl -s --fail --retry-all-errors --retry 7 --retry-delay 2 -o /dev/null -w "%{http_code}" "$@"
 }
