@@ -1,11 +1,14 @@
 output "workflow" {
     value = yamlencode({
         jobs = {
-            build = {
-                runs-on = "ubuntu"
+            publish = {
+                runs-on = "ubuntu-latest"
                 permissions = {
                     id-token = "write"
                     contents = "read"
+                }
+                matrix = {
+                    chdir = []
                 }
                 steps = [
                     {
@@ -24,13 +27,19 @@ output "workflow" {
                     },
                     {
                         name = "Checkout"
+                        id = "checkout"
                         uses = "actions/checkout@v4"
                         with = {
                             fetch-depth = 0
                         }
                     },
                     {
-
+                        name = "Install Monad"
+                        id = "install-monad"
+                        uses = "bkeane/monad-action@main"
+                        with = {
+                            version = "latest"
+                        }
                     }
                 ]
             }

@@ -1,0 +1,34 @@
+name: e2e
+
+on:
+  pull_request:
+
+jobs:
+  publish:
+    matrix:
+      chdir: [e2e/echo]
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - id: assume-role
+        name: Authenticate with AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-west-2
+          role-to-assume: arn:aws:iam::677771948337:role/bkeane-monad-oidc-role
+      - id: docker-login
+        name: Authenticate with ECR
+        uses: aws-actions/amazon-ecr-login@v2
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: install-monad
+        name: Install Monad
+        uses: bkeane/monad-action@main
+        with:
+          version: latest
+
