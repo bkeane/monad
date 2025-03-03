@@ -11,6 +11,10 @@ scaffolds := "go python node ruby"
 default:
     @just --list
 
+# generate terraform docs
+gen:
+    terraform-docs markdown terraform > terraform/README.md
+
 # install monad to ~/.local/bin
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go

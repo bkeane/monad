@@ -1,0 +1,12 @@
+formatter: "markdown"
+
+content: |-
+  {{ .Header }}
+
+  {{ .Providers }}
+
+  {{ .Modules }}
+
+  {{ .Inputs }}
+
+  {{ .Outputs }}
