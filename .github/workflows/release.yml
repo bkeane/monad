@@ -37,6 +37,16 @@ jobs:
             registry: ghcr.io
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Enable containerd registry
+          uses: docker/setup-docker-action@v4
+          with:
+            daemon-config: |
+              {
+                "debug": true,
+                "features": {
+                  "containerd-snapshotter": true
+                }
+              }
         - name: Checkout
           uses: actions/checkout@v4
           with:
