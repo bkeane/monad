@@ -1,12 +1,12 @@
-resource "aws_ecr_repository" "service" {
+resource "aws_ecr_repository" "services" {
     for_each = local.is_hub ? toset(local.images) : toset([])
     name = each.value
     image_tag_mutability = var.mutable ? "MUTABLE" : "IMMUTABLE"
 }
 
 resource "aws_ecr_repository_policy" "cross_account_access" {
-    for_each = local.is_hub ? toset(local.images) : toset([])
-    repository = each.value
+    for_each = aws_ecr_repository.services
+    repository = each.value.name
     policy = jsonencode({
         Version = "2012-10-17"
         Statement = [

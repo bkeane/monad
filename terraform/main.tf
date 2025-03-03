@@ -20,6 +20,12 @@ locals {
         for service in var.services:
             "${local.repo_owner}/${local.repo_name}/${service}"
     ]
+
+    hub_account_role_arn = "arn:aws:iam::${var.ecr_hub_account_id}:role/${local.prefix}-oidc-role"
+    spoke_account_role_arns = [
+        for account_id in var.ecr_spoke_account_ids:
+            "arn:aws:iam::${account_id}:role/${local.prefix}-oidc-role"
+    ]
 }
 
 data "aws_caller_identity" "current" {}
