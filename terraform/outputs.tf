@@ -7,8 +7,10 @@ output "workflow" {
                     id-token = "write"
                     contents = "read"
                 }
-                matrix = {
-                    chdir = []
+                strategy = {
+                    matrix = {
+                        chdir = []
+                    }
                 }
                 steps = [
                     {
