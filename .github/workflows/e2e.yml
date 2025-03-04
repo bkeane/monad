@@ -46,7 +46,9 @@ jobs:
           role_arn: arn:aws:iam::677771948337:role/bkeane-monad-oidc-role
           version: latest
       - name: Publish echo
-        run: monad --chdir e2e/echo encode | docker compose -f - build --push
+        run: monad --chdir e2e/echo compose | docker compose -f - build --push
+
+
 
 
 

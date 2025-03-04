@@ -10,7 +10,7 @@ locals {
   publish = [
     for path, service in var.services : {
       name = "Publish ${basename(path)}"
-      run  = "${trimspace("monad --chdir ${path} encode ${service.encode_args}")} | docker compose -f - build --push"
+      run  = "${trimspace("monad --chdir ${path} compose ${service.compose_args}")} | docker compose -f - build --push"
     }
   ]
 

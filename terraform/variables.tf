@@ -6,7 +6,7 @@ variable "origin" {
 variable "services" {
   type = map(object({
     global_args = optional(string, "")
-    encode_args = optional(string, "")
+    compose_args = optional(string, "")
     deploy_args = optional(string, "")
     destroy_args = optional(string, "")
   }))
