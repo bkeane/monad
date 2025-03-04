@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bkeane/monad/pkg/param"
 	"github.com/bkeane/monad/pkg/saga"
@@ -9,6 +10,7 @@ import (
 
 type Destroy struct {
 	param.Aws `arg:"-"`
+	Untag     bool `arg:"--untag" default:"false"`
 }
 
 func (d *Destroy) Route(ctx context.Context, r Root) error {
@@ -18,6 +20,13 @@ func (d *Destroy) Route(ctx context.Context, r Root) error {
 
 	if err := saga.Init(ctx, d.Aws).Undo(ctx); err != nil {
 		return err
+	}
+
+	if d.Untag {
+		path := fmt.Sprintf("%s/%s/%s", r.Git.Owner, r.Git.Repository, r.Git.Service)
+		if err := d.Registry.Client.Untag(ctx, path, r.Git.Branch); err != nil {
+			return err
+		}
 	}
 
 	return nil

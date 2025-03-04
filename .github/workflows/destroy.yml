@@ -1,0 +1,26 @@
+"env":
+  "MONAD_BRANCH": "${{ github.head_ref || github.ref_name }}"
+  "MONAD_REGISTRY_ID": "677771948337"
+  "MONAD_REGISTRY_REGION": "us-west-2"
+  "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+    || github.sha }}"
+"jobs":
+  "destroy":
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+    - "name": "Destroy echo"
+      "run": "monad --chdir e2e/echo destroy --untag"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/bkeane-monad-oidc-role"
+        - "arn:aws:iam::831926600600:role/bkeane-monad-oidc-role"
+"name": "Destroy"
+"on":
+  "delete": {}
