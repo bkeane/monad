@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-          "repo:${local.repo_path}"
+          "repo:${local.repo_owner}/${local.repo_name}:${local.allowed_branches}"
       ]
     }
   }

@@ -4,8 +4,14 @@ variable "origin" {
 }
 
 variable "services" {
-  type = list(string)
-  description = "service names within the repo"
+  type = map(object({
+    global_args = optional(string, "")
+    encode_args = optional(string, "")
+    deploy_args = optional(string, "")
+    destroy_args = optional(string, "")
+  }))
+  description = "service definitions"
+  default = {}
 }
 
 variable "mutable" {
@@ -17,6 +23,12 @@ variable "mutable" {
 variable "ecr_hub_account_id" {
   type = string
   description = "The ECR hub account ID"
+}
+
+variable "ecr_hub_account_region" {
+  type = string
+  description = "The ECR hub account region"
+  default = null
 }
 
 variable "ecr_spoke_account_ids" {
