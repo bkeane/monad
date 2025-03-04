@@ -14,6 +14,11 @@
     - "id": "setup-monad"
       "name": "Setup Monad"
       "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "arn:aws:iam::677771948337:role/bkeane-monad-oidc-role"
+        "version": "latest"
     - "name": "Destroy echo"
       "run": "monad --chdir e2e/echo destroy --untag"
     "strategy":

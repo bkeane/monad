@@ -2,7 +2,8 @@
   "MONAD_BRANCH": "${{ github.head_ref || github.ref_name }}"
   "MONAD_REGISTRY_ID": "677771948337"
   "MONAD_REGISTRY_REGION": "us-west-2"
-  "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+  "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+    || github.sha }}"
 "jobs":
   "deploy":
     "needs": "publish"
