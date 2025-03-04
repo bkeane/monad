@@ -28,4 +28,6 @@
         - "arn:aws:iam::831926600600:role/bkeane-monad-oidc-role"
 "name": "Destroy"
 "on":
-  "delete": {}
+  "pull_request_target":
+    "types":
+    - "closed"

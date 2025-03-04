@@ -6,6 +6,7 @@ import (
 
 	"github.com/bkeane/monad/pkg/param"
 	"github.com/bkeane/monad/pkg/saga"
+	"github.com/rs/zerolog/log"
 )
 
 type Destroy struct {
@@ -24,6 +25,7 @@ func (d *Destroy) Route(ctx context.Context, r Root) error {
 
 	if d.Untag {
 		path := fmt.Sprintf("%s/%s/%s", r.Git.Owner, r.Git.Repository, r.Git.Service)
+		log.Info().Str("repository", path).Str("tag", r.Git.Branch).Msg("untagging image")
 		if err := d.Registry.Client.Untag(ctx, path, r.Git.Branch); err != nil {
 			return err
 		}

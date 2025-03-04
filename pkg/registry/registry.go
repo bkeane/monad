@@ -167,6 +167,12 @@ func (r *Client) Untag(ctx context.Context, repository string, reference string)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 404 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Warn().Str("response", string(bodyBytes)).Msg("untag")
+		return nil
+	}
+
 	return nil
 }
 
