@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  goreleaser:
+  binaries:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,3 +28,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PERSONAL_AUTH_TOKEN: ${{ secrets.GR_PAT }}
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+        - name: GHCR Login
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Enable containerd registry
+          uses: docker/setup-docker-action@v4
+          with:
+            daemon-config: |
+              {
+                "debug": true,
+                "features": {
+                  "containerd-snapshotter": true
+                }
+              }
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Publish release image
+          run: |
+            docker build \
+            -t ghcr.io/bkeane/monad:${{ github.ref_name }} \
+            -t ghcr.io/bkeane/monad:latest \
+            --platform linux/amd64,linux/arm64 \
+            --push .

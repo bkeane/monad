@@ -156,6 +156,20 @@ func (r *Client) GetTags(ctx context.Context, repository string) (Tags, error) {
 	return tags, nil
 }
 
+func (r *Client) Untag(ctx context.Context, repository string, reference string) error {
+	url := fmt.Sprintf("https://%s/v2/%s/manifests/%s", r.Url, repository, reference)
+
+	req, _ := http.NewRequest("DELETE", url, nil)
+	req.Header.Add("Authorization", "Basic "+r.token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 func (r *Client) FromGitPath(ctx context.Context, owner, repo, service, branch string) (ImagePointer, error) {
 	path := fmt.Sprintf("%s/%s/%s", owner, repo, service)
 	return r.FromPath(ctx, path, branch)
