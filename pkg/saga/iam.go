@@ -294,7 +294,8 @@ func (s *IAM) DetachRolePolicy(ctx context.Context) error {
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":
-			return nil
+			// in the case that the boundary does not exist, we can continue
+			break
 		default:
 			return err
 		}
