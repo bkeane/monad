@@ -55,6 +55,13 @@ destroy:
 clean:
     rm -rf e2e/stage
 
+# Apply terraform
+terraform: 
+    AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod init
+    AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod apply
+
+    AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev init
+    AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev apply
 
 
 

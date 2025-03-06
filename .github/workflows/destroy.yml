@@ -17,10 +17,12 @@
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/bkeane-monad-oidc-role"
+        "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "name": "Destroy echo"
-      "run": "monad --chdir e2e/echo destroy --untag"
+      "run": "monad --chdir e2e/echo destroy"
+    - "name": "Untag echo"
+      "run": "monad --chdir e2e/echo ecr untag"
     "strategy":
       "matrix":
         "role_arn":
