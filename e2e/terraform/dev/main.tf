@@ -33,12 +33,10 @@ module "api_gateway" {
 }
 
 module "monad" {
-    # source = "github.com/bkeane/monad-action//module?ref=main"
-    source = "../../../../monad-action/module"
+    source = "github.com/bkeane/monad-action//module?ref=main"
     origin = "https://github.com/bkeane/monad.git"
     ecr_hub_account_id = "677771948337"
     ecr_spoke_account_ids = ["831926600600"]
     create_oidc_provider = true
-
     apigatewayv2_ids = toset([module.api_gateway.api_id])
 }
