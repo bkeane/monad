@@ -21,7 +21,8 @@
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "name": "Deploy echo"
-      "run": "monad --chdir e2e/echo deploy"
+      "run": "monad --chdir e2e/echo deploy --api kaixo --rule file://rule.json --policy
+        file://policy.json"
     "strategy":
       "matrix":
         "role_arn":
@@ -46,3 +47,6 @@
 "name": "Deploy"
 "on":
   "pull_request": {}
+  "push":
+    "branches":
+    - "main"
