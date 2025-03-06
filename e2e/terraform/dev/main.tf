@@ -41,8 +41,4 @@ module "monad" {
     create_oidc_provider = true
 
     apigatewayv2_ids = toset([module.api_gateway.api_id])
-
-    services = {
-        "e2e/echo" = {}
-    }
 }

@@ -43,7 +43,9 @@ module "monad" {
     apigatewayv2_ids = toset([module.api_gateway.api_id])
 
     services = {
-        "e2e/echo" = {}
+        "e2e/echo" = {
+            deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
+        }
     }
 }
 
