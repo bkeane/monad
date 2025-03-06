@@ -167,26 +167,20 @@ func (r *Client) Untag(ctx context.Context, repository string, reference string)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 404 {
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Warn().Str("response", string(bodyBytes)).Msg("untag")
-		return nil
+		log.Error().
+			RawJSON("body", bodyBytes).
+			Int("status", resp.StatusCode).
+			Msg("registry")
+
+		return fmt.Errorf("failed to untag image: %s:%s", repository, reference)
 	}
 
 	return nil
 }
 
-func (r *Client) FromGitPath(ctx context.Context, owner, repo, service, branch string) (ImagePointer, error) {
-	path := fmt.Sprintf("%s/%s/%s", owner, repo, service)
-	return r.FromPath(ctx, path, branch)
-}
-
 func (r *Client) FromPath(ctx context.Context, path string, reference string) (ImagePointer, error) {
-	log.Info().
-		Str("url", fmt.Sprintf("%s/%s", r.Url, path)).
-		Str("tag", reference).
-		Msg("fetching image")
-
 	jsonString, err := r.DigImage(ctx, path, reference)
 	if err != nil {
 		return ImagePointer{}, err

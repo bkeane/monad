@@ -2,7 +2,6 @@ package route
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bkeane/monad/pkg/param"
 	"github.com/bkeane/monad/pkg/saga"
@@ -17,8 +16,7 @@ func (d *Deploy) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	path := fmt.Sprintf("%s/%s/%s", r.Git.Owner, r.Git.Repository, r.Git.Service)
-	image, err := d.Registry.Client.FromPath(ctx, path, r.Git.Branch)
+	image, err := d.Registry.GetImage(ctx, r.Git.Owner, r.Git.Repository, r.Git.Service, r.Git.Branch)
 	if err != nil {
 		return err
 	}

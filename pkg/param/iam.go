@@ -12,9 +12,10 @@ import (
 )
 
 type Iam struct {
-	Client         *iam.Client `arg:"-" json:"-"`
-	PolicyTemplate string      `arg:"--policy" placeholder:"template" help:"{} | file://policy.tmpl" default:"minimal-policy"`
-	RoleTemplate   string      `arg:"--role" placeholder:"template" help:"{} | file://role.tmpl" default:"minimal-role"`
+	Client            *iam.Client `arg:"-" json:"-"`
+	PolicyTemplate    string      `arg:"--policy" placeholder:"template" help:"{} | file://policy.tmpl" default:"minimal-policy"`
+	RoleTemplate      string      `arg:"--role" placeholder:"template" help:"{} | file://role.tmpl" default:"minimal-role"`
+	BoundaryPolicyArn string      `arg:"--boundary-arn" placeholder:"arn" help:"boundary policy arn" default:"no-boundary"`
 }
 
 func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
@@ -50,8 +51,18 @@ func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
 
 	}
 
+	if l.BoundaryPolicyArn != "" {
+		_, err := l.Client.GetPolicy(ctx, &iam.GetPolicyInput{
+			PolicyArn: aws.String(l.BoundaryPolicyArn),
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to get boundary policy")
+		}
+	}
+
 	return v.ValidateStruct(l,
-		v.Field(&l.PolicyTemplate, v.NilOrNotEmpty),
-		v.Field(&l.RoleTemplate, v.NilOrNotEmpty),
+		v.Field(&l.PolicyTemplate, v.Required),
+		v.Field(&l.RoleTemplate, v.Required),
 	)
 }

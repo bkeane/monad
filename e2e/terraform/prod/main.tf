@@ -1,5 +1,6 @@
 module "monad" {
-    source = "github.com/bkeane/monad-action//module?ref=main"
+    # source = "github.com/bkeane/monad-action//module?ref=main"
+    source = "../../../../monad-action/module"
     origin = "https://github.com/bkeane/monad.git"
     ecr_hub_account_id = "677771948337"
     ecr_spoke_account_ids = ["831926600600"]

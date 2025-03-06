@@ -261,6 +261,18 @@ func (s *IAM) AttachRolePolicy(ctx context.Context) error {
 		return err
 	}
 
+	if s.config.BoundaryPolicyArn() != "" {
+		boundary := &iam.PutRolePermissionsBoundaryInput{
+			RoleName:            aws.String(s.config.ResourceName()),
+			PermissionsBoundary: aws.String(s.config.BoundaryPolicyArn()),
+		}
+
+		_, err := s.config.Iam.Client.PutRolePermissionsBoundary(ctx, boundary)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -274,7 +286,21 @@ func (s *IAM) DetachRolePolicy(ctx context.Context) error {
 		RoleName:  aws.String(s.config.ResourceName()),
 	}
 
-	_, err := s.config.Iam.Client.DetachRolePolicy(ctx, detach)
+	boundary := &iam.DeleteRolePermissionsBoundaryInput{
+		RoleName: detach.RoleName,
+	}
+
+	_, err := s.config.Iam.Client.DeleteRolePermissionsBoundary(ctx, boundary)
+	if errors.As(err, &apiErr) {
+		switch apiErr.ErrorCode() {
+		case "NoSuchEntity":
+			return nil
+		default:
+			return err
+		}
+	}
+
+	_, err = s.config.Iam.Client.DetachRolePolicy(ctx, detach)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "NoSuchEntity":

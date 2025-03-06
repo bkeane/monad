@@ -13,10 +13,11 @@ import (
 type Root struct {
 	param.Git
 	AwsConfig aws.Config `arg:"-" json:"-"`
-	Deploy    *Deploy    `arg:"subcommand:deploy" help:"deploy a monad"`
-	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a monad"`
-	Init      *Scaffold  `arg:"subcommand:init" help:"initialize a monad"`
-	Compose   *Compose   `arg:"subcommand:compose" help:"compose a monad"`
+	Deploy    *Deploy    `arg:"subcommand:deploy" help:"deploy a service"`
+	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a service"`
+	Ecr       *Ecr       `arg:"subcommand:ecr" help:"ecr commands"`
+	Init      *Scaffold  `arg:"subcommand:init" help:"initialize a service"`
+	Compose   *Compose   `arg:"subcommand:compose" help:"compose a service"`
 }
 
 func (r *Root) Validate(ctx context.Context) error {

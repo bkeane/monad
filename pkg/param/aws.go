@@ -110,6 +110,10 @@ func (c *Aws) PolicyArn() string {
 	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.Caller.AccountId, c.ResourceName())
 }
 
+func (c *Aws) BoundaryPolicyArn() string {
+	return c.Iam.BoundaryPolicyArn
+}
+
 func (c *Aws) EniRoleName() string {
 	return "AWSLambdaVPCAccessExecutionRole"
 }
