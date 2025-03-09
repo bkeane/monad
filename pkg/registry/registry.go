@@ -281,9 +281,9 @@ func (r *Client) GetManifest(ctx context.Context, repository string, reference s
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		log.Error().
 			RawJSON("body", bodyBytes).
@@ -306,9 +306,9 @@ func (r *Client) GetConfig(ctx context.Context, repository string, reference str
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		log.Error().
 			RawJSON("body", bodyBytes).
