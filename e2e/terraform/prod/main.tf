@@ -57,7 +57,7 @@ module "hub" {
     source = "../../../../monad-action/modules/hub"
     origin = "https://github.com/bkeane/monad.git"
     spoke_account_ids = ["831926600600"]
-    boundary_policy = false
+    boundary_policy = true
 
     services = {
         "e2e/echo" = {

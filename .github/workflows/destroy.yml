@@ -1,4 +1,5 @@
 "env":
+  "MONAD_BOUNDARY_POLICY": "monad-boundary-policy"
   "MONAD_BRANCH": "${{ github.head_ref || github.ref_name }}"
   "MONAD_REGISTRY_ID": "677771948337"
   "MONAD_REGISTRY_REGION": "us-west-2"
