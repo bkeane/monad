@@ -111,6 +111,10 @@ func (c *Aws) PolicyArn() string {
 }
 
 func (c *Aws) BoundaryPolicyArn() string {
+	if c.Iam.BoundaryPolicy == "" {
+		return c.Iam.BoundaryPolicy
+	}
+
 	if strings.HasPrefix(c.Iam.BoundaryPolicy, "arn:aws:iam::") {
 		return c.Iam.BoundaryPolicy
 	}
