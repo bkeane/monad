@@ -26,8 +26,7 @@
     "strategy":
       "matrix":
         "role_arn":
-        - "arn:aws:iam::677771948337:role/bkeane-monad-oidc-role"
-        - "arn:aws:iam::831926600600:role/bkeane-monad-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
   "publish":
     "permissions":
       "contents": "read"
@@ -40,7 +39,7 @@
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/bkeane-monad-oidc-role"
+        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
         "version": "latest"
     - "name": "Publish echo"
       "run": "monad --chdir e2e/echo compose | docker compose -f - build --push"

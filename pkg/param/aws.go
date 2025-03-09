@@ -111,7 +111,11 @@ func (c *Aws) PolicyArn() string {
 }
 
 func (c *Aws) BoundaryPolicyArn() string {
-	return c.Iam.BoundaryPolicyArn
+	if strings.HasPrefix(c.Iam.BoundaryPolicy, "arn:aws:iam::") {
+		return c.Iam.BoundaryPolicy
+	}
+
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.Caller.AccountId, c.Iam.BoundaryPolicy)
 }
 
 func (c *Aws) EniRoleName() string {

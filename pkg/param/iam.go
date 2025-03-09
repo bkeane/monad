@@ -12,10 +12,10 @@ import (
 )
 
 type Iam struct {
-	Client            *iam.Client `arg:"-" json:"-"`
-	PolicyTemplate    string      `arg:"--policy" placeholder:"template" help:"{} | file://policy.tmpl" default:"minimal-policy"`
-	RoleTemplate      string      `arg:"--role" placeholder:"template" help:"{} | file://role.tmpl" default:"minimal-role"`
-	BoundaryPolicyArn string      `arg:"--boundary-arn" placeholder:"arn" help:"boundary policy arn" default:"no-boundary"`
+	Client         *iam.Client `arg:"-" json:"-"`
+	PolicyTemplate string      `arg:"--policy" placeholder:"template" help:"{} | file://policy.tmpl" default:"minimal-policy"`
+	RoleTemplate   string      `arg:"--role" placeholder:"template" help:"{} | file://role.tmpl" default:"minimal-role"`
+	BoundaryPolicy string      `arg:"--boundary,env:MONAD_BOUNDARY_POLICY" placeholder:"arn|name" help:"boundary policy" default:"no-boundary"`
 }
 
 func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
@@ -49,16 +49,6 @@ func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
 			return fmt.Errorf("failed to read provided role template")
 		}
 
-	}
-
-	if l.BoundaryPolicyArn != "" {
-		_, err := l.Client.GetPolicy(ctx, &iam.GetPolicyInput{
-			PolicyArn: aws.String(l.BoundaryPolicyArn),
-		})
-
-		if err != nil {
-			return fmt.Errorf("failed to get boundary policy")
-		}
 	}
 
 	return v.ValidateStruct(l,
