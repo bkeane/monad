@@ -58,12 +58,14 @@ module "hub" {
     origin = "https://github.com/bkeane/monad.git"
     spoke_account_ids = ["831926600600"]
     boundary_policy = true
-
+    
     services = {
         "e2e/echo" = {
             deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
         }
     }
+
+
 }
 
 module "spoke" {

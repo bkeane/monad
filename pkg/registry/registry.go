@@ -281,9 +281,16 @@ func (r *Client) GetManifest(ctx context.Context, repository string, reference s
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get image manifest: status %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Error().
+			RawJSON("body", bodyBytes).
+			Int("status", resp.StatusCode).
+			Msg("registry")
+
+		return nil, fmt.Errorf("failed to get image manifest")
 	}
 
 	return resp, nil
@@ -299,9 +306,16 @@ func (r *Client) GetConfig(ctx context.Context, repository string, reference str
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get image config: status %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Error().
+			RawJSON("body", bodyBytes).
+			Int("status", resp.StatusCode).
+			Msg("registry")
+
+		return nil, fmt.Errorf("failed to get image config")
 	}
 
 	return resp, nil
