@@ -37,7 +37,7 @@ module "api_gateway" {
             authorizer_type = "JWT"
             identity_sources = ["$request.header.Authorization"]
             jwt_configuration = {
-                issuer = "https://kaixo.us.auth0.com/",
+                issuer = "https://kaixo.auth0.com/",
                 audience = ["https://kaixo.io"]
             }
         }
@@ -49,19 +49,16 @@ module "boundary" {
 }
 
 module "hub" {
-    # source = "github.com/bkeane/monad-action//module?ref=main"
-    depends_on = [
-        aws_iam_openid_connect_provider.github,
-    ]
-
-    source = "../../../../monad-action/modules/hub"
+    source = "github.com/bkeane/monad-action//modules/hub?ref=main"
+    # source = "../../../../monad-action/modules/hub"
+    depends_on = [aws_iam_openid_connect_provider.github]
     origin = "https://github.com/bkeane/monad.git"
     spoke_account_ids = ["831926600600"]
-    boundary_policy = true
+    boundary_policy_document = module.boundary
     
     services = {
         "e2e/echo" = {
-            deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
+            monad_deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
         }
     }
 
@@ -69,12 +66,12 @@ module "hub" {
 }
 
 module "spoke" {
-    source = "../../../../monad-action/modules/spoke"
+    source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
+    # source = "../../../../monad-action/modules/spoke"
     depends_on = [aws_iam_openid_connect_provider.github ]
-
     origin = "https://github.com/bkeane/monad.git"
     api_gateway_ids = toset([module.api_gateway.api_id])
-    boundary_policy = module.boundary
+    boundary_policy_document = module.boundary
 }
 
 resource "local_file" "deploy" {

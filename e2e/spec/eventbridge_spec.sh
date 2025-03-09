@@ -1,17 +1,5 @@
 Include spec/helpers.sh
 
-emit_test_event() {
-  local string=$1
-  aws events put-events --entries '[
-    {
-      "Source": "shellspec",
-      "DetailType": "TestEvent", 
-      "Detail": "{\"Message\": \"'$string'\"}",
-      "EventBusName": "default"
-    }
-  ]'
-}
-
 Describe "EventBridge"
   branch="$(git rev-parse --abbrev-ref HEAD)"
   sha="$(git rev-parse HEAD)"
@@ -24,6 +12,12 @@ Describe "EventBridge"
     The status should be success
   End
 
+  It "Health"
+    When call curl_sigv4_until 200 https://${host}/${path}/health
+    The output should eq 200
+    The status should be success
+  End
+
   Describe "Event"
     It "Event Sent"
       When call emit_test_event $event_id
@@ -32,8 +26,8 @@ Describe "EventBridge"
     End
 
     It "Event Received"
-      When call curl_retry_sigv4_status "https://${host}/${path}/function/log_group/tail?n=50&grep=$event_id&expect=true"
-      The output should include "200"
+      When call curl_sigv4_until 200 "https://${host}/${path}/function/log_group/tail?n=50&grep=$event_id&expect=true"
+      The output should include 200
       The status should be success
     End
   End
