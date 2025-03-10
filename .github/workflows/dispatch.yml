@@ -1,5 +1,6 @@
 "env":
   "GH_TOKEN": "${{ github.token}}"
+  "MONAD_BRANCH": "${{ github.head_ref || github.ref_name }}"
 "jobs":
   "dispatch":
     "permissions":
@@ -13,9 +14,9 @@
         "fetch-depth": 0
     - "id": "list-workflows"
       "name": "list workflows"
-      "run": "gh workflow list"
+      "run": "gh workflow run just.yml --ref ${{ env.MONAD_BRANCH }}"
 
-"name": "Deploy"
+"name": "Dispatch"
 "on":
   "pull_request": {}
   "push":

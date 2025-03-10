@@ -61,8 +61,6 @@ module "hub" {
             monad_deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
         }
     }
-
-
 }
 
 module "spoke" {
