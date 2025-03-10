@@ -22,63 +22,103 @@ fetch_bearer_token() {
   echo $response | jq -r .access_token
 }
 
-curl_retry() {
-  curl -s --retry-all-errors --retry 5 "$@"
+curl_oauth() {
+  curl -s --header "Authorization: Bearer $(fetch_bearer_token)" "$@"
 }
 
-curl_retry_sigv4() {
+curl_sigv4() {
   session=$(aws sts get-session-token --duration-seconds 3600)
   key=$(echo $session | jq -r .Credentials.AccessKeyId)
   secret=$(echo $session | jq -r .Credentials.SecretAccessKey)
   token=$(echo $session | jq -r .Credentials.SessionToken)
-  curl_retry --user "$key:$secret" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $token" "$@"
+  curl -s --user "$key:$secret" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $token" "$@"
 }
 
-curl_retry_oauth() {
-  curl_retry --header "Authorization: Bearer $(fetch_bearer_token)" "$@"
-}
-
-curl_retry_status() {
-  curl -s --fail --retry-all-errors --retry 7 --retry-delay 2 -o /dev/null -w "%{http_code}" "$@"
-}
-
-curl_retry_oauth_status() {
-  curl_retry_status --header "Authorization: Bearer $(fetch_bearer_token)" "$@"
-}
-
-curl_retry_sigv4_status() {
-  session=$(aws sts get-session-token --duration-seconds 3600)
-  key=$(echo $session | jq -r .Credentials.AccessKeyId)
-  secret=$(echo $session | jq -r .Credentials.SecretAccessKey)
-  token=$(echo $session | jq -r .Credentials.SessionToken)
-  curl_retry_status --fail --user "$key:$secret" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $token" "$@"
-}
-
-curl_until_failure() {
-  local max_attempts=7
-  local attempt=1
-  local delay=2
+curl_until() {
+  expected_status=$1
+  url=$2
+  max_tries=${3:-7}  # Default max tries of 7
+  delay=${4:-2}  # Default delay of 2 seconds
   
-  while [ $attempt -le $max_attempts ]; do
-    response=$(curl -s -o /dev/null -w "%{http_code}" "$@")
-    if [ "$response" != "200" ]; then
-      echo $response
-      return 1
+  tries=0
+  while [ $tries -lt $max_tries ]; do
+    status=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+    
+    if [ "$status" = "$expected_status" ]; then
+      echo "$status"
+      return 0
     fi
-    sleep $delay
-    attempt=$((attempt + 1))
+    
+    tries=$((tries + 1))
+    
+    if [ $tries -lt $max_tries ]; then
+      sleep $delay
+    fi
   done
   
-  echo "Failed to get 403/401"
+  echo "$status"
+  return 1
+}
+
+curl_sigv4_until() {
+  expected_status=$1
+  url=$2
+  max_tries=${3:-7}  # Default max tries of 7
+  delay=${4:-2}  # Default delay of 2 seconds
+  
+  tries=0
+  while [ $tries -lt $max_tries ]; do
+    status=$(curl_sigv4 -s -o /dev/null -w "%{http_code}" "$url")
+    
+    if [ "$status" = "$expected_status" ]; then
+      echo "$status"
+      return 0
+    fi
+    
+    tries=$((tries + 1))
+    
+    if [ $tries -lt $max_tries ]; then
+      sleep $delay
+    fi
+  done
+  
+  echo "$status"
+  return 1
+}
+
+curl_oauth_until() {
+  expected_status=$1
+  url=$2
+  max_tries=${3:-7}  # Default max tries of 7
+  delay=${4:-2}  # Default delay of 2 seconds
+  
+  tries=0
+  while [ $tries -lt $max_tries ]; do
+    status=$(curl_oauth -s -o /dev/null -w "%{http_code}" "$url")
+    
+    if [ "$status" = "$expected_status" ]; then
+      echo "$status"
+      return 0
+    fi
+    
+    tries=$((tries + 1))
+    
+    if [ $tries -lt $max_tries ]; then
+      sleep $delay
+    fi
+  done
+  
+  echo "$status"
   return 1
 }
 
 emit_test_event() {
+  local string=$1
   aws events put-events --entries '[
     {
       "Source": "shellspec",
-      "DetailType": "TestEvent",
-      "Detail": "{\"Hello\": \"World\"}",
+      "DetailType": "TestEvent", 
+      "Detail": "{\"Message\": \"'$string'\"}",
       "EventBusName": "default"
     }
   ]'

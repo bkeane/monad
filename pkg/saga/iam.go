@@ -53,6 +53,7 @@ func (s *IAM) Do(ctx context.Context) error {
 	log.Info().
 		Str("role", s.config.RoleArn()).
 		Str("policy", s.config.PolicyArn()).
+		Str("boundary", s.config.BoundaryPolicyArn()).
 		Msg("ensuring role policy attachment")
 
 	if err := s.AttachRolePolicy(ctx); err != nil {
@@ -66,6 +67,7 @@ func (s *IAM) Undo(ctx context.Context) error {
 	log.Info().
 		Str("role", s.config.RoleArn()).
 		Str("policy", s.config.PolicyArn()).
+		Str("boundary", s.config.BoundaryPolicyArn()).
 		Msg("deleting role policy attachment")
 
 	if err := s.DetachRolePolicy(ctx); err != nil {
@@ -219,9 +221,13 @@ func (s *IAM) PutRole(ctx context.Context) error {
 		AssumeRolePolicyDocument: aws.String(roleDocument),
 	}
 
-	update := &iam.UpdateAssumeRolePolicyInput{
-		RoleName:       aws.String(s.config.ResourceName()),
-		PolicyDocument: aws.String(roleDocument),
+	if s.config.BoundaryPolicyArn() != "" {
+		create.PermissionsBoundary = aws.String(s.config.BoundaryPolicyArn())
+	}
+
+	updatePolicy := &iam.UpdateAssumeRolePolicyInput{
+		RoleName:       create.RoleName,
+		PolicyDocument: create.AssumeRolePolicyDocument,
 	}
 
 	tag := &iam.TagRoleInput{
@@ -233,10 +239,11 @@ func (s *IAM) PutRole(ctx context.Context) error {
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "EntityAlreadyExists":
-			_, err = s.config.Iam.Client.UpdateAssumeRolePolicy(ctx, update)
+			_, err = s.config.Iam.Client.UpdateAssumeRolePolicy(ctx, updatePolicy)
 			if err != nil {
 				return err
 			}
+
 		default:
 			return err
 		}
@@ -251,6 +258,8 @@ func (s *IAM) PutRole(ctx context.Context) error {
 }
 
 func (s *IAM) AttachRolePolicy(ctx context.Context) error {
+	var apiErr smithy.APIError
+
 	attach := &iam.AttachRolePolicyInput{
 		PolicyArn: aws.String(s.config.PolicyArn()),
 		RoleName:  aws.String(s.config.ResourceName()),
@@ -270,6 +279,20 @@ func (s *IAM) AttachRolePolicy(ctx context.Context) error {
 		_, err := s.config.Iam.Client.PutRolePermissionsBoundary(ctx, boundary)
 		if err != nil {
 			return err
+		}
+	} else {
+		boundary := &iam.DeleteRolePermissionsBoundaryInput{
+			RoleName: aws.String(s.config.ResourceName()),
+		}
+
+		_, err := s.config.Iam.Client.DeleteRolePermissionsBoundary(ctx, boundary)
+		if errors.As(err, &apiErr) {
+			switch apiErr.ErrorCode() {
+			case "NoSuchEntity":
+				return nil
+			default:
+				return err
+			}
 		}
 	}
 
