@@ -1,0 +1,19 @@
+"env":
+  "GH_TOKEN": "${{ secrets.GH_TOKEN }}"
+"jobs":
+  "dispatch":
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "list-workflows"
+      "name": "list workflows"
+      "run": "gh workflow list"
+
+"name": "Deploy"
+"on":
+  "pull_request": {}
+  "push":
+    "branches":
+    - "main"
