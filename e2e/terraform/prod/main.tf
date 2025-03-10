@@ -61,6 +61,17 @@ module "hub" {
             monad_deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
         }
     }
+
+    post_deploy = [
+        {
+            name = "Install Just"
+            uses = "extractions/setup-just@v2"
+        },
+        {
+            name = "Test"
+            run = "just list"
+        }
+    ]
 }
 
 module "spoke" {
