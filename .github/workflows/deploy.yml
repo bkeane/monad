@@ -28,6 +28,16 @@
       "matrix":
         "role_arn":
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "dispatch":
+    "needs": "publish"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "list-workflows"
+      "name": "list workflows"
+      "run": "gh workflow list"
   "publish":
     "permissions":
       "contents": "read"

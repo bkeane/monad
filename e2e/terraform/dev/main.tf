@@ -47,8 +47,8 @@ module "boundary" {
 }
 
 module "spoke" {
-    source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
-    # source = "../../../../monad-action/modules/spoke"
+    # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
+    source = "../../../../monad-action/modules/spoke"
     depends_on = [aws_iam_openid_connect_provider.github]
     origin = "https://github.com/bkeane/monad.git"
     api_gateway_ids = toset([module.api_gateway.api_id])
