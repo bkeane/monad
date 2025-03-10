@@ -1,0 +1,15 @@
+name: Just Hello
+on:
+  workflow_dispatch:
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: extractions/setup-just@v2
+      - name: Run just hello
+        run: just hello

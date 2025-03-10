@@ -9,6 +9,16 @@ locals {
     ]
 }
 
+resource "aws_iam_openid_connect_provider" "github" {
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+  ]
+}
+
 module "api_gateway" {
     source = "terraform-aws-modules/apigateway-v2/aws"
 
@@ -25,18 +35,22 @@ module "api_gateway" {
             authorizer_type = "JWT"
             identity_sources = ["$request.header.Authorization"]
             jwt_configuration = {
-                issuer = "https://kaixo.us.auth0.com/",
+                issuer = "https://kaixo.auth0.com/",
                 audience = ["https://kaixo.io"]
             }
         }
     }
 }
 
-module "monad" {
-    source = "github.com/bkeane/monad-action//module?ref=main"
+module "boundary" {
+    source = "../modules/boundary"
+}
+
+module "spoke" {
+    # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
+    source = "../../../../monad-action/modules/spoke"
+    depends_on = [aws_iam_openid_connect_provider.github]
     origin = "https://github.com/bkeane/monad.git"
-    ecr_hub_account_id = "677771948337"
-    ecr_spoke_account_ids = ["831926600600"]
-    create_oidc_provider = true
-    apigatewayv2_ids = toset([module.api_gateway.api_id])
+    api_gateway_ids = toset([module.api_gateway.api_id])
+    boundary_policy_document = module.boundary
 }
