@@ -53,7 +53,7 @@ module "hub" {
     source = "../../../../monad-action/modules/hub"
     depends_on = [aws_iam_openid_connect_provider.github]
     origin = "https://github.com/bkeane/monad.git"
-    spoke_account_ids = ["831926600600"]
+    spoke_account_ids = [data.aws_caller_identity.current.account_id, "831926600600"]
     boundary_policy_document = module.boundary
     
     images = [
