@@ -56,7 +56,7 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 	if e.RuleTemplate != "" {
 		content, err := uriopt.Json(e.RuleTemplate)
 		if err != nil {
-			return fmt.Errorf("failed to read provided rule template")
+			return fmt.Errorf("failed to read provided rule template: %w", err)
 		}
 
 		e.RuleTemplate = content

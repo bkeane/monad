@@ -28,13 +28,13 @@ func (l *Lambda) Validate(ctx context.Context, awsconfig aws.Config) error {
 	if l.EnvTemplate == "" {
 		l.EnvTemplate, err = ReadDefault("defaults/.env.tmpl")
 		if err != nil {
-			return fmt.Errorf("failed to read default env template")
+			return fmt.Errorf("failed to read default env template: %w", err)
 		}
 
 	} else {
 		l.EnvTemplate, err = uriopt.String(l.EnvTemplate)
 		if err != nil {
-			return fmt.Errorf("failed to read provided env template")
+			return fmt.Errorf("failed to read provided env template: %w", err)
 		}
 
 	}

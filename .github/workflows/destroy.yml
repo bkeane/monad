@@ -23,9 +23,9 @@
     - "env":
         "MONAD_API": "m2q7ypdvsf"
         "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env"
-        "MONAD_POLICY": "file://policy.json"
-        "MONAD_RULE": "file://rule.json"
+        "MONAD_ENV": "file://.env.tmpl"
+        "MONAD_POLICY": "file://policy.json.tmpl"
+        "MONAD_RULE": "file://rule.json.tmpl"
       "name": "Destroy}"
       "run": "monad destroy"
     "strategy":
@@ -54,8 +54,8 @@
   - "env":
       "MONAD_API": "m2q7ypdvsf"
       "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env"
-      "MONAD_POLICY": "file://policy.json"
-      "MONAD_RULE": "file://rule.json"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
     "name": "Untag"
     "run": "monad ecr untag"

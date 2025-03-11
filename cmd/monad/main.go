@@ -28,8 +28,7 @@ func main() {
 
 	parser, err := arg.NewParser(
 		arg.Config{
-			IgnoreDefault:     true,
-			StrictSubcommands: true,
+			IgnoreDefault: true,
 		},
 		&root,
 	)
