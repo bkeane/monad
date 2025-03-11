@@ -63,7 +63,7 @@ module "hub" {
     services = [
         {
             "MONAD_CHDIR" = "e2e/echo"
-            "MONAD_API" = module.api_gateway.api_id
+            "MONAD_API" = "kaixo"
             "MONAD_POLICY" = "file://policy.json.tmpl"
             "MONAD_RULE" = "file://rule.json.tmpl"
             "MONAD_ENV" = "file://.env.tmpl"

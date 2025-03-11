@@ -21,7 +21,7 @@
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "env":
-        "MONAD_API": "m2q7ypdvsf"
+        "MONAD_API": "kaixo"
         "MONAD_CHDIR": "e2e/echo"
         "MONAD_ENV": "file://.env.tmpl"
         "MONAD_POLICY": "file://policy.json.tmpl"
@@ -52,7 +52,7 @@
       "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
       "version": "latest"
   - "env":
-      "MONAD_API": "m2q7ypdvsf"
+      "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_ENV": "file://.env.tmpl"
       "MONAD_POLICY": "file://policy.json.tmpl"
