@@ -21,13 +21,14 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
-    - "name": "Deploy echo"
-      "run": "monad --chdir e2e/echo deploy --api kaixo --rule file://rule.json --policy
-        file://policy.json"
-    - "name": "Install Just"
-      "uses": "extractions/setup-just@v2"
-    - "name": "Test"
-      "run": "just list"
+    - "env":
+        "MONAD_API": "m2q7ypdvsf"
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_ENV": "file://.env"
+        "MONAD_POLICY": "file://policy.json"
+        "MONAD_RULE": "file://rule.json"
+      "name": "Deploy"
+      "run": "monad deploy"
     "strategy":
       "matrix":
         "role_arn":
@@ -47,8 +48,14 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
         "version": "latest"
-    - "name": "Publish echo"
-      "run": "monad --chdir e2e/echo compose | docker compose -f - build --push"
+    - "env":
+        "MONAD_API": "m2q7ypdvsf"
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_ENV": "file://.env"
+        "MONAD_POLICY": "file://policy.json"
+        "MONAD_RULE": "file://rule.json"
+      "name": "Release"
+      "run": "monad compose | docker compose -f - build --push"
 "name": "Deploy"
 "on":
   "pull_request": {}

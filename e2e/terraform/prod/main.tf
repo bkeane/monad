@@ -56,20 +56,17 @@ module "hub" {
     spoke_account_ids = ["831926600600"]
     boundary_policy_document = module.boundary
     
-    services = {
-        "e2e/echo" = {
-            monad_deploy_args = "--api kaixo --rule file://rule.json --policy file://policy.json"
-        }
-    }
-
-    post_deploy = [
+    images = [
+        "bkeane/monad/echo"
+    ]
+    
+    services = [
         {
-            name = "Install Just"
-            uses = "extractions/setup-just@v2"
-        },
-        {
-            name = "Test"
-            run = "just list"
+            "MONAD_CHDIR" = "e2e/echo"
+            "MONAD_API" = module.api_gateway.api_id
+            "MONAD_POLICY" = "file://policy.json"
+            "MONAD_RULE" = "file://rule.json"
+            "MONAD_ENV" = "file://.env"
         }
     ]
 }

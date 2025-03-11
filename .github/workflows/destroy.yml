@@ -20,8 +20,14 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
-    - "name": "Destroy echo"
-      "run": "monad --chdir e2e/echo destroy"
+    - "env":
+        "MONAD_API": "m2q7ypdvsf"
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_ENV": "file://.env"
+        "MONAD_POLICY": "file://policy.json"
+        "MONAD_RULE": "file://rule.json"
+      "name": "Destroy}"
+      "run": "monad destroy"
     "strategy":
       "matrix":
         "role_arn":
@@ -45,5 +51,11 @@
       "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
       "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
       "version": "latest"
-  - "name": "Untag echo"
-    "run": "monad --chdir e2e/echo ecr untag"
+  - "env":
+      "MONAD_API": "m2q7ypdvsf"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env"
+      "MONAD_POLICY": "file://policy.json"
+      "MONAD_RULE": "file://rule.json"
+    "name": "Untag"
+    "run": "monad ecr untag"
