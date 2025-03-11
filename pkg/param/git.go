@@ -1,6 +1,7 @@
 package param
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bkeane/monad/internal/git"
@@ -11,12 +12,13 @@ import (
 
 type Git struct {
 	cwd        string `arg:"-" json:"-"`
-	Chdir      string `arg:"--chdir" placeholder:"path" default:"cwd"`
-	Owner      string `arg:"--owner" placeholder:"name" default:"github.com/<owner>/repo.git"`
-	Repository string `arg:"--repo" placeholder:"name" default:"github.com/owner/<repo>.git"`
-	Service    string `arg:"--service" placeholder:"name" default:"current directory name"`
+	Chdir      string `arg:"--chdir,env:MONAD_CHDIR" placeholder:"path" default:"cwd"`
+	Owner      string `arg:"--owner,env:MONAD_OWNER" placeholder:"name" default:"github.com/<owner>/repo.git"`
+	Repository string `arg:"--repo,env:MONAD_REPO" placeholder:"name" default:"github.com/owner/<repo>.git"`
+	Service    string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" default:"current directory name"`
 	Branch     string `arg:"--branch,env:MONAD_BRANCH" placeholder:"name" default:"current git branch"`
 	Sha        string `arg:"--sha,env:MONAD_SHA" placeholder:"sha" default:"current git sha"`
+	ImagePath  string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" default:"${owner}/${repo}/${service}"`
 }
 
 func (g *Git) Validate() error {
@@ -78,6 +80,10 @@ func (g *Git) Validate() error {
 		g.Sha = git.Sha
 	}
 
+	if g.ImagePath == "" {
+		g.ImagePath = fmt.Sprintf("%s/%s/%s", g.Owner, g.Repository, g.Service)
+	}
+
 	log.Info().
 		Str("cwd", g.cwd).
 		Str("owner", g.Owner).
@@ -94,5 +100,6 @@ func (g *Git) Validate() error {
 		v.Field(&g.Service, v.Required),
 		v.Field(&g.Branch, v.Required),
 		v.Field(&g.Sha, v.Required),
+		v.Field(&g.ImagePath, v.Required),
 	)
 }

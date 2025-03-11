@@ -13,11 +13,11 @@ import (
 
 type Lambda struct {
 	Client           *lambda.Client `arg:"-" json:"-"`
-	Region           string         `arg:"--region" placeholder:"name" help:"lambda region name" default:"caller-region"`
-	EnvTemplate      string         `arg:"--env" placeholder:"template" help:"{} | file://env.tmpl" default:"minimal-env"`
-	EphemeralStorage int32          `arg:"--disk" placeholder:"mb" help:"ephemeral storage" default:"512"`
-	MemorySize       int32          `arg:"--memory" placeholder:"mb" help:"memory size" default:"128"`
-	Timeout          int32          `arg:"--timeout" placeholder:"seconds" help:"function timeout" default:"3"`
+	Region           string         `arg:"--lambda-region,env:MONAD_LAMBDA_REGION" placeholder:"name" help:"lambda region name" default:"caller-region"`
+	EnvTemplate      string         `arg:"--env,env:MONAD_ENV" placeholder:"template" help:"string | file://env.tmpl" default:"minimal-env"`
+	EphemeralStorage int32          `arg:"--disk,env:MONAD_DISK" placeholder:"mb" help:"ephemeral storage size" default:"512"`
+	MemorySize       int32          `arg:"--memory,env:MONAD_MEMORY" placeholder:"mb" help:"memory size" default:"128"`
+	Timeout          int32          `arg:"--timeout,env:MONAD_TIMEOUT" placeholder:"seconds" help:"function timeout" default:"3"`
 }
 
 func (l *Lambda) Validate(ctx context.Context, awsconfig aws.Config) error {

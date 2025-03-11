@@ -26,7 +26,7 @@ func (e *Ecr) Route(ctx context.Context, r Root) error {
 			return err
 		}
 	case r.Ecr.Untag != nil:
-		if err := e.Registry.Untag(ctx, r.Git.Owner, r.Git.Repository, r.Git.Service, r.Git.Branch); err != nil {
+		if err := e.Registry.Untag(ctx, r.Git.ImagePath, r.Git.Branch); err != nil {
 			return err
 		}
 	}

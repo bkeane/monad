@@ -15,9 +15,9 @@ import (
 
 type EventBridge struct {
 	Client       *eventbridge.Client `arg:"-" json:"-"`
-	BusName      string              `arg:"--bus" placeholder:"name" help:"eventbridge bus name" default:"default"`
-	RuleTemplate string              `arg:"--rule" placeholder:"template" help:"{} | file://rule.json" default:"no-rule"`
-	Region       string              `arg:"--bus-region" placeholder:"name" help:"eventbridge region name" default:"caller-region"`
+	BusName      string              `arg:"--bus,env:MONAD_BUS" placeholder:"name" help:"eventbridge bus name" default:"default"`
+	RuleTemplate string              `arg:"--rule,env:MONAD_RULE" placeholder:"template" help:"string | file://rule.json" default:"no-rule"`
+	Region       string              `arg:"--bus-region,env:MONAD_BUS_REGION" placeholder:"name" help:"eventbridge region name" default:"caller-region"`
 }
 
 func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error {

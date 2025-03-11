@@ -18,6 +18,7 @@ import (
 
 type Registry struct {
 	ecrc   *ecr.Client      `arg:"-" json:"-"`
+	git    Git              `arg:"-" json:"-"`
 	Client *registry.Client `arg:"-" json:"-"`
 	Id     string           `arg:"--ecr-id,env:MONAD_REGISTRY_ID" placeholder:"id" help:"ecr registry id" default:"caller-account-id"`
 	Region string           `arg:"--ecr-region,env:MONAD_REGISTRY_REGION" placeholder:"name" help:"ecr registry region" default:"caller-region"`
@@ -94,31 +95,24 @@ func (r *Registry) Login(ctx context.Context) error {
 	return nil
 }
 
-func (r *Registry) Untag(ctx context.Context, owner, repo, service, branch string) error {
-	path := fmt.Sprintf("%s/%s/%s", owner, repo, service)
-
+func (r *Registry) Untag(ctx context.Context, repo, tag string) error {
 	log.Info().
-		Str("owner", owner).
-		Str("repo", repo).
-		Str("service", service).
-		Str("branch", branch).
-		Str("tag", path+":"+branch).
+		Str("registry", r.Client.Url).
+		Str("repository", repo).
+		Str("tag", tag).
 		Msg("deleting tag")
 
-	return r.Client.Untag(ctx, path, branch)
+	return r.Client.Untag(ctx, repo, tag)
 }
 
-func (r *Registry) GetImage(ctx context.Context, owner, repo, service, branch string) (registry.ImagePointer, error) {
-	path := fmt.Sprintf("%s/%s/%s", owner, repo, service)
+func (r *Registry) GetImage(ctx context.Context, repo, tag string) (registry.ImagePointer, error) {
 	log.Info().
-		Str("owner", owner).
-		Str("repo", repo).
-		Str("service", service).
-		Str("branch", branch).
-		Str("url", fmt.Sprintf("%s/%s", r.Client.Url, path)).
+		Str("registry", r.Client.Url).
+		Str("repository", repo).
+		Str("tag", tag).
 		Msg("fetching image")
 
-	return r.Client.FromPath(ctx, path, branch)
+	return r.Client.FromPath(ctx, repo, tag)
 }
 
 func parseToken(token *string) (username string, password string, err error) {

@@ -39,13 +39,13 @@ func (c *Compose) Route(ctx context.Context, r Root) error {
 	}
 
 	name := r.Git.Service
-	image := fmt.Sprintf("%s/%s/%s/%s:%s", c.Registry.Client.Url, r.Git.Owner, r.Git.Repository, r.Git.Service, r.Git.Branch)
+	tag := fmt.Sprintf("%s/%s:%s", c.Registry.Client.Url, r.Git.ImagePath, r.Git.Branch)
 
 	compose := &ctypes.Config{}
 
 	service := ctypes.ServiceConfig{
 		Name:  name,
-		Image: image,
+		Image: tag,
 		Build: &ctypes.BuildConfig{
 			Context:    c.BuildContext,
 			Dockerfile: c.Dockerfile,

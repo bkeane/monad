@@ -10,7 +10,7 @@ import (
 
 type CloudWatch struct {
 	Client       *cloudwatchlogs.Client `arg:"-" json:"-"`
-	LogRetention int32                  `arg:"--log-retention" placeholder:"days" help:"1, 3, 5, 7, 14, 30..." default:"3"`
+	LogRetention int32                  `arg:"--log-retention,env:MONAD_LOG_RETENTION" placeholder:"days" help:"1, 3, 5, 7, 14, 30..." default:"3"`
 }
 
 func (c *CloudWatch) Validate(ctx context.Context, awsconfig aws.Config) error {
