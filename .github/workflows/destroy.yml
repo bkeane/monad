@@ -24,13 +24,16 @@
         "MONAD_API": "kaixo"
         "MONAD_CHDIR": "e2e/echo"
         "MONAD_ENV": "file://.env.tmpl"
+        "MONAD_IMAGE": "bkeane/monad/echo"
         "MONAD_POLICY": "file://policy.json.tmpl"
         "MONAD_RULE": "file://rule.json.tmpl"
+        "MONAD_SERVICE": "echo"
       "name": "Destroy}"
       "run": "monad destroy"
     "strategy":
       "matrix":
         "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
 "name": "Destroy"
 "on":
@@ -55,7 +58,9 @@
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
       "MONAD_POLICY": "file://policy.json.tmpl"
       "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo"
     "name": "Untag"
     "run": "monad ecr untag"

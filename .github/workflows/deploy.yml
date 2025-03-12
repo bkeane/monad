@@ -25,13 +25,16 @@
         "MONAD_API": "kaixo"
         "MONAD_CHDIR": "e2e/echo"
         "MONAD_ENV": "file://.env.tmpl"
+        "MONAD_IMAGE": "bkeane/monad/echo"
         "MONAD_POLICY": "file://policy.json.tmpl"
         "MONAD_RULE": "file://rule.json.tmpl"
+        "MONAD_SERVICE": "echo"
       "name": "Deploy"
       "run": "monad deploy"
     "strategy":
       "matrix":
         "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
   "publish":
     "permissions":
@@ -52,8 +55,10 @@
         "MONAD_API": "kaixo"
         "MONAD_CHDIR": "e2e/echo"
         "MONAD_ENV": "file://.env.tmpl"
+        "MONAD_IMAGE": "bkeane/monad/echo"
         "MONAD_POLICY": "file://policy.json.tmpl"
         "MONAD_RULE": "file://rule.json.tmpl"
+        "MONAD_SERVICE": "echo"
       "name": "Release"
       "run": "monad compose | docker compose -f - build --push"
 "name": "Deploy"

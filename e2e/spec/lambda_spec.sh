@@ -8,7 +8,7 @@ Describe "Lambda"
   account_id="$(aws sts get-caller-identity --query "Account" --output text)"
 
   It "monad deploy --api kaixo"
-    When call monad --chdir echo deploy --disk 1024 --memory 256 --timeout 10 --api kaixo --policy file://policy.json --env file://.env
+    When call monad --chdir echo deploy --disk 1024 --memory 256 --timeout 10 --api kaixo --policy file://policy.json.tmpl --env file://.env.tmpl
     The status should be success
   End
 

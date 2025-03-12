@@ -42,7 +42,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error
 		return err
 	}
 
-	if err := c.Vpc.Validate(); err != nil {
+	if err := c.Vpc.Validate(ctx, awsconfig); err != nil {
 		return err
 	}
 

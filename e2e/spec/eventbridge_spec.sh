@@ -7,8 +7,8 @@ Describe "EventBridge"
   host="prod.kaixo.io"
   event_id=$(uuidgen)
 
-  It "monad deploy --api kaixo --rule file://rule.json" --policy file://policy.json
-    When call monad --chdir echo deploy --api kaixo --rule file://rule.json --policy file://policy.json
+  It "monad deploy --api kaixo --rule file://rule.json.tmpl" --policy file://policy.json.tmple
+    When call monad --chdir echo deploy --api kaixo --rule file://rule.json.tmpl --policy file://policy.json.tmpl
     The status should be success
   End
 
