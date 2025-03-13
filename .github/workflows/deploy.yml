@@ -6,8 +6,35 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "deploy":
-    "needs": "publish"
+  "Deploy echo":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo"
+    "needs":
+    - "env":
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_IMAGE": "bkeane/monad/echo"
+      "permissions":
+        "contents": "read"
+        "id-token": "write"
+      "runs-on": "ubuntu-latest"
+      "steps":
+      - "id": "setup-monad"
+        "name": "Setup Monad"
+        "uses": "bkeane/monad-action@main"
+        "with":
+          "configure_for_build": true
+          "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+          "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+          "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+          "version": "latest"
+      - "name": "bkeane/monad/echo:${{env.MONAD_BRANCH}}"
+        "run": "monad compose | docker compose -f - build --push"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -21,45 +48,118 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_AUTH": "auth0"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo-oauth"
-      "name": "Deploy"
-      "run": "monad deploy"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SECURITY_GROUPS": "basic"
-        "MONAD_SERVICE": "echo-vpc"
-        "MONAD_SUBNETS": "private-a,private-b"
-      "name": "Deploy"
-      "run": "monad deploy"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo"
-      "name": "Deploy"
+    - "name": "deploy"
       "run": "monad deploy"
     "strategy":
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "publish":
+  "Deploy echo-oauth":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_AUTH": "auth0"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo-oauth"
+    "needs":
+    - "env":
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_IMAGE": "bkeane/monad/echo"
+      "permissions":
+        "contents": "read"
+        "id-token": "write"
+      "runs-on": "ubuntu-latest"
+      "steps":
+      - "id": "setup-monad"
+        "name": "Setup Monad"
+        "uses": "bkeane/monad-action@main"
+        "with":
+          "configure_for_build": true
+          "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+          "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+          "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+          "version": "latest"
+      - "name": "bkeane/monad/echo:${{env.MONAD_BRANCH}}"
+        "run": "monad compose | docker compose -f - build --push"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "deploy"
+      "run": "monad deploy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "Deploy echo-vpc":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SECURITY_GROUPS": "basic"
+      "MONAD_SERVICE": "echo-vpc"
+      "MONAD_SUBNETS": "private-a,private-b"
+    "needs":
+    - "env":
+        "MONAD_CHDIR": "e2e/echo"
+        "MONAD_IMAGE": "bkeane/monad/echo"
+      "permissions":
+        "contents": "read"
+        "id-token": "write"
+      "runs-on": "ubuntu-latest"
+      "steps":
+      - "id": "setup-monad"
+        "name": "Setup Monad"
+        "uses": "bkeane/monad-action@main"
+        "with":
+          "configure_for_build": true
+          "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+          "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+          "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+          "version": "latest"
+      - "name": "bkeane/monad/echo:${{env.MONAD_BRANCH}}"
+        "run": "monad compose | docker compose -f - build --push"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "deploy"
+      "run": "monad deploy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "Release bkeane/monad/echo":
+    "env":
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_IMAGE": "bkeane/monad/echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -74,38 +174,7 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
         "version": "latest"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_AUTH": "auth0"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo-oauth"
-      "name": "Release"
-      "run": "monad compose | docker compose -f - build --push"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SECURITY_GROUPS": "basic"
-        "MONAD_SERVICE": "echo-vpc"
-        "MONAD_SUBNETS": "private-a,private-b"
-      "name": "Release"
-      "run": "monad compose | docker compose -f - build --push"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo"
-      "name": "Release"
+    - "name": "bkeane/monad/echo:${{env.MONAD_BRANCH}}"
       "run": "monad compose | docker compose -f - build --push"
 "name": "Deploy"
 "on":

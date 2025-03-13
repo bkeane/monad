@@ -6,7 +6,15 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "destroy":
+  "Destroy echo":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -20,64 +28,15 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_AUTH": "auth0"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo-oauth"
-      "name": "Destroy}"
-      "run": "monad destroy"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SECURITY_GROUPS": "basic"
-        "MONAD_SERVICE": "echo-vpc"
-        "MONAD_SUBNETS": "private-a,private-b"
-      "name": "Destroy}"
-      "run": "monad destroy"
-    - "env":
-        "MONAD_API": "kaixo"
-        "MONAD_CHDIR": "e2e/echo"
-        "MONAD_ENV": "file://.env.tmpl"
-        "MONAD_IMAGE": "bkeane/monad/echo"
-        "MONAD_POLICY": "file://policy.json.tmpl"
-        "MONAD_RULE": "file://rule.json.tmpl"
-        "MONAD_SERVICE": "echo"
-      "name": "Destroy}"
+    - "name": "destroy"
       "run": "monad destroy"
     "strategy":
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-"name": "Destroy"
-"on":
-  "pull_request_target":
-    "types":
-    - "closed"
-"untag":
-  "permissions":
-    "contents": "read"
-    "id-token": "write"
-  "runs-on": "ubuntu-latest"
-  "steps":
-  - "id": "setup-monad"
-    "name": "Setup Monad"
-    "uses": "bkeane/monad-action@main"
-    "with":
-      "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
-      "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-      "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
-      "version": "latest"
-  - "env":
+  "Destroy echo-oauth":
+    "env":
       "MONAD_API": "kaixo"
       "MONAD_AUTH": "auth0"
       "MONAD_CHDIR": "e2e/echo"
@@ -86,9 +45,28 @@
       "MONAD_POLICY": "file://policy.json.tmpl"
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
-    "name": "Untag"
-    "run": "monad ecr untag"
-  - "env":
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "destroy"
+      "run": "monad destroy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "Destroy echo-vpc":
+    "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_ENV": "file://.env.tmpl"
@@ -98,15 +76,47 @@
       "MONAD_SECURITY_GROUPS": "basic"
       "MONAD_SERVICE": "echo-vpc"
       "MONAD_SUBNETS": "private-a,private-b"
-    "name": "Untag"
-    "run": "monad ecr untag"
-  - "env":
-      "MONAD_API": "kaixo"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "destroy"
+      "run": "monad destroy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "Untag bkeane/monad/echo":
+    "env":
       "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env.tmpl"
       "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
-      "MONAD_SERVICE": "echo"
-    "name": "Untag"
-    "run": "monad ecr untag"
+    "needs":
+    - "Destroy echo"
+    - "Destroy echo-oauth"
+    - "Destroy echo-vpc"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "version": "latest"
+    - "name": "untag"
+      "run": "monad ecr untag"
+"name": "Destroy"
+"on":
+  "pull_request_target":
+    "types":
+    - "closed"

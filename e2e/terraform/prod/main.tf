@@ -11,12 +11,12 @@ locals {
   ]
 
   service_common = {
-    "MONAD_CHDIR"   = "e2e/echo"
-    "MONAD_IMAGE"   = "bkeane/monad/echo"
-    "MONAD_API"     = local.api_name
-    "MONAD_POLICY"  = "file://policy.json.tmpl"
-    "MONAD_RULE"    = "file://rule.json.tmpl"
-    "MONAD_ENV"     = "file://.env.tmpl"
+    "MONAD_CHDIR"  = "e2e/echo"
+    "MONAD_IMAGE"  = "bkeane/monad/echo"
+    "MONAD_API"    = local.api_name
+    "MONAD_POLICY" = "file://policy.json.tmpl"
+    "MONAD_RULE"   = "file://rule.json.tmpl"
+    "MONAD_ENV"    = "file://.env.tmpl"
   }
 
 }
@@ -68,20 +68,26 @@ module "hub" {
   spoke_account_ids        = [data.aws_caller_identity.current.account_id, "831926600600"]
   boundary_policy_document = module.boundary
 
-  services = [
-    merge(local.service_common, {
-      "MONAD_SERVICE" = "echo"
-    }),
-    merge(local.service_common, {
-      "MONAD_SERVICE" = "echo-oauth"
-      "MONAD_AUTH"    = "auth0"
-    }),
-    merge(local.service_common, {
-      "MONAD_SERVICE"         = "echo-vpc"
-      "MONAD_SECURITY_GROUPS" = join(",", local.security_group_names)
-      "MONAD_SUBNETS"         = join(",", local.subnet_names)
-    })
-  ]
+  services = {
+    releases = [{
+      "MONAD_CHDIR" = "e2e/echo"
+      "MONAD_IMAGE" = "bkeane/monad/echo"
+    }]
+
+    deployments = [
+      merge(local.service_common, {
+        "MONAD_SERVICE" = "echo"
+      }),
+      merge(local.service_common, {
+        "MONAD_SERVICE" = "echo-oauth"
+        "MONAD_AUTH"    = "auth0"
+      }),
+      merge(local.service_common, {
+        "MONAD_SERVICE"         = "echo-vpc"
+        "MONAD_SECURITY_GROUPS" = join(",", local.security_group_names)
+        "MONAD_SUBNETS"         = join(",", local.subnet_names)
+    })]
+  }
 }
 
 module "spoke" {
