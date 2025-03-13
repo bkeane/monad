@@ -63,5 +63,3 @@ terraform:
     AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev init
     AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev apply
 
-
-

@@ -16,7 +16,7 @@ func (d *Deploy) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	image, err := d.Registry.GetImage(ctx, r.Git.Owner, r.Git.Repository, r.Git.Service, r.Git.Branch)
+	image, err := d.Registry.GetImage(ctx, r.Git.ImagePath, r.Git.Branch)
 	if err != nil {
 		return err
 	}

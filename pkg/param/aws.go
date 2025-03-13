@@ -42,7 +42,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error
 		return err
 	}
 
-	if err := c.Vpc.Validate(); err != nil {
+	if err := c.Vpc.Validate(ctx, awsconfig); err != nil {
 		return err
 	}
 
@@ -111,7 +111,15 @@ func (c *Aws) PolicyArn() string {
 }
 
 func (c *Aws) BoundaryPolicyArn() string {
-	return c.Iam.BoundaryPolicyArn
+	if c.Iam.BoundaryPolicy == "" {
+		return c.Iam.BoundaryPolicy
+	}
+
+	if strings.HasPrefix(c.Iam.BoundaryPolicy, "arn:aws:iam::") {
+		return c.Iam.BoundaryPolicy
+	}
+
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.Caller.AccountId, c.Iam.BoundaryPolicy)
 }
 
 func (c *Aws) EniRoleName() string {

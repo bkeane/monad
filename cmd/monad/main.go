@@ -27,7 +27,9 @@ func main() {
 	var root route.Root
 
 	parser, err := arg.NewParser(
-		arg.Config{IgnoreDefault: true},
+		arg.Config{
+			IgnoreDefault: true,
+		},
 		&root,
 	)
 

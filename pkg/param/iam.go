@@ -12,10 +12,10 @@ import (
 )
 
 type Iam struct {
-	Client            *iam.Client `arg:"-" json:"-"`
-	PolicyTemplate    string      `arg:"--policy" placeholder:"template" help:"{} | file://policy.tmpl" default:"minimal-policy"`
-	RoleTemplate      string      `arg:"--role" placeholder:"template" help:"{} | file://role.tmpl" default:"minimal-role"`
-	BoundaryPolicyArn string      `arg:"--boundary-arn" placeholder:"arn" help:"boundary policy arn" default:"no-boundary"`
+	Client         *iam.Client `arg:"-" json:"-"`
+	PolicyTemplate string      `arg:"--policy,env:MONAD_POLICY" placeholder:"template" help:"string | file://policy.tmpl" default:"minimal-policy"`
+	RoleTemplate   string      `arg:"--role,env:MONAD_ROLE" placeholder:"template" help:"string | file://role.tmpl" default:"minimal-role"`
+	BoundaryPolicy string      `arg:"--boundary,env:MONAD_BOUNDARY_POLICY" placeholder:"arn|name" help:"boundary policy" default:"no-boundary"`
 }
 
 func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
@@ -26,13 +26,13 @@ func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
 	if l.PolicyTemplate == "" {
 		l.PolicyTemplate, err = ReadDefault("defaults/policy.json.tmpl")
 		if err != nil {
-			return fmt.Errorf("failed to read default policy template")
+			return fmt.Errorf("failed to read default policy template: %w", err)
 		}
 
 	} else {
 		l.PolicyTemplate, err = uriopt.Json(l.PolicyTemplate)
 		if err != nil {
-			return fmt.Errorf("failed to read provided policy template")
+			return fmt.Errorf("failed to read provided policy template: %w", err)
 		}
 
 	}
@@ -40,25 +40,15 @@ func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
 	if l.RoleTemplate == "" {
 		l.RoleTemplate, err = ReadDefault("defaults/role.json.tmpl")
 		if err != nil {
-			return fmt.Errorf("failed to read default role template")
+			return fmt.Errorf("failed to read default role template: %w", err)
 		}
 
 	} else {
 		l.RoleTemplate, err = uriopt.Json(l.RoleTemplate)
 		if err != nil {
-			return fmt.Errorf("failed to read provided role template")
+			return fmt.Errorf("failed to read provided role template: %w", err)
 		}
 
-	}
-
-	if l.BoundaryPolicyArn != "" {
-		_, err := l.Client.GetPolicy(ctx, &iam.GetPolicyInput{
-			PolicyArn: aws.String(l.BoundaryPolicyArn),
-		})
-
-		if err != nil {
-			return fmt.Errorf("failed to get boundary policy")
-		}
 	}
 
 	return v.ValidateStruct(l,

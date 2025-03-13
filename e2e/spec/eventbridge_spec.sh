@@ -1,17 +1,5 @@
 Include spec/helpers.sh
 
-emit_test_event() {
-  local string=$1
-  aws events put-events --entries '[
-    {
-      "Source": "shellspec",
-      "DetailType": "TestEvent", 
-      "Detail": "{\"Message\": \"'$string'\"}",
-      "EventBusName": "default"
-    }
-  ]'
-}
-
 Describe "EventBridge"
   branch="$(git rev-parse --abbrev-ref HEAD)"
   sha="$(git rev-parse HEAD)"
@@ -19,8 +7,14 @@ Describe "EventBridge"
   host="prod.kaixo.io"
   event_id=$(uuidgen)
 
-  It "monad deploy --api kaixo --rule file://rule.json" --policy file://policy.json
-    When call monad --chdir echo deploy --api kaixo --rule file://rule.json --policy file://policy.json
+  It "monad deploy --api kaixo --rule file://rule.json.tmpl" --policy file://policy.json.tmple
+    When call monad --chdir echo deploy --api kaixo --rule file://rule.json.tmpl --policy file://policy.json.tmpl
+    The status should be success
+  End
+
+  It "Health"
+    When call curl_sigv4_until 200 https://${host}/${path}/health
+    The output should eq 200
     The status should be success
   End
 
@@ -32,8 +26,8 @@ Describe "EventBridge"
     End
 
     It "Event Received"
-      When call curl_retry_sigv4_status "https://${host}/${path}/function/log_group/tail?n=50&grep=$event_id&expect=true"
-      The output should include "200"
+      When call curl_sigv4_until 200 "https://${host}/${path}/function/log_group/tail?n=50&grep=$event_id&expect=true"
+      The output should include 200
       The status should be success
     End
   End
