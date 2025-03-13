@@ -1,5 +1,8 @@
 export LOG_LEVEL=warn
-export API_NAME=kaixo
+export MONAD_API=${MONAD_API:-kaixo}
+export MONAD_BRANCH=${MONAD_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}
+export MONAD_SHA=${MONAD_SHA:-$(git rev-parse HEAD)}
+
 
 fetch_client_creds() {
   echo $(aws ssm get-parameter --name "/monad/e2e/auth0" --query "Parameter.Value" --with-decryption --output json | jq -r)
@@ -122,4 +125,55 @@ emit_test_event() {
       "EventBusName": "default"
     }
   ]'
+}
+
+resolve_api_domain() {
+    if [ -z "$1" ]; then
+        echo "Error: API name argument is required" >&2
+        return 1
+    fi
+
+    api_name="$1"
+    api_id=""
+
+    echo "DEBUG: Looking for API with name '${api_name}'" >&2
+    
+    api_id=$(aws apigatewayv2 get-apis --query "Items[?Name=='${api_name}'].ApiId" --output text)
+    echo "DEBUG: Found API ID: '${api_id}'" >&2
+    
+    if [ -z "$api_id" ] || [ "$api_id" = "None" ]; then
+        echo "Error: No API found with name '${api_name}'" >&2
+        return 1
+    fi
+
+    domains=$(aws apigatewayv2 get-domain-names --query "Items[].DomainName" --output text)
+    echo "DEBUG: Found domains: ${domains}" >&2
+
+    found_domain=""
+    
+    for domain in $domains; do
+        echo "DEBUG: Checking mappings for domain: ${domain}" >&2
+        
+        mappings=$(aws apigatewayv2 get-api-mappings \
+            --domain-name "${domain}" \
+            --query "Items[?ApiId=='${api_id}'].[ApiId,Stage]" \
+            --output text)
+        
+        echo "DEBUG: Mappings result for ${domain}: ${mappings}" >&2
+        
+        if [ -n "$mappings" ] && [ "$mappings" != "None" ]; then
+            if [ -z "$found_domain" ]; then
+                found_domain="$domain"
+            fi
+            echo "DEBUG: Found mapping: ${domain} -> ${api_name}:${api_id}:${stage}" >&2
+        fi
+    done
+
+    if [ -z "$found_domain" ]; then
+        echo "Error: No custom domain found for API '${api_name}'" >&2
+        return 1
+    fi
+
+    echo "$found_domain"
+    return 0
 }
