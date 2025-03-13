@@ -88,6 +88,17 @@ module "hub" {
         "MONAD_SUBNETS"         = join(",", local.subnet_names)
     })]
   }
+
+  post_deploy_steps = [
+    {
+      name = "install just"
+      uses = "extractions/setup-just@v2"
+    },
+    {
+      name = "health check"
+      run  = "just test"
+    }
+  ]
 }
 
 module "spoke" {

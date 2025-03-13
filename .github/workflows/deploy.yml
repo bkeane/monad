@@ -32,6 +32,10 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
+    - "name": "install just"
+      "uses": "extractions/setup-just@v2"
+    - "name": "health check"
+      "run": "just test"
     "strategy":
       "matrix":
         "role_arn":
@@ -64,6 +68,10 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
+    - "name": "install just"
+      "uses": "extractions/setup-just@v2"
+    - "name": "health check"
+      "run": "just test"
     "strategy":
       "matrix":
         "role_arn":
@@ -97,6 +105,10 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
+    - "name": "install just"
+      "uses": "extractions/setup-just@v2"
+    - "name": "health check"
+      "run": "just test"
     "strategy":
       "matrix":
         "role_arn":
