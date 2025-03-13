@@ -6,7 +6,7 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "Destroy echo":
+  "Destroy:echo":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
@@ -35,7 +35,7 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Destroy echo-oauth":
+  "Destroy:echo-oauth":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_AUTH": "auth0"
@@ -65,7 +65,7 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Destroy echo-vpc":
+  "Destroy:echo-vpc":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
@@ -96,14 +96,14 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Untag bkeane/monad/echo":
+  "Untag:bkeane/monad/echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
     "needs":
-    - "Destroy echo"
-    - "Destroy echo-oauth"
-    - "Destroy echo-vpc"
+    - "Destroy:echo"
+    - "Destroy:echo-oauth"
+    - "Destroy:echo-vpc"
     "steps":
     - "id": "setup-monad"
       "name": "Setup Monad"

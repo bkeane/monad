@@ -6,7 +6,7 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "Deploy echo":
+  "Deploy:echo":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
@@ -16,7 +16,7 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
     "needs":
-    - "Release bkeane/monad/echo"
+    - "Release:bkeane/monad/echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -37,7 +37,7 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Deploy echo-oauth":
+  "Deploy:echo-oauth":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_AUTH": "auth0"
@@ -48,7 +48,7 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "needs":
-    - "Release bkeane/monad/echo"
+    - "Release:bkeane/monad/echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -69,7 +69,7 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Deploy echo-vpc":
+  "Deploy:echo-vpc":
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
@@ -81,7 +81,7 @@
       "MONAD_SERVICE": "echo-vpc"
       "MONAD_SUBNETS": "private-a,private-b"
     "needs":
-    - "Release bkeane/monad/echo"
+    - "Release:bkeane/monad/echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -102,7 +102,7 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-  "Release bkeane/monad/echo":
+  "Release:bkeane/monad/echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
