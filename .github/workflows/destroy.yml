@@ -104,6 +104,7 @@
     - "destroy-echo"
     - "destroy-echo-oauth"
     - "destroy-echo-vpc"
+    "runs-on": "ubuntu-latest",
     "steps":
     - "id": "setup-monad"
       "name": "Setup Monad"
