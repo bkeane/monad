@@ -34,7 +34,7 @@
       "run": "monad deploy"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest --chdir e2e"
+        --workdir /src ghcr.io/bkeane/shellspec:latest"
     "strategy":
       "matrix":
         "role_arn":
@@ -69,7 +69,7 @@
       "run": "monad deploy"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest --chdir e2e"
+        --workdir /src ghcr.io/bkeane/shellspec:latest"
     "strategy":
       "matrix":
         "role_arn":
@@ -105,7 +105,7 @@
       "run": "monad deploy"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest --chdir e2e"
+        --workdir /src ghcr.io/bkeane/shellspec:latest"
     "strategy":
       "matrix":
         "role_arn":
