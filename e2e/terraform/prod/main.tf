@@ -92,7 +92,7 @@ module "hub" {
   post_deploy_steps = [
     {
       name = "health check"
-      run  = "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
+      run  = "docker run --rm -t ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
     }
   ]
 }

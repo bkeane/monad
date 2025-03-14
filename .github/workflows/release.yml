@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PERSONAL_AUTH_TOKEN: ${{ secrets.GR_PAT }}
 
-  images:
+  image:
     runs-on: ubuntu-latest
     steps:
         - name: GHCR Login
@@ -62,12 +62,4 @@ jobs:
             -t ghcr.io/bkeane/monad:${{ github.ref_name }} \
             -t ghcr.io/bkeane/monad:latest \
             --platform linux/amd64,linux/arm64 \
-            --push .
-        - name: Publish shellspec image
-          run: |
-            docker build \
-            -t ghcr.io/bkeane/shellspec:${{ github.ref_name }} \
-            -t ghcr.io/bkeane/shellspec:latest \
-            --platform linux/amd64,linux/arm64 \
-            --target shellspec \
             --push .

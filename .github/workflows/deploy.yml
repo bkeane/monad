@@ -33,8 +33,7 @@
     - "name": "deploy"
       "run": "monad deploy"
     - "name": "health check"
-      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
-        --chdir /src/e2e"
+      "run": "docker run --rm -t ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -68,8 +67,7 @@
     - "name": "deploy"
       "run": "monad deploy"
     - "name": "health check"
-      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
-        --chdir /src/e2e"
+      "run": "docker run --rm -t ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -104,8 +102,7 @@
     - "name": "deploy"
       "run": "monad deploy"
     - "name": "health check"
-      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
-        --chdir /src/e2e"
+      "run": "docker run --rm -t ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":
