@@ -91,12 +91,8 @@ module "hub" {
 
   post_deploy_steps = [
     {
-      name = "install just"
-      uses = "extractions/setup-just@v2"
-    },
-    {
       name = "health check"
-      run  = "just test"
+      run  = "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest --chdir /src/e2e"
     }
   ]
 }

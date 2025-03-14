@@ -32,10 +32,9 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
-    - "name": "install just"
-      "uses": "extractions/setup-just@v2"
     - "name": "health check"
-      "run": "just test"
+      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
+        --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -68,10 +67,9 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
-    - "name": "install just"
-      "uses": "extractions/setup-just@v2"
     - "name": "health check"
-      "run": "just test"
+      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
+        --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -105,10 +103,9 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
-    - "name": "install just"
-      "uses": "extractions/setup-just@v2"
     - "name": "health check"
-      "run": "just test"
+      "run": "docker run --rm -it --entrypoint /bin/bash ghcr.io/bkeane/shellspec:latest
+        --chdir /src/e2e"
     "strategy":
       "matrix":
         "role_arn":

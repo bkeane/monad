@@ -56,7 +56,7 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - name: Publish release image
+        - name: Publish monad image
           run: |
             docker build \
             -t ghcr.io/bkeane/monad:${{ github.ref_name }} \
