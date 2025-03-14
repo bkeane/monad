@@ -38,6 +38,10 @@ jobs:
             registry: ghcr.io
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Configure Docker QEMU
+          uses: docker/setup-qemu-action@v3
+        - name: Configure Docker Buildx
+          uses: docker/setup-buildx-action@v3
         - name: Enable containerd registry
           uses: docker/setup-docker-action@v4
           with:
