@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PERSONAL_AUTH_TOKEN: ${{ secrets.GR_PAT }}
 
-  images:
+  image:
     runs-on: ubuntu-latest
     steps:
         - name: GHCR Login
@@ -38,6 +38,10 @@ jobs:
             registry: ghcr.io
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Configure Docker QEMU
+          uses: docker/setup-qemu-action@v3
+        - name: Configure Docker Buildx
+          uses: docker/setup-buildx-action@v3
         - name: Enable containerd registry
           uses: docker/setup-docker-action@v4
           with:
@@ -52,7 +56,7 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - name: Publish release image
+        - name: Publish monad image
           run: |
             docker build \
             -t ghcr.io/bkeane/monad:${{ github.ref_name }} \

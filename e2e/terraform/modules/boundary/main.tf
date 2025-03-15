@@ -50,7 +50,8 @@ data "aws_iam_policy_document" "boundary" {
             "ssm:GetParameterHistory",
             "ssm:GetParametersByPath",
             "ssm:GetParameters",
-            "ssm:DescribeParameters"
+            "ssm:DescribeParameters",
+            "kms:Decrypt"
         ]
         resources = ["*"]
     }
