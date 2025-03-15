@@ -7,7 +7,11 @@
             "Action": [
                 "logs:*"
             ],
-            "Resource": "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*"
+            "Resource": [
+                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*",
+                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}:*",
+                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}:*:*"
+            ]
         },
         {
             "Sid": "AllowLambdaIntrospection",

@@ -19,7 +19,7 @@ test:
     export AWS_SECRET_ACCESS_KEY=$(echo $session | jq -r .Credentials.SecretAccessKey)
     export AWS_SESSION_TOKEN=$(echo $session | jq -r .Credentials.SessionToken)
     unset AWS_PROFILE
-    docker run -it --rm --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src --workdir /src ghcr.io/bkeane/shellspec:latest --chdir e2e
+    docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e
 
 # apply e2e/terraform
 terraform: 

@@ -10,11 +10,14 @@
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
+      "MONAD_DISK": "1024"
       "MONAD_ENV": "file://.env.tmpl"
       "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_MEMORY": "256"
       "MONAD_POLICY": "file://policy.json.tmpl"
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
+      "MONAD_TIMEOUT": "10"
     "needs":
     - "release-echo"
     "permissions":
@@ -111,7 +114,7 @@
     "steps":
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest"
+        ghcr.io/bkeane/spec:latest --chdir e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -126,7 +129,7 @@
     "steps":
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest"
+        ghcr.io/bkeane/spec:latest --chdir e2e"
     "strategy":
       "matrix":
         "role_arn":
@@ -141,7 +144,7 @@
     "steps":
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
-        --workdir /src ghcr.io/bkeane/shellspec:latest"
+        ghcr.io/bkeane/spec:latest --chdir e2e"
     "strategy":
       "matrix":
         "role_arn":

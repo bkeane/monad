@@ -10,11 +10,14 @@
     "env":
       "MONAD_API": "kaixo"
       "MONAD_CHDIR": "e2e/echo"
+      "MONAD_DISK": "1024"
       "MONAD_ENV": "file://.env.tmpl"
       "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_MEMORY": "256"
       "MONAD_POLICY": "file://policy.json.tmpl"
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
+      "MONAD_TIMEOUT": "10"
     "permissions":
       "contents": "read"
       "id-token": "write"

@@ -62,9 +62,9 @@ module "boundary" {
 }
 
 module "extended" {
-  source = "../modules/extended"
-  account_id = data.aws_caller_identity.current.account_id
-  region = data.aws_region.current.name
+  source          = "../modules/extended"
+  account_id      = data.aws_caller_identity.current.account_id
+  region          = data.aws_region.current.name
   api_gateway_ids = [module.api_gateway.api_id]
 }
 
@@ -85,6 +85,9 @@ module "hub" {
     deployments = [
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo"
+        "MONAD_DISK"    = 1024
+        "MONAD_MEMORY"  = 256
+        "MONAD_TIMEOUT" = 10
       }),
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo-oauth"
@@ -100,7 +103,7 @@ module "hub" {
   post_deploy_steps = [
     {
       name = "health check"
-      run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src --workdir /src ghcr.io/bkeane/shellspec:latest"
+      run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
     }
   ]
 }
