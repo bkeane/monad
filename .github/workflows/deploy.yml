@@ -117,7 +117,10 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
       "MONAD_TIMEOUT": "10"
-    "needs": "deploy-echo"
+    "needs":
+    - "deploy-echo"
+    - "deploy-echo-oauth"
+    - "deploy-echo-vpc"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -129,7 +132,7 @@
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
@@ -149,7 +152,10 @@
       "MONAD_POLICY": "file://policy.json.tmpl"
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
-    "needs": "deploy-echo-oauth"
+    "needs":
+    - "deploy-echo"
+    - "deploy-echo-oauth"
+    - "deploy-echo-vpc"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -161,7 +167,7 @@
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
@@ -182,7 +188,10 @@
       "MONAD_SECURITY_GROUPS": "basic"
       "MONAD_SERVICE": "echo-vpc"
       "MONAD_SUBNETS": "private-a,private-b"
-    "needs": "deploy-echo-vpc"
+    "needs":
+    - "deploy-echo"
+    - "deploy-echo-oauth"
+    - "deploy-echo-vpc"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -194,7 +203,7 @@
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "role_arn": "${{ matrix.role_arn }}"
         "version": "latest"
     - "name": "health check"
       "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
