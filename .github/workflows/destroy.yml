@@ -34,6 +34,7 @@
     - "name": "destroy"
       "run": "monad destroy"
     "strategy":
+      "fail-fast": false
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
@@ -64,6 +65,7 @@
     - "name": "destroy"
       "run": "monad destroy"
     "strategy":
+      "fail-fast": false
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
@@ -94,6 +96,7 @@
     - "name": "destroy"
       "run": "monad destroy"
     "strategy":
+      "fail-fast": false
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
@@ -125,6 +128,7 @@
     - "name": "destroy"
       "run": "monad destroy"
     "strategy":
+      "fail-fast": false
       "matrix":
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
