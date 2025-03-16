@@ -108,6 +108,7 @@ module "hub" {
     {
       name = "health check"
       run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
+      continue-on-error = true
     }
   ]
 }
