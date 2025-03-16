@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "extended" {
             "events:PutEvents"
         ]
         resources = [
-            "arn:aws:events:${var.region}:${var.account_id}:rule/monad-*",
+            "arn:aws:events:${var.region}:${var.account_id}:event-bus/default",
         ]
     }
 

@@ -90,6 +90,10 @@ module "hub" {
         "MONAD_TIMEOUT" = 10
       }),
       merge(local.service_common, {
+        "MONAD_SERVICE" = "echo-open",
+        "MONAD_AUTH"    = "none"
+      }),
+      merge(local.service_common, {
         "MONAD_SERVICE" = "echo-oauth"
         "MONAD_AUTH"    = "auth0"
       }),

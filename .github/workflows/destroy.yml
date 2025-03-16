@@ -68,6 +68,36 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "destroy-echo-open":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_AUTH": "none"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo-open"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "destroy"
+      "run": "monad destroy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
   "destroy-echo-vpc":
     "env":
       "MONAD_API": "kaixo"
@@ -106,6 +136,7 @@
     "needs":
     - "destroy-echo"
     - "destroy-echo-oauth"
+    - "destroy-echo-open"
     - "destroy-echo-vpc"
     "permissions":
       "contents": "read"

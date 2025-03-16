@@ -72,6 +72,38 @@
         "role_arn":
         - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
         - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "deploy-echo-open":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_AUTH": "none"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo-open"
+    "needs":
+    - "release-echo"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "deploy"
+      "run": "monad deploy"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
   "deploy-echo-vpc":
     "env":
       "MONAD_API": "kaixo"
@@ -150,6 +182,38 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "needs": "deploy-echo-oauth"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "id": "setup-monad"
+      "name": "Setup Monad"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "${{ matrix.role_arn }}"
+        "version": "latest"
+    - "name": "health check"
+      "run": "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src
+        ghcr.io/bkeane/spec:latest --chdir e2e"
+    "strategy":
+      "matrix":
+        "role_arn":
+        - "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
+        - "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
+  "post-deploy-echo-open":
+    "env":
+      "MONAD_API": "kaixo"
+      "MONAD_AUTH": "none"
+      "MONAD_CHDIR": "e2e/echo"
+      "MONAD_ENV": "file://.env.tmpl"
+      "MONAD_IMAGE": "bkeane/monad/echo"
+      "MONAD_POLICY": "file://policy.json.tmpl"
+      "MONAD_RULE": "file://rule.json.tmpl"
+      "MONAD_SERVICE": "echo-open"
+    "needs": "deploy-echo-open"
     "permissions":
       "contents": "read"
       "id-token": "write"
