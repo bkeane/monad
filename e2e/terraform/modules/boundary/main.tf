@@ -28,10 +28,12 @@ data "aws_iam_policy_document" "boundary" {
     statement {
         sid = "AllowCloudWatchAccess"
         actions = [
-            "logs:Get*",
-            "logs:List*",
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
             "logs:Describe*",
-            "logs:Filter*"
+            "logs:Get*",
+            "logs:List*"
         ]
         resources = ["*"]
     }
