@@ -44,7 +44,7 @@
         "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "fromJson(needs.dev.outputs.result).role-arn"
+        "role_arn": "fromJson(needs.dev.outputs.result).roleArn"
         "version": "latest"
   "echo":
     "env":
@@ -105,7 +105,7 @@
         "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "fromJson(needs.prod.outputs.result).role-arn"
+        "role_arn": "fromJson(needs.prod.outputs.result).roleArn"
         "version": "latest"
 "name": "Deploy"
 "on":
