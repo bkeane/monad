@@ -9,6 +9,9 @@
   "dev":
     "needs":
     - "echo"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
     - "env":
@@ -32,6 +35,9 @@
     "env":
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
     - "id": "setup"
@@ -49,6 +55,9 @@
   "prod":
     "needs":
     - "echo"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
     - "env":
