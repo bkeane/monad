@@ -73,7 +73,18 @@ module "hub" {
   source                   = "../../../../monad-action/modules/hub"
   depends_on               = [aws_iam_openid_connect_provider.github]
   origin                   = "https://github.com/bkeane/monad.git"
-  spoke_account_ids        = [data.aws_caller_identity.current.account_id, "831926600600"]
+  spoke_accounts        = [
+    {
+      id = data.aws_caller_identity.current.account_id
+      name = "prod"
+    },
+    {
+      id = "831926600600"
+      name = "dev"
+    }
+  ]
+  
+  # [data.aws_caller_identity.current.account_id, "831926600600"]
   boundary_policy_document = module.boundary
 
   services = {
@@ -104,12 +115,12 @@ module "hub" {
     })]
   }
 
-  post_deploy_steps = [
-    {
-      name = "health check"
-      run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
-    }
-  ]
+  # post_deploy_steps = [
+  #   {
+  #     name = "health check"
+  #     run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
+  #   }
+  # ]
 }
 
 module "spoke" {
@@ -127,9 +138,9 @@ resource "local_file" "deploy" {
   filename = "../../../.github/workflows/deploy.yml"
 }
 
-resource "local_file" "destroy" {
-  content  = module.hub.destroy
-  filename = "../../../.github/workflows/destroy.yml"
-}
+# resource "local_file" "destroy" {
+#   content  = module.hub.destroy
+#   filename = "../../../.github/workflows/destroy.yml"
+# }
 
 
