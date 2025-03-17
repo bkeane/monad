@@ -77,10 +77,12 @@ module "hub" {
     {
       id = data.aws_caller_identity.current.account_id
       name = "prod"
+      branches = ["main"]
     },
     {
       id = "831926600600"
       name = "dev"
+      branches = ["*"]
     }
   ]
   

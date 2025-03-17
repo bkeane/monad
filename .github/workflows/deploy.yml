@@ -14,6 +14,10 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
+    - "name": "Checkout"
+      "uses": "actions/checkout@v4"
+      "with":
+        "fetch-depth": 1
     - "env":
         "ACCOUNT_BRANCHES": "*"
       "uses": "actions/github-script@v7"
@@ -60,8 +64,12 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
+    - "name": "Checkout"
+      "uses": "actions/checkout@v4"
+      "with":
+        "fetch-depth": 1
     - "env":
-        "ACCOUNT_BRANCHES": "*"
+        "ACCOUNT_BRANCHES": "main"
       "uses": "actions/github-script@v7"
       "with":
         "script": |
