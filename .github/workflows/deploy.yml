@@ -28,13 +28,24 @@
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          return accepted.includes("*") || accepted.includes(branch);
+          return {
+            pass: accepted.includes("*") || accepted.includes(branch),
+            role-arn: "arn:aws:iam::123456789012:role/example-role"
+          };
   "dev-post":
+    "if": "fromJson(needs.dev.outputs.result).pass"
     "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "testing"
-      "run": "echo 'got this far'"
+    - "id": "setup"
+      "name": "setup"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "configure_for_build": true
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "fromJson(needs.dev.outputs.result).role-arn"
+        "version": "latest"
   "echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
@@ -78,13 +89,24 @@
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          return accepted.includes("*") || accepted.includes(branch);
+          return {
+            pass: accepted.includes("*") || accepted.includes(branch),
+            role-arn: "arn:aws:iam::123456789012:role/example-role"
+          };
   "prod-post":
+    "if": "fromJson(needs.prod.outputs.result).pass"
     "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "testing"
-      "run": "echo 'got this far'"
+    - "id": "setup"
+      "name": "setup"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "configure_for_build": true
+        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
+        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
+        "role_arn": "fromJson(needs.prod.outputs.result).role-arn"
+        "version": "latest"
 "name": "Deploy"
 "on":
   "pull_request": {}
