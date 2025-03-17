@@ -30,7 +30,7 @@
           console.log("accepted:", accepted);
           return {
             pass: accepted.includes("*") || accepted.includes(branch),
-            role-arn: "arn:aws:iam::123456789012:role/example-role"
+            roleArn: "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           };
   "dev-post":
     "if": "fromJson(needs.dev.outputs.result).pass"
@@ -91,7 +91,7 @@
           console.log("accepted:", accepted);
           return {
             pass: accepted.includes("*") || accepted.includes(branch),
-            role-arn: "arn:aws:iam::123456789012:role/example-role"
+            roleArn: "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           };
   "prod-post":
     "if": "fromJson(needs.prod.outputs.result).pass"
