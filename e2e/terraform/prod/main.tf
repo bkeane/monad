@@ -18,7 +18,6 @@ locals {
     "MONAD_RULE"   = "file://rule.json.tmpl"
     "MONAD_ENV"    = "file://.env.tmpl"
   }
-
 }
 
 data "aws_caller_identity" "current" {}
@@ -89,12 +88,23 @@ module "hub" {
   boundary_policy_document = module.boundary
 
   services = {
-    releases = [{
-      "MONAD_CHDIR" = "e2e/echo"
-      "MONAD_IMAGE" = "bkeane/monad/echo"
-    }]
+    releases = [
+      {
+        "MONAD_CHDIR" = "e2e/echo"
+        "MONAD_IMAGE" = "bkeane/monad/echo"
+      },
+      {
+        "MONAD_CHDIR" = "e2e/stage/go",
+        "MONAD_IMAGE" = "bkeane/monad/go",
+      }
+    ]
 
     deployments = [
+      {
+        "MONAD_CHDIR" = "e2e/stage/go",
+        "MONAD_IMAGE" = "bkeane/monad/go",
+        "MONAD_SERVICE" = "go",
+      },
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo"
         "MONAD_DISK"    = 1024
