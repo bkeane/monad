@@ -6,9 +6,64 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "deploy-echo":
+  "deploy-dev-echo":
+    "if": "needs.dev.outputs.pass == true"
+    "name": "echo"
+    "needs":
+    - "dev"
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo to dev"
+        echo "Pass: ${{ needs.dev.outputs.pass }}"
+        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
+  "deploy-dev-echo-oauth":
+    "if": "needs.dev.outputs.pass == true"
+    "name": "echo-oauth"
+    "needs":
+    - "dev"
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-oauth to dev"
+        echo "Pass: ${{ needs.dev.outputs.pass }}"
+        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
+  "deploy-dev-echo-open":
+    "if": "needs.dev.outputs.pass == true"
+    "name": "echo-open"
+    "needs":
+    - "dev"
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-open to dev"
+        echo "Pass: ${{ needs.dev.outputs.pass }}"
+        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
+  "deploy-dev-echo-vpc":
+    "if": "needs.dev.outputs.pass == true"
+    "name": "echo-vpc"
+    "needs":
+    - "dev"
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-vpc to dev"
+        echo "Pass: ${{ needs.dev.outputs.pass }}"
+        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
+  "deploy-prod-echo":
     "if": "needs.prod.outputs.pass == true"
-    "needs": "prod"
+    "name": "echo"
+    "needs":
+    - "dev"
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -16,9 +71,12 @@
         echo "Deploying echo to prod"
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
-  "deploy-echo-oauth":
+  "deploy-prod-echo-oauth":
     "if": "needs.prod.outputs.pass == true"
-    "needs": "prod"
+    "name": "echo-oauth"
+    "needs":
+    - "dev"
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -26,9 +84,12 @@
         echo "Deploying echo-oauth to prod"
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
-  "deploy-echo-open":
+  "deploy-prod-echo-open":
     "if": "needs.prod.outputs.pass == true"
-    "needs": "prod"
+    "name": "echo-open"
+    "needs":
+    - "dev"
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -36,9 +97,12 @@
         echo "Deploying echo-open to prod"
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
-  "deploy-echo-vpc":
+  "deploy-prod-echo-vpc":
     "if": "needs.prod.outputs.pass == true"
-    "needs": "prod"
+    "name": "echo-vpc"
+    "needs":
+    - "dev"
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -47,6 +111,7 @@
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "dev":
+    "name": "dev"
     "needs":
     - "release-echo"
     "outputs":
@@ -77,6 +142,7 @@
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
   "prod":
+    "name": "prod"
     "needs":
     - "release-echo"
     "outputs":
@@ -110,6 +176,7 @@
     "env":
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
+    "name": "echo"
     "permissions":
       "contents": "read"
       "id-token": "write"
