@@ -36,26 +36,54 @@
           console.log("pass:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
-  "dev-deploy":
-    "needs": "dev"
+  "echo":
+    "id": "prod-echo"
+    "if": "needs.prod.outputs.pass == true"
+    "needs":
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
       "run": |
-        echo "Deploying dev"
-        echo "Pass: ${{ needs.dev.outputs.pass }}"
-        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
-  "echo":
-    "env":
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-    "permissions":
-      "contents": "read"
-      "id-token": "write"
+        echo "Deploying echo to prod"
+        echo "Pass: ${{ needs.prod.outputs.pass }}"
+        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
+  "echo-oauth":
+    "id": "prod-echo-oauth"
+    "if": "needs.prod.outputs.pass == true"
+    "needs":
+    - "prod"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "faux build"
-      "run": "echo 'Building bkeane/monad/echo'"
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-oauth to prod"
+        echo "Pass: ${{ needs.prod.outputs.pass }}"
+        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
+  "echo-open":
+    "id": "prod-echo-open"
+    "if": "needs.prod.outputs.pass == true"
+    "needs":
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-open to prod"
+        echo "Pass: ${{ needs.prod.outputs.pass }}"
+        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
+  "echo-vpc":
+    "id": "prod-echo-vpc"
+    "if": "needs.prod.outputs.pass == true"
+    "needs":
+    - "prod"
+    "runs-on": "ubuntu-latest"
+    "steps":
+    - "name": "deploy"
+      "run": |
+        echo "Deploying echo-vpc to prod"
+        echo "Pass: ${{ needs.prod.outputs.pass }}"
+        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "prod":
     "needs":
     - "echo"
@@ -86,15 +114,6 @@
           console.log("pass:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
-  "prod-deploy":
-    "needs": "prod"
-    "runs-on": "ubuntu-latest"
-    "steps":
-    - "name": "deploy"
-      "run": |
-        echo "Deploying prod"
-        echo "Pass: ${{ needs.prod.outputs.pass }}"
-        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
 "name": "Deploy"
 "on":
   "pull_request": {}
