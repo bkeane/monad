@@ -38,8 +38,7 @@
           core.setOutput("roleArn", roleArn);
   "echo":
     "if": "needs.prod.outputs.pass == true"
-    "needs":
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -49,8 +48,7 @@
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-oauth":
     "if": "needs.prod.outputs.pass == true"
-    "needs":
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -60,8 +58,7 @@
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-open":
     "if": "needs.prod.outputs.pass == true"
-    "needs":
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -71,8 +68,7 @@
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-vpc":
     "if": "needs.prod.outputs.pass == true"
-    "needs":
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
