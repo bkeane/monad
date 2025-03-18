@@ -48,7 +48,7 @@
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "dev":
     "needs":
-    - "release-bkeane/monad/echo"
+    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -78,7 +78,7 @@
           core.setOutput("roleArn", roleArn);
   "prod":
     "needs":
-    - "release-bkeane/monad/echo"
+    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -106,7 +106,7 @@
           console.log("pass:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
-  "release-bkeane/monad/echo":
+  "release-echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
