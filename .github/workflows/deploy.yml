@@ -33,7 +33,7 @@
             roleArn: "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           };
   "dev-post":
-    "if": "fromJson(needs.dev.outputs.result).pass == true"
+    "if": "${{ fromJson(needs.dev.outputs.result).pass }} == true"
     "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
@@ -44,7 +44,7 @@
         "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "fromJson(needs.dev.outputs.result).roleArn"
+        "role_arn": "${{ fromJson(needs.dev.outputs.result).roleArn }}"
         "version": "latest"
   "echo":
     "env":
@@ -94,7 +94,7 @@
             roleArn: "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           };
   "prod-post":
-    "if": "fromJson(needs.prod.outputs.result).pass == true"
+    "if": "${{ fromJson(needs.prod.outputs.result).pass }} == true"
     "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
@@ -105,7 +105,7 @@
         "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "fromJson(needs.prod.outputs.result).roleArn"
+        "role_arn": "${{ fromJson(needs.prod.outputs.result).roleArn }}"
         "version": "latest"
 "name": "Deploy"
 "on":
