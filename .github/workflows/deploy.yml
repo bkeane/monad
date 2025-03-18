@@ -10,8 +10,8 @@
     "needs":
     - "echo"
     "outputs":
-      "pass": "${{ steps.branch-check.outputs.result.pass }}"
-      "roleArn": "${{ steps.branch-check.outputs.result.roleArn }}"
+      "pass": "${{ steps.branch-check.outputs.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -60,8 +60,8 @@
     "needs":
     - "echo"
     "outputs":
-      "pass": "${{ steps.branch-check.outputs.result.pass }}"
-      "roleArn": "${{ steps.branch-check.outputs.result.roleArn }}"
+      "pass": "${{ steps.branch-check.outputs.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
