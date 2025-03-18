@@ -9,9 +9,7 @@
   "deploy-dev-echo":
     "if": "needs.dev.outputs.pass == true"
     "name": "echo"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -22,9 +20,7 @@
   "deploy-dev-echo-oauth":
     "if": "needs.dev.outputs.pass == true"
     "name": "echo-oauth"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -35,9 +31,7 @@
   "deploy-dev-echo-open":
     "if": "needs.dev.outputs.pass == true"
     "name": "echo-open"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -48,9 +42,7 @@
   "deploy-dev-echo-vpc":
     "if": "needs.dev.outputs.pass == true"
     "name": "echo-vpc"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "dev"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -61,9 +53,7 @@
   "deploy-prod-echo":
     "if": "needs.prod.outputs.pass == true"
     "name": "echo"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -74,9 +64,7 @@
   "deploy-prod-echo-oauth":
     "if": "needs.prod.outputs.pass == true"
     "name": "echo-oauth"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -87,9 +75,7 @@
   "deploy-prod-echo-open":
     "if": "needs.prod.outputs.pass == true"
     "name": "echo-open"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
@@ -100,9 +86,7 @@
   "deploy-prod-echo-vpc":
     "if": "needs.prod.outputs.pass == true"
     "name": "echo-vpc"
-    "needs":
-    - "dev"
-    - "prod"
+    "needs": "prod"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "deploy"
