@@ -86,7 +86,6 @@ module "hub" {
     }
   ]
   
-  # [data.aws_caller_identity.current.account_id, "831926600600"]
   boundary_policy_document = module.boundary
 
   services = {
@@ -101,10 +100,6 @@ module "hub" {
         "MONAD_DISK"    = 1024
         "MONAD_MEMORY"  = 256
         "MONAD_TIMEOUT" = 10
-      }),
-      merge(local.service_common, {
-        "MONAD_SERVICE" = "echo-open",
-        "MONAD_AUTH"    = "none"
       }),
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo-oauth"
