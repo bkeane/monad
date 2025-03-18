@@ -34,10 +34,8 @@
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("pass:", pass);
-          return {
-            pass: pass,
-            roleArn: roleArn
-          }
+          core.setOutput("pass", pass);
+          core.setOutput("roleArn", roleArn);
   "dev-deploy":
     "needs": "dev"
     "runs-on": "ubuntu-latest"
@@ -86,10 +84,8 @@
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("pass:", pass);
-          return {
-            pass: pass,
-            roleArn: roleArn
-          }
+          core.setOutput("pass", pass);
+          core.setOutput("roleArn", roleArn);
   "prod-deploy":
     "needs": "prod"
     "runs-on": "ubuntu-latest"
