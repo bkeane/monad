@@ -9,6 +9,9 @@
   "dev":
     "needs":
     - "echo"
+    "outputs":
+      "pass": "${{ steps.branch-check.outputs.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -20,6 +23,7 @@
         "fetch-depth": 1
     - "env":
         "ACCOUNT_BRANCHES": "*"
+      "id": "branch-check"
       "uses": "actions/github-script@v7"
       "with":
         "script": |
@@ -55,6 +59,9 @@
   "prod":
     "needs":
     - "echo"
+    "outputs":
+      "pass": "${{ steps.branch-check.outputs.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -66,6 +73,7 @@
         "fetch-depth": 1
     - "env":
         "ACCOUNT_BRANCHES": "main"
+      "id": "branch-check"
       "uses": "actions/github-script@v7"
       "with":
         "script": |
