@@ -25,12 +25,13 @@
         "script": |
           const branch = process.env.MONAD_BRANCH;
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
+          const pass = accepted.includes("*") || accepted.includes(branch)
+          const roleArn = "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          return {
-            pass: accepted.includes("*") || accepted.includes(branch),
-            roleArn: "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
-          };
+          console.log("pass:", pass);
+          console.log("roleArn:", roleArn);
+          core.setOutput("pass", pass);
   "dev-deploy":
     "needs": "dev"
     "runs-on": "ubuntu-latest"
@@ -70,12 +71,13 @@
         "script": |
           const branch = process.env.MONAD_BRANCH;
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
+          const pass = accepted.includes("*") || accepted.includes(branch)
+          const roleArn = "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          return {
-            pass: accepted.includes("*") || accepted.includes(branch),
-            roleArn: "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
-          };
+          console.log("pass:", pass);
+          console.log("roleArn:", roleArn);
+          core.setOutput("pass", pass);
   "prod-deploy":
     "needs": "prod"
     "runs-on": "ubuntu-latest"
