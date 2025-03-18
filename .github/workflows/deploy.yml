@@ -31,7 +31,7 @@
             pass: accepted.includes("*") || accepted.includes(branch),
             roleArn: "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           };
-  "dev deploy":
+  "dev-deploy":
     "if": "fromJson(needs.dev.outputs.result).pass == true"
     "needs": "dev"
     "runs-on": "ubuntu-latest"
@@ -74,7 +74,7 @@
             pass: accepted.includes("*") || accepted.includes(branch),
             roleArn: "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           };
-  "prod deploy":
+  "prod-deploy":
     "if": "fromJson(needs.prod.outputs.result).pass == true"
     "needs": "prod"
     "runs-on": "ubuntu-latest"
