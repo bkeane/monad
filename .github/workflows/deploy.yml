@@ -92,7 +92,7 @@
       "run": "monad deploy"
   "deploy-dev-go":
     "env":
-      "MONAD_CHDIR": "e2e/stage/go"
+      "MONAD_CHDIR": "e2e/go"
       "MONAD_IMAGE": "bkeane/monad/go"
       "MONAD_SERVICE": "go"
     "if": "needs.dev.outputs.pass == 'true'"
@@ -198,7 +198,7 @@
       "run": "monad deploy"
   "deploy-prod-go":
     "env":
-      "MONAD_CHDIR": "e2e/stage/go"
+      "MONAD_CHDIR": "e2e/go"
       "MONAD_IMAGE": "bkeane/monad/go"
       "MONAD_SERVICE": "go"
     "if": "needs.prod.outputs.pass == 'true'"
@@ -306,7 +306,7 @@
       "run": "monad compose | docker compose -f - build --push"
   "release-go":
     "env":
-      "MONAD_CHDIR": "e2e/stage/go"
+      "MONAD_CHDIR": "e2e/go"
       "MONAD_IMAGE": "bkeane/monad/go"
     "name": "go"
     "permissions":

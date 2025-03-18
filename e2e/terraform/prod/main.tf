@@ -94,14 +94,14 @@ module "hub" {
         "MONAD_IMAGE" = "bkeane/monad/echo"
       },
       {
-        "MONAD_CHDIR" = "e2e/stage/go",
+        "MONAD_CHDIR" = "e2e/go",
         "MONAD_IMAGE" = "bkeane/monad/go",
       }
     ]
 
     deployments = [
       {
-        "MONAD_CHDIR" = "e2e/stage/go",
+        "MONAD_CHDIR" = "e2e/go",
         "MONAD_IMAGE" = "bkeane/monad/go",
         "MONAD_SERVICE" = "go",
       },
