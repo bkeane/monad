@@ -10,8 +10,8 @@
     "needs":
     - "echo"
     "outputs":
-      "pass": "${{ steps.branch-check.outputs.pass }}"
-      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
+      "pass": "${{ steps.branch-check.outputs.result.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.result.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -34,8 +34,10 @@
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("pass:", pass);
-          console.log("roleArn:", roleArn);
-          core.setOutput("pass", pass);
+          return {
+            pass: pass,
+            roleArn: roleArn
+          }
   "dev-deploy":
     "needs": "dev"
     "runs-on": "ubuntu-latest"
@@ -43,8 +45,8 @@
     - "name": "deploy"
       "run": |
         echo "Deploying dev"
-        echo "Pass: ${{ needs.dev.outputs.result.pass }}"
-        echo "Role ARN: ${{ needs.dev.outputs.result.roleArn }}"
+        echo "Pass: ${{ needs.dev.outputs.pass }}"
+        echo "Role ARN: ${{ needs.dev.outputs.roleArn }}"
   "echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
@@ -60,8 +62,8 @@
     "needs":
     - "echo"
     "outputs":
-      "pass": "${{ steps.branch-check.outputs.pass }}"
-      "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
+      "pass": "${{ steps.branch-check.outputs.result.pass }}"
+      "roleArn": "${{ steps.branch-check.outputs.result.roleArn }}"
     "permissions":
       "contents": "read"
       "id-token": "write"
@@ -84,8 +86,10 @@
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("pass:", pass);
-          console.log("roleArn:", roleArn);
-          core.setOutput("pass", pass);
+          return {
+            pass: pass,
+            roleArn: roleArn
+          }
   "prod-deploy":
     "needs": "prod"
     "runs-on": "ubuntu-latest"
@@ -93,8 +97,8 @@
     - "name": "deploy"
       "run": |
         echo "Deploying prod"
-        echo "Pass: ${{ needs.prod.outputs.result.pass }}"
-        echo "Role ARN: ${{ needs.prod.outputs.result.roleArn }}"
+        echo "Pass: ${{ needs.prod.outputs.pass }}"
+        echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
 "name": "Deploy"
 "on":
   "pull_request": {}
