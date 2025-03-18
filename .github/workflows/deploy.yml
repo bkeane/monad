@@ -37,7 +37,6 @@
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
   "echo":
-    "id": "prod-echo"
     "if": "needs.prod.outputs.pass == true"
     "needs":
     - "prod"
@@ -49,7 +48,6 @@
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-oauth":
-    "id": "prod-echo-oauth"
     "if": "needs.prod.outputs.pass == true"
     "needs":
     - "prod"
@@ -61,7 +59,6 @@
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-open":
-    "id": "prod-echo-open"
     "if": "needs.prod.outputs.pass == true"
     "needs":
     - "prod"
@@ -73,7 +70,6 @@
         echo "Pass: ${{ needs.prod.outputs.pass }}"
         echo "Role ARN: ${{ needs.prod.outputs.roleArn }}"
   "echo-vpc":
-    "id": "prod-echo-vpc"
     "if": "needs.prod.outputs.pass == true"
     "needs":
     - "prod"
