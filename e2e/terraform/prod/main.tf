@@ -136,9 +136,9 @@ resource "local_file" "deploy" {
   filename = "../../../.github/workflows/deploy.yml"
 }
 
-# resource "local_file" "destroy" {
-#   content  = module.hub.destroy
-#   filename = "../../../.github/workflows/destroy.yml"
-# }
+resource "local_file" "destroy" {
+  content  = module.hub.destroy
+  filename = "../../../.github/workflows/destroy.yml"
+}
 
 

@@ -14,7 +14,6 @@ type Compose struct {
 	param.Registry
 	Dockerfile   string `arg:"-f,--file" help:"path to dockerfile"`
 	BuildContext string `arg:"--build-context" help:"path to build context"`
-	GhaCache     bool   `arg:"--gha-cache" help:"use github actions cache"`
 }
 
 func (c *Compose) Route(ctx context.Context, r Root) error {
@@ -50,11 +49,6 @@ func (c *Compose) Route(ctx context.Context, r Root) error {
 			"linux/amd64",
 			"linux/arm64",
 		},
-	}
-
-	if c.GhaCache {
-		build.CacheFrom = []string{"type=gha"}
-		build.CacheTo = []string{"type=gha,mode=max"}
 	}
 
 	service := ctypes.ServiceConfig{
