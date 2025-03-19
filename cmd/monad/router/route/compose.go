@@ -14,7 +14,7 @@ type Compose struct {
 	param.Registry
 	Dockerfile   string `arg:"-f,--file" help:"path to dockerfile"`
 	BuildContext string `arg:"--build-context" help:"path to build context"`
-	Login        bool   `arg:"--login" help:"login to registry"`
+	GhaCache     bool   `arg:"--gha-cache" help:"use github actions cache"`
 }
 
 func (c *Compose) Route(ctx context.Context, r Root) error {
@@ -43,17 +43,24 @@ func (c *Compose) Route(ctx context.Context, r Root) error {
 
 	compose := &ctypes.Config{}
 
+	build := &ctypes.BuildConfig{
+		Context:    c.BuildContext,
+		Dockerfile: c.Dockerfile,
+		Platforms: []string{
+			"linux/amd64",
+			"linux/arm64",
+		},
+	}
+
+	if c.GhaCache {
+		build.CacheFrom = []string{"type=gha"}
+		build.CacheTo = []string{"type=gha,mode=max"}
+	}
+
 	service := ctypes.ServiceConfig{
 		Name:  name,
 		Image: tag,
-		Build: &ctypes.BuildConfig{
-			Context:    c.BuildContext,
-			Dockerfile: c.Dockerfile,
-			Platforms: []string{
-				"linux/amd64",
-				"linux/arm64",
-			},
-		},
+		Build: build,
 	}
 
 	compose.Name = "build"

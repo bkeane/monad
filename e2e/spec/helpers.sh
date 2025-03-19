@@ -1,6 +1,3 @@
-export LOG_LEVEL=warn
-export API_NAME=kaixo
-
 fetch_client_creds() {
   echo $(aws ssm get-parameter --name "/monad/e2e/auth0" --query "Parameter.Value" --with-decryption --output json | jq -r)
 }
@@ -26,12 +23,18 @@ curl_oauth() {
   curl -s --header "Authorization: Bearer $(fetch_bearer_token)" "$@"
 }
 
+ensure_aws_creds() {
+  if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_SESSION_TOKEN" ]; then
+    session=$(aws sts get-session-token --duration-seconds 3600)
+    export AWS_ACCESS_KEY_ID=$(echo $session | jq -r .Credentials.AccessKeyId)
+    export AWS_SECRET_ACCESS_KEY=$(echo $session | jq -r .Credentials.SecretAccessKey)
+    export AWS_SESSION_TOKEN=$(echo $session | jq -r .Credentials.SessionToken)
+  fi
+}
+
 curl_sigv4() {
-  session=$(aws sts get-session-token --duration-seconds 3600)
-  key=$(echo $session | jq -r .Credentials.AccessKeyId)
-  secret=$(echo $session | jq -r .Credentials.SecretAccessKey)
-  token=$(echo $session | jq -r .Credentials.SessionToken)
-  curl -s --user "$key:$secret" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $token" "$@"
+  ensure_aws_creds
+  curl -s --user "$AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY" --aws-sigv4 "aws:amz:us-west-2:execute-api" --header "X-Amz-Security-Token: $AWS_SESSION_TOKEN" "$@"
 }
 
 curl_until() {
@@ -122,4 +125,54 @@ emit_test_event() {
       "EventBusName": "default"
     }
   ]'
+}
+
+resolve_api_domain() {
+    if [ -z "$1" ]; then
+        echo "Error: API name argument is required" >&2
+        return 1
+    fi
+
+    api_name="$1"
+    debug_log=""
+    
+    debug_log="${debug_log}Looking for API with name '${api_name}'\n"
+    api_id=$(aws apigatewayv2 get-apis --query "Items[?Name=='${api_name}'].ApiId" --output text)
+    debug_log="${debug_log}Found API ID: '${api_id}'\n"
+    
+    if [ -z "$api_id" ] || [ "$api_id" = "None" ]; then
+        echo -e "$debug_log" >&2
+        echo "Error: No API found with name '${api_name}'" >&2
+        return 1
+    fi
+
+    domains=$(aws apigatewayv2 get-domain-names --query "Items[].DomainName" --output text)
+    debug_log="${debug_log}Found domains: ${domains}\n"
+
+    found_domain=""
+    
+    for domain in $domains; do
+        debug_log="${debug_log}Checking mappings for domain: ${domain}\n"
+        
+        mappings=$(aws apigatewayv2 get-api-mappings \
+            --domain-name "${domain}" \
+            --query "Items[?ApiId=='${api_id}'].[ApiId,Stage]" \
+            --output text)
+        
+        if [ -n "$mappings" ] && [ "$mappings" != "None" ]; then
+            if [ -z "$found_domain" ]; then
+                found_domain="$domain"
+            fi
+            debug_log="${debug_log}Found mapping: ${domain} -> ${api_name}:${api_id}\n"
+        fi
+    done
+
+    if [ -z "$found_domain" ]; then
+        echo -e "$debug_log" >&2
+        echo "Error: No custom domain found for API '${api_name}'" >&2
+        return 1
+    fi
+
+    echo "$found_domain"
+    return 0
 }

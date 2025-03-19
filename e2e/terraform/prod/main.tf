@@ -18,10 +18,10 @@ locals {
     "MONAD_RULE"   = "file://rule.json.tmpl"
     "MONAD_ENV"    = "file://.env.tmpl"
   }
-
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
@@ -60,23 +60,47 @@ module "boundary" {
   source = "../modules/boundary"
 }
 
+module "extended" {
+  source          = "../modules/extended"
+  account_id      = data.aws_caller_identity.current.account_id
+  region          = data.aws_region.current.name
+  api_gateway_ids = [module.api_gateway.api_id]
+}
+
 module "hub" {
   # source = "github.com/bkeane/monad-action//modules/hub?ref=main"
   source                   = "../../../../monad-action/modules/hub"
   depends_on               = [aws_iam_openid_connect_provider.github]
   origin                   = "https://github.com/bkeane/monad.git"
-  spoke_account_ids        = [data.aws_caller_identity.current.account_id, "831926600600"]
+  spoke_accounts        = [
+    {
+      id = data.aws_caller_identity.current.account_id
+      name = "prod"
+      branches = ["main"]
+    },
+    {
+      id = "831926600600"
+      name = "dev"
+      branches = ["*"]
+    }
+  ]
+  
   boundary_policy_document = module.boundary
 
   services = {
-    releases = [{
-      "MONAD_CHDIR" = "e2e/echo"
-      "MONAD_IMAGE" = "bkeane/monad/echo"
-    }]
+    releases = [
+      {
+        "MONAD_CHDIR" = "e2e/echo"
+        "MONAD_IMAGE" = "bkeane/monad/echo"
+      }
+    ]
 
     deployments = [
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo"
+        "MONAD_DISK"    = 1024
+        "MONAD_MEMORY"  = 256
+        "MONAD_TIMEOUT" = 10
       }),
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo-oauth"
@@ -88,6 +112,13 @@ module "hub" {
         "MONAD_SUBNETS"         = join(",", local.subnet_names)
     })]
   }
+
+  # post_deploy_steps = [
+  #   {
+  #     name = "health check"
+  #     run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
+  #   }
+  # ]
 }
 
 module "spoke" {
@@ -97,6 +128,7 @@ module "spoke" {
   origin                   = "https://github.com/bkeane/monad.git"
   api_gateway_ids          = toset([module.api_gateway.api_id])
   boundary_policy_document = module.boundary
+  extended_policy_document = module.extended
 }
 
 resource "local_file" "deploy" {
@@ -104,9 +136,9 @@ resource "local_file" "deploy" {
   filename = "../../../.github/workflows/deploy.yml"
 }
 
-resource "local_file" "destroy" {
-  content  = module.hub.destroy
-  filename = "../../../.github/workflows/destroy.yml"
-}
+# resource "local_file" "destroy" {
+#   content  = module.hub.destroy
+#   filename = "../../../.github/workflows/destroy.yml"
+# }
 
 

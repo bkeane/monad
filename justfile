@@ -1,65 +1,30 @@
-export AWS_PROFILE := "prod.kaixo.io"
-
-branch := `git rev-parse --abbrev-ref HEAD`
-sha := `git rev-parse HEAD`
-
-monad := "go run cmd/monad/main.go"
-publish := "docker compose -f - build --push"
-scaffolds := "go python node ruby"
-
 [private]
 default:
-    @just --list
+    @just --list --unsorted
 
-# install monad to ~/.local/bin
+# build and install monad to ~/.local/bin
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
-# login to registry
-login:
-    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 677771948337.dkr.ecr.us-west-2.amazonaws.com
+# Build docker images locally
+build:
+    # docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
+    docker build -t ghcr.io/bkeane/shellspec:latest --platform linux/amd64,linux/arm64 --target shellspec .
 
-# init scaffolds
-init:
-    #! /usr/bin/env bash
-    for scaffold in {{scaffolds}}; do
-        {{monad}} init $scaffold e2e/stage/$scaffold
-    done
-
-# publish scaffolds
-publish:
-    #! /usr/bin/env bash
-    for scaffold in {{scaffolds}}; do
-        {{monad}} --chdir e2e/stage/$scaffold compose | {{publish}}
-    done
-
-# deploy scaffolds
-deploy:
-    #! /usr/bin/env bash
-    for scaffold in {{scaffolds}}; do
-        {{monad}} --chdir e2e/stage/$scaffold deploy --api kaixo --auth aws_iam
-    done
-
-# test scaffolds
+# approximate github actions tests
 test:
-    shellspec --chdir e2e
-
-# destroy scaffolds
-destroy:
     #! /usr/bin/env bash
-    for scaffold in {{scaffolds}}; do
-        {{monad}} --chdir e2e/stage/$scaffold destroy
-    done
+    session=$(aws sts get-session-token --duration-seconds 3600)
+    export AWS_ACCESS_KEY_ID=$(echo $session | jq -r .Credentials.AccessKeyId)
+    export AWS_SECRET_ACCESS_KEY=$(echo $session | jq -r .Credentials.SecretAccessKey)
+    export AWS_SESSION_TOKEN=$(echo $session | jq -r .Credentials.SessionToken)
+    unset AWS_PROFILE
+    docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e
 
-# clean up scaffolds
-clean:
-    rm -rf e2e/stage
-
-# Apply terraform
+# apply e2e/terraform
 terraform: 
     AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod init
     AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod apply
-
     AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev init
     AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev apply
 

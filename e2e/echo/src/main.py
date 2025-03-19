@@ -20,6 +20,13 @@ app = FastAPI(
 )
 
 @app.middleware("http")
+async def set_root_path(request: Request, call_next):
+    if request.headers.get("x-forwarded-prefix"):
+        app.root_path = request.headers.get("x-forwarded-prefix")
+    response = await call_next(request)
+    return response
+
+@app.middleware("http")
 async def log_incoming_events(request: Request, call_next):
     if request.url.path == "/events":
         body = await request.body()
@@ -29,20 +36,12 @@ async def log_incoming_events(request: Request, call_next):
     return response
 
 @app.middleware("http")
-async def set_root_path(request: Request, call_next):
-    if request.headers.get("x-forwarded-prefix"):
-        app.root_path = request.headers.get("x-forwarded-prefix")
-    response = await call_next(request)
-    return response
-
-@app.middleware("http")
 async def configure_boto3(request: Request, call_next):
     request.state.function_name = getenv("AWS_LAMBDA_FUNCTION_NAME")
     request.state.lambdac = client('lambda')
     request.state.iamc = client('iam')
     request.state.logc = client('logs')
-    response = await call_next(request)
-    return response
+    return await call_next(request)
 
 @app.get("/health")
 async def health():

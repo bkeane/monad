@@ -9,6 +9,9 @@ locals {
     ]
 }
 
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
@@ -46,6 +49,13 @@ module "boundary" {
     source = "../modules/boundary"
 }
 
+module "extended" {
+    source = "../modules/extended"
+    account_id = data.aws_caller_identity.current.account_id
+    region = data.aws_region.current.name
+    api_gateway_ids = toset([module.api_gateway.api_id])
+}
+
 module "spoke" {
     # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
     source = "../../../../monad-action/modules/spoke"
@@ -53,4 +63,5 @@ module "spoke" {
     origin = "https://github.com/bkeane/monad.git"
     api_gateway_ids = toset([module.api_gateway.api_id])
     boundary_policy_document = module.boundary
+    extended_policy_document = module.extended
 }

@@ -28,6 +28,10 @@ data "aws_iam_policy_document" "boundary" {
     statement {
         sid = "AllowCloudWatchAccess"
         actions = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "logs:Describe*",
             "logs:Get*",
             "logs:List*"
         ]
@@ -50,7 +54,8 @@ data "aws_iam_policy_document" "boundary" {
             "ssm:GetParameterHistory",
             "ssm:GetParametersByPath",
             "ssm:GetParameters",
-            "ssm:DescribeParameters"
+            "ssm:DescribeParameters",
+            "kms:Decrypt"
         ]
         resources = ["*"]
     }

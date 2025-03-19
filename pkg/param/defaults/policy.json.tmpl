@@ -2,12 +2,17 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowAccessLoose",
+            "Sid": "AllowLogWrite",
             "Effect": "Allow",
             "Action": [
-                "logs:*"
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
             ],
-            "Resource": "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*"
+            "Resource": [
+                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*",
+                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}:log-stream:*"
+            ]
         }
     ]
 }
