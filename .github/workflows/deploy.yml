@@ -19,7 +19,7 @@
       "MONAD_SERVICE": "echo"
       "MONAD_TIMEOUT": "10"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "echo"
+    "name": "deploy echo"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -46,7 +46,7 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "echo-oauth"
+    "name": "deploy echo-oauth"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -74,7 +74,7 @@
       "MONAD_SERVICE": "echo-vpc"
       "MONAD_SUBNETS": "private-a,private-b"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "echo-vpc"
+    "name": "deploy echo-vpc"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -96,7 +96,7 @@
       "MONAD_IMAGE": "bkeane/monad/go"
       "MONAD_SERVICE": "go"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "go"
+    "name": "deploy go"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -125,7 +125,7 @@
       "MONAD_SERVICE": "echo"
       "MONAD_TIMEOUT": "10"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "echo"
+    "name": "deploy echo"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -152,7 +152,7 @@
       "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "echo-oauth"
+    "name": "deploy echo-oauth"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -180,7 +180,7 @@
       "MONAD_SERVICE": "echo-vpc"
       "MONAD_SUBNETS": "private-a,private-b"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "echo-vpc"
+    "name": "deploy echo-vpc"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -202,7 +202,7 @@
       "MONAD_IMAGE": "bkeane/monad/go"
       "MONAD_SERVICE": "go"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "go"
+    "name": "deploy go"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -231,10 +231,6 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "Checkout"
-      "uses": "actions/checkout@v4"
-      "with":
-        "fetch-depth": 1
     - "env":
         "ACCOUNT_BRANCHES": "*"
       "id": "branch-check"
@@ -247,7 +243,7 @@
           const roleArn = "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          console.log("pass:", pass);
+          console.log("deploy:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
   "prod":
@@ -263,10 +259,6 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "Checkout"
-      "uses": "actions/checkout@v4"
-      "with":
-        "fetch-depth": 1
     - "env":
         "ACCOUNT_BRANCHES": "main"
       "id": "branch-check"
@@ -279,7 +271,7 @@
           const roleArn = "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
-          console.log("pass:", pass);
+          console.log("deploy:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", roleArn);
   "release-echo":
