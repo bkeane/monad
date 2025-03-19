@@ -249,7 +249,7 @@
         "version": "latest"
     - "id": "release"
       "name": "release"
-      "run": "monad compose | docker compose -f - build --push"
+      "run": "monad compose --gha-cache | docker compose -f - build --push"
 "name": "Deploy"
 "on":
   "pull_request": {}
