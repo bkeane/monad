@@ -62,7 +62,7 @@ func (s *Cloudwatch) PutLogGroup(ctx context.Context) error {
 		switch apiErr.ErrorCode() {
 		case "ResourceAlreadyExistsException":
 			_, err := s.config.CloudWatch.Client.TagResource(ctx, &cloudwatchlogs.TagResourceInput{
-				ResourceArn: aws.String(s.config.CloudwatchLogGroup()),
+				ResourceArn: aws.String(s.config.CloudwatchLogGroupArn()),
 				Tags:        s.config.Tags(),
 			})
 			return err
