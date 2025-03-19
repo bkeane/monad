@@ -90,28 +90,6 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
-  "deploy-dev-go":
-    "env":
-      "MONAD_CHDIR": "e2e/go"
-      "MONAD_IMAGE": "bkeane/monad/go"
-      "MONAD_SERVICE": "go"
-    "if": "needs.dev.outputs.pass == 'true'"
-    "name": "deploy go"
-    "needs": "dev"
-    "permissions":
-      "contents": "read"
-      "id-token": "write"
-    "runs-on": "ubuntu-latest"
-    "steps":
-    - "name": "setup"
-      "uses": "bkeane/monad-action@main"
-      "with":
-        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
-        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "${{ needs.dev.outputs.roleArn }}"
-        "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
   "deploy-prod-echo":
     "env":
       "MONAD_API": "kaixo"
@@ -196,33 +174,10 @@
         "version": "latest"
     - "name": "deploy"
       "run": "monad deploy"
-  "deploy-prod-go":
-    "env":
-      "MONAD_CHDIR": "e2e/go"
-      "MONAD_IMAGE": "bkeane/monad/go"
-      "MONAD_SERVICE": "go"
-    "if": "needs.prod.outputs.pass == 'true'"
-    "name": "deploy go"
-    "needs": "prod"
-    "permissions":
-      "contents": "read"
-      "id-token": "write"
-    "runs-on": "ubuntu-latest"
-    "steps":
-    - "name": "setup"
-      "uses": "bkeane/monad-action@main"
-      "with":
-        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
-        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "${{ needs.prod.outputs.roleArn }}"
-        "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
   "dev":
     "name": "dev"
     "needs":
     - "release-echo"
-    - "release-go"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -250,7 +205,6 @@
     "name": "prod"
     "needs":
     - "release-echo"
-    - "release-go"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -279,28 +233,6 @@
       "MONAD_CHDIR": "e2e/echo"
       "MONAD_IMAGE": "bkeane/monad/echo"
     "name": "echo"
-    "permissions":
-      "contents": "read"
-      "id-token": "write"
-    "runs-on": "ubuntu-latest"
-    "steps":
-    - "id": "setup"
-      "name": "setup"
-      "uses": "bkeane/monad-action@main"
-      "with":
-        "configure_for_build": true
-        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
-        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
-        "version": "latest"
-    - "id": "release"
-      "name": "release"
-      "run": "monad compose | docker compose -f - build --push"
-  "release-go":
-    "env":
-      "MONAD_CHDIR": "e2e/go"
-      "MONAD_IMAGE": "bkeane/monad/go"
-    "name": "go"
     "permissions":
       "contents": "read"
       "id-token": "write"

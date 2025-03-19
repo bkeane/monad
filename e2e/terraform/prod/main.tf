@@ -92,19 +92,10 @@ module "hub" {
       {
         "MONAD_CHDIR" = "e2e/echo"
         "MONAD_IMAGE" = "bkeane/monad/echo"
-      },
-      {
-        "MONAD_CHDIR" = "e2e/go",
-        "MONAD_IMAGE" = "bkeane/monad/go",
       }
     ]
 
     deployments = [
-      {
-        "MONAD_CHDIR" = "e2e/go",
-        "MONAD_IMAGE" = "bkeane/monad/go",
-        "MONAD_SERVICE" = "go",
-      },
       merge(local.service_common, {
         "MONAD_SERVICE" = "echo"
         "MONAD_DISK"    = 1024
