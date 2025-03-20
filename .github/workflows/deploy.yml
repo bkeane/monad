@@ -188,6 +188,7 @@
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "*"
+        "ACCOUNT_ROLE_ARN": "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
       "id": "branch-check"
       "uses": "actions/github-script@v7"
       "with":
@@ -195,12 +196,11 @@
           const branch = process.env.MONAD_BRANCH;
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
           const pass = accepted.includes("*") || accepted.includes(branch)
-          const roleArn = "arn:aws:iam::831926600600:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("deploy:", pass);
           core.setOutput("pass", pass);
-          core.setOutput("roleArn", roleArn);
+          core.setOutput("roleArn", process.env.ACCOUNT_ROLE_ARN);
   "prod":
     "name": "prod"
     "needs":
@@ -215,6 +215,7 @@
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "main"
+        "ACCOUNT_ROLE_ARN": "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
       "id": "branch-check"
       "uses": "actions/github-script@v7"
       "with":
@@ -222,12 +223,11 @@
           const branch = process.env.MONAD_BRANCH;
           const accepted = process.env.ACCOUNT_BRANCHES.split(',').map(b => b.trim());
           const pass = accepted.includes("*") || accepted.includes(branch)
-          const roleArn = "arn:aws:iam::677771948337:role/monad-spoke-oidc-role"
           console.log("branch:", branch);
           console.log("accepted:", accepted);
           console.log("deploy:", pass);
           core.setOutput("pass", pass);
-          core.setOutput("roleArn", roleArn);
+          core.setOutput("roleArn", process.env.ACCOUNT_ROLE_ARN);
   "release-echo":
     "env":
       "MONAD_CHDIR": "e2e/echo"
