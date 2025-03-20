@@ -176,8 +176,6 @@
       "run": "monad destroy"
   "dev":
     "name": "dev"
-    "needs":
-    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -202,8 +200,6 @@
           core.setOutput("roleArn", roleArn);
   "prod":
     "name": "prod"
-    "needs":
-    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"

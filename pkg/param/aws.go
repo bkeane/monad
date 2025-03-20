@@ -76,8 +76,12 @@ func (c *Aws) CloudwatchLogGroup() string {
 	return fmt.Sprintf("/aws/lambda/%s", c.ResourcePath())
 }
 
+func (c *Aws) CloudwatchLogGroupArn() string {
+	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.CloudWatch.Region, c.Caller.AccountId, c.CloudwatchLogGroup())
+}
+
 func (c *Aws) CloudwatchLogRetention() int32 {
-	return c.CloudWatch.LogRetention
+	return c.CloudWatch.Retention
 }
 
 func (c *Aws) Env() (map[string]string, error) {
