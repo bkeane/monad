@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,4 +15,7 @@ jobs:
           fetch-depth: 0
       - name: test
         run: echo "Hello, test!"
-      - uses: ./.github/actions/deploy
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    uses: ./.github/actions/deploy
