@@ -20,4 +20,4 @@ jobs:
         run: go test ./...
   deploy:
     needs: test
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/workflows/deploy.yml
