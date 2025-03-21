@@ -18,4 +18,4 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    uses: ./.github/actions/deploy
+    uses: ./.github/actions/deploy.yml
