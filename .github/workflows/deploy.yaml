@@ -15,4 +15,4 @@ jobs:
           fetch-depth: 0
       - name: test
         run: echo "Hello, test!"
-      - uses: ./.github/actions/deploy.yaml
+      - uses: ./.github/actions/deploy
