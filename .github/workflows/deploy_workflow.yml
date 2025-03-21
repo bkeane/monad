@@ -252,7 +252,4 @@
       "run": "monad compose | docker compose -f - build --push"
 "name": "Deploy"
 "on":
-  "pull_request": {}
-  "push":
-    "branches":
-    - "main"
+  "workflow_call": {}

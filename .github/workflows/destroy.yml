@@ -249,8 +249,8 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
         "version": "latest"
-    - "name": "destroy"
-      "run": "monad destroy"
+    - "name": "untag"
+      "run": "monad untag"
 "name": "Destroy"
 "on":
   "pull_request_target":
