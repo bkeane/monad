@@ -1,4 +1,4 @@
-name: Deploy
+name: QA
 
 on:
   push:
@@ -13,8 +13,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.24.0
       - name: test
-        run: echo "Hello, test!"
+        run: go test ./...
   deploy:
     needs: test
-    uses: ./.github/workflows/owl.yaml
+    uses: ./.github/workflows/deploy.yaml

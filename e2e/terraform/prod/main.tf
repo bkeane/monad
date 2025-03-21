@@ -113,6 +113,7 @@ module "hub" {
     })]
   }
 
+  // We are going to first publish "latest" monad images to ghcr.
   deploy_on = {
     workflow_call = {}
   }
