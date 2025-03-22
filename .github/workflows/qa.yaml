@@ -18,6 +18,23 @@ jobs:
           go-version: 1.24.0
       - name: test
         run: go test ./...
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/docker-setup/action.yml
+      - name: Build latest image
+        run: |
+          docker build \
+          -t ghcr.io/bkeane/monad:latest \
+          --platform linux/amd64,linux/arm64 \
+          --push .
+
+          
+  
   deploy:
     needs: test
     uses: ./.github/workflows/deploy.yml
