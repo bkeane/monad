@@ -113,12 +113,10 @@ module "hub" {
     })]
   }
 
-  # post_deploy_steps = [
-  #   {
-  #     name = "health check"
-  #     run  = "docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e"
-  #   }
-  # ]
+  // We are going to first publish "latest" monad images to ghcr.
+  deploy_on = {
+    workflow_call = {}
+  }
 }
 
 module "spoke" {

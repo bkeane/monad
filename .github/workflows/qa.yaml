@@ -1,0 +1,40 @@
+name: QA
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.24.0
+      - name: test
+        run: go test ./...
+  latest:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/docker-setup
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build latest image
+        run: |
+          docker build \
+          -t ghcr.io/bkeane/monad:latest \
+          --platform linux/amd64,linux/arm64 \
+          --push .
+  qa:
+    needs: latest
+    uses: ./.github/workflows/deploy.yml
