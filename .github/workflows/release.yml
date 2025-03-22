@@ -28,7 +28,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PERSONAL_AUTH_TOKEN: ${{ secrets.GR_PAT }}
-
   image:
     runs-on: ubuntu-latest
     steps:

@@ -19,6 +19,7 @@ jobs:
       - name: test
         run: go test ./...
   latest:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,9 +33,6 @@ jobs:
           -t ghcr.io/bkeane/monad:latest \
           --platform linux/amd64,linux/arm64 \
           --push .
-
-          
-  
   deploy:
-    needs: test
+    needs: latest
     uses: ./.github/workflows/deploy.yml
