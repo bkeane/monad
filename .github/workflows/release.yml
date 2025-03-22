@@ -35,7 +35,7 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - uses: ./.github/actions/docker-setup/action.yml
+        - uses: ./.github/actions/docker-setup
         - name: Publish monad image
           run: |
             docker build \
