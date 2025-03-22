@@ -36,6 +36,8 @@ jobs:
           with:
             fetch-depth: 0
         - uses: ./.github/actions/docker-setup
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
         - name: Publish monad image
           run: |
             docker build \

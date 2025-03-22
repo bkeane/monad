@@ -1,6 +1,12 @@
 name: 'Docker Setup'
 description: 'Sets up Docker with GHCR login, QEMU, Buildx, and containerd registry'
 
+inputs:
+  token:
+    required: true
+    type: string
+    description: 'GitHub token'
+
 runs:
   using: "composite"
   steps:
@@ -9,7 +15,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.token }}
 
     - name: Configure Docker QEMU
       uses: docker/setup-qemu-action@v3
