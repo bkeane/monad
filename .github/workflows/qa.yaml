@@ -26,9 +26,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/docker-setup
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build latest image
         run: |
           docker build \
