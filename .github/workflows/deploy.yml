@@ -24,7 +24,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -51,7 +51,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -79,7 +79,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -108,7 +108,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -135,7 +135,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -163,7 +163,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -184,7 +184,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "*"
@@ -211,7 +211,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "main"
@@ -236,16 +236,16 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "ubuntu-latest"
+    "runs-on": "attic"
     "steps":
     - "id": "setup"
       "name": "setup"
       "uses": "bkeane/monad-action@main"
       "with":
-        "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "setup_docker": true
         "version": "latest"
     - "id": "release"
       "name": "release"

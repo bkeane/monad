@@ -2,13 +2,17 @@
 default:
     @just --list --unsorted
 
+# generate static site
+gen:
+    pandoc README.md -css --css https://edwardtufte.github.io/tufte-css/tufte.css -o index.html
+
 # build and install monad to ~/.local/bin
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
 # Build docker images locally
 build:
-    # docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
+    docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
     docker build -t ghcr.io/bkeane/shellspec:latest --platform linux/amd64,linux/arm64 --target shellspec .
 
 # approximate github actions tests

@@ -87,6 +87,8 @@ module "hub" {
   
   boundary_policy_document = module.boundary
 
+  runs_on = "attic"
+
   services = {
     releases = [
       {
