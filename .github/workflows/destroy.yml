@@ -24,7 +24,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -51,7 +51,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -79,7 +79,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -108,7 +108,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -135,7 +135,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -163,7 +163,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"
@@ -182,7 +182,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "*"
@@ -207,7 +207,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "env":
         "ACCOUNT_BRANCHES": "main"
@@ -240,7 +240,7 @@
     "permissions":
       "contents": "read"
       "id-token": "write"
-    "runs-on": "attic"
+    "runs-on": "self-hosted"
     "steps":
     - "name": "setup"
       "uses": "bkeane/monad-action@main"

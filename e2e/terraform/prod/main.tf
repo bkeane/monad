@@ -87,7 +87,7 @@ module "hub" {
   
   boundary_policy_document = module.boundary
 
-  runs_on = "attic"
+  runs_on = "self-hosted"
 
   services = {
     releases = [
