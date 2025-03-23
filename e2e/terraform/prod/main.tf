@@ -88,6 +88,7 @@ module "hub" {
   boundary_policy_document = module.boundary
 
   runs_on = "self-hosted"
+  setup_docker = false
 
   services = {
     releases = [

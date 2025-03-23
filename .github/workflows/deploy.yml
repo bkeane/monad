@@ -245,7 +245,7 @@
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
-        "setup_docker": true
+        "setup_docker": false
         "version": "latest"
     - "id": "release"
       "name": "release"
