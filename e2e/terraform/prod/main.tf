@@ -1,23 +1,20 @@
 locals {
   api_name = "kaixo"
-
-  security_group_names = [
-    "basic"
+  image = "bkeane/monad/echo"
+  common_config = [
+    "--image", local.image,
+    "--disk", "1024",
+    "--memory", "256",
+    "--timeout", "10",
+    "--api", local.api_name,
+    "--policy", "file://e2e/echo/policy.json.tmpl",
+    "--rule", "file://e2e/echo/rule.json.tmpl",
+    "--env", "file://e2e/echo/.env.tmpl"
   ]
-
-  subnet_names = [
-    "private-a",
-    "private-b"
+  vpc_config = [
+    "--sg-ids", "basic",
+    "--sn-ids", "private-a,private-b"
   ]
-
-  service_common = {
-    "MONAD_CHDIR"  = "e2e/echo"
-    "MONAD_IMAGE"  = "bkeane/monad/echo"
-    "MONAD_API"    = local.api_name
-    "MONAD_POLICY" = "file://policy.json.tmpl"
-    "MONAD_RULE"   = "file://rule.json.tmpl"
-    "MONAD_ENV"    = "file://.env.tmpl"
-  }
 }
 
 data "aws_caller_identity" "current" {}
@@ -72,6 +69,8 @@ module "hub" {
   source                   = "../../../../monad-action/modules/hub"
   depends_on               = [aws_iam_openid_connect_provider.github]
   origin                   = "https://github.com/bkeane/monad.git"
+  boundary_policy_document = module.boundary
+
   spoke_accounts        = [
     {
       id = data.aws_caller_identity.current.account_id
@@ -84,39 +83,25 @@ module "hub" {
       branches = ["*"]
     }
   ]
-  
-  boundary_policy_document = module.boundary
 
-  services = {
-    releases = [
-      {
-        "MONAD_CHDIR" = "e2e/echo"
-        "MONAD_IMAGE" = "bkeane/monad/echo"
-      }
-    ]
+  images = [
+    local.image
+  ]
 
-    deployments = [
-      merge(local.service_common, {
-        "MONAD_SERVICE" = "echo"
-        "MONAD_DISK"    = 1024
-        "MONAD_MEMORY"  = 256
-        "MONAD_TIMEOUT" = 10
-      }),
-      merge(local.service_common, {
-        "MONAD_SERVICE" = "echo-oauth"
-        "MONAD_AUTH"    = "auth0"
-      }),
-      merge(local.service_common, {
-        "MONAD_SERVICE"         = "echo-vpc"
-        "MONAD_SECURITY_GROUPS" = join(",", local.security_group_names)
-        "MONAD_SUBNETS"         = join(",", local.subnet_names)
-    })]
-  }
-
-  // We are going to first publish "latest" monad images to ghcr.
-  deploy_on = {
-    workflow_call = {}
-  }
+  services = [
+    {
+      name = "echo"
+      deploy_cmd = concat(["deploy"], local.common_config)
+    },
+    {
+      name = "echo-oauth"
+      deploy_cmd = concat(["deploy", "--auth", "auth0"], local.common_config)
+    },
+    {
+      name = "echo-vpc"
+      deploy_cmd = concat(["deploy"], local.common_config, local.vpc_config)
+    }
+  ]
 }
 
 module "spoke" {
@@ -129,14 +114,19 @@ module "spoke" {
   extended_policy_document = module.extended
 }
 
-resource "local_file" "deploy" {
-  content  = module.hub.deploy
-  filename = "../../../.github/workflows/deploy.yml"
+resource "local_file" "up" {
+  content  = module.hub.up
+  filename = "../../../.github/workflows/up.yml"
 }
 
-resource "local_file" "destroy" {
-  content  = module.hub.destroy
-  filename = "../../../.github/workflows/destroy.yml"
+resource "local_file" "down" {
+  content  = module.hub.down
+  filename = "../../../.github/workflows/down.yml"
+}
+
+resource "local_file" "untag" {
+  content  = module.hub.untag
+  filename = "../../../.github/workflows/untag.yml"
 }
 
 

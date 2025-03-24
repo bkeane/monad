@@ -1,0 +1,13 @@
+name: GC
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+jobs:
+  down:
+    uses: ./.github/workflows/down.yml
+  untag:
+    needs: down
+    uses: ./.github/workflows/untag.yml

@@ -6,20 +6,11 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "deploy-dev-echo":
+  "destroy-dev-echo":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_DISK": "1024"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_MEMORY": "256"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
-      "MONAD_TIMEOUT": "10"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "deploy echo"
+    "name": "destroy echo"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -33,20 +24,13 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
-  "deploy-dev-echo-oauth":
+    - "name": "destroy"
+      "run": "monad destroy"
+  "destroy-dev-echo-oauth":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_AUTH": "auth0"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "deploy echo-oauth"
+    "name": "destroy echo-oauth"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -60,21 +44,13 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
-  "deploy-dev-echo-vpc":
+    - "name": "destroy"
+      "run": "monad destroy"
+  "destroy-dev-echo-vpc":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
-      "MONAD_SECURITY_GROUPS": "basic"
       "MONAD_SERVICE": "echo-vpc"
-      "MONAD_SUBNETS": "private-a,private-b"
     "if": "needs.dev.outputs.pass == 'true'"
-    "name": "deploy echo-vpc"
+    "name": "destroy echo-vpc"
     "needs": "dev"
     "permissions":
       "contents": "read"
@@ -88,22 +64,13 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
-  "deploy-prod-echo":
+    - "name": "destroy"
+      "run": "monad destroy"
+  "destroy-prod-echo":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_DISK": "1024"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_MEMORY": "256"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo"
-      "MONAD_TIMEOUT": "10"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "deploy echo"
+    "name": "destroy echo"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -117,20 +84,13 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
-  "deploy-prod-echo-oauth":
+    - "name": "destroy"
+      "run": "monad destroy"
+  "destroy-prod-echo-oauth":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_AUTH": "auth0"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
       "MONAD_SERVICE": "echo-oauth"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "deploy echo-oauth"
+    "name": "destroy echo-oauth"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -144,21 +104,13 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
-  "deploy-prod-echo-vpc":
+    - "name": "destroy"
+      "run": "monad destroy"
+  "destroy-prod-echo-vpc":
     "env":
-      "MONAD_API": "kaixo"
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_ENV": "file://.env.tmpl"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-      "MONAD_POLICY": "file://policy.json.tmpl"
-      "MONAD_RULE": "file://rule.json.tmpl"
-      "MONAD_SECURITY_GROUPS": "basic"
       "MONAD_SERVICE": "echo-vpc"
-      "MONAD_SUBNETS": "private-a,private-b"
     "if": "needs.prod.outputs.pass == 'true'"
-    "name": "deploy echo-vpc"
+    "name": "destroy echo-vpc"
     "needs": "prod"
     "permissions":
       "contents": "read"
@@ -172,12 +124,10 @@
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
-      "run": "monad deploy"
+    - "name": "destroy"
+      "run": "monad destroy"
   "dev":
     "name": "dev"
-    "needs":
-    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -203,8 +153,6 @@
           core.setOutput("roleArn", process.env.ACCOUNT_ROLE_ARN);
   "prod":
     "name": "prod"
-    "needs":
-    - "release-echo"
     "outputs":
       "pass": "${{ steps.branch-check.outputs.pass }}"
       "roleArn": "${{ steps.branch-check.outputs.roleArn }}"
@@ -228,33 +176,6 @@
           console.log("deploy:", pass);
           core.setOutput("pass", pass);
           core.setOutput("roleArn", process.env.ACCOUNT_ROLE_ARN);
-  "release-echo":
-    "env":
-      "MONAD_CHDIR": "e2e/echo"
-      "MONAD_IMAGE": "bkeane/monad/echo"
-    "name": "echo"
-    "permissions":
-      "contents": "read"
-      "id-token": "write"
-    "runs-on": "ubuntu-latest"
-    "steps":
-    - "id": "setup"
-      "name": "setup"
-      "uses": "bkeane/monad-action@main"
-      "with":
-        "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
-        "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
-        "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
-        "setup_docker": true
-        "version": "latest"
-    - "id": "release"
-      "name": "release"
-      "run": |
-        docker buildx build -t $(monad ecr tag) \
-        --cache-from type=gha,scope=bkeane/monad/echo \
-        --cache-to type=gha,mode=max,scope=bkeane/monad/echo \
-        --platform linux/amd64,linux/arm64 --push .
-      "working-directory": "e2e/echo"
-"name": "Deploy"
+"name": "Down"
 "on":
   "workflow_call": {}

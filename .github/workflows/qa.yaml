@@ -18,7 +18,8 @@ jobs:
           go-version: 1.24.0
       - name: test
         run: go test ./...
-  latest:
+  
+  monad:
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -32,11 +33,35 @@ jobs:
       - name: Build latest image
         run: |
           docker buildx build \
-          --cache-to type=gha,mode=max,scope=monad \
-          --cache-from type=gha,scope=monad \
+          --cache-to type=gha,mode=max,scope=${{ github.ref_name }}-monad \
+          --cache-from type=gha,scope=${{ github.ref_name }}-monad \
           -t ghcr.io/bkeane/monad:latest \
           --platform linux/amd64,linux/arm64 \
           --push .
-  qa:
-    needs: latest
+  
+  echo:
+    needs: monad
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: bkeane/monad-action@main
+        with:
+          registry_id: 677771948337
+          registry_region: us-west-2
+          role_arn: arn:aws:iam::677771948337:role/monad-hub-oidc-role
+          version: latest
+      - name: publish
+        run: |
+          docker buildx build \
+          --cache-to type=gha,mode=max,scope=${{ github.ref_name }}-echo \
+          --cache-from type=gha,scope=${{ github.ref_name }}-echo \
+          -t $(monad ecr tag echo) \
+          --platform linux/amd64,linux/arm64 \
+          --push .
+
+  deploy:
+    needs: echo
     uses: ./.github/workflows/deploy.yml
