@@ -38,8 +38,6 @@ jobs:
           docker buildx build \
           --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad \
-          --mount=type=cache,target=/root/.cache/go-build \
-          --mount=type=cache,target=/go/pkg/mod \
           -t ghcr.io/bkeane/monad:latest \
           --platform linux/amd64,linux/arm64 \
           --push .
