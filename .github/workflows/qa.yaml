@@ -64,4 +64,4 @@ jobs:
 
   deploy:
     needs: echo
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/up.yml

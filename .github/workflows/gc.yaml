@@ -6,9 +6,9 @@ on:
       - closed
 
 jobs:
-  down:
+  destroy:
     uses: ./.github/workflows/down.yml
   untag:
-    needs: down
+    needs: destroy
     if: "!failure() && !cancelled()"
     uses: ./.github/workflows/untag.yml
