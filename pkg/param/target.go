@@ -9,8 +9,8 @@ import (
 )
 
 type Target struct {
-	Service      string                 `arg:"--service" placeholder:"name" help:"service name" default:"${basename $PWD}"`
-	Image        string                 `arg:"--image" placeholder:"path" help:"ecr image path" default:"${owner}/${repo}/${service}"`
+	Service      string                 `arg:"--service,env:MONAD_SERVICE" placeholder:"name" help:"service name" default:"${basename $PWD}"`
+	Image        string                 `arg:"--image,env:MONAD_IMAGE" placeholder:"path" help:"ecr image path" default:"${owner}/${repo}/${service}"`
 	ImagePointer *registry.ImagePointer `arg:"-"`
 }
 
