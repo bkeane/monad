@@ -5,9 +5,7 @@
             "Sid": "AllowLogWrite",
             "Effect": "Allow",
             "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
+                "logs:*",
             ],
             "Resource": [
                 "{{.Cloudwatch.LogGroupArn}}*",

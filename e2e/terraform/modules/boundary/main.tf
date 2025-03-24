@@ -33,7 +33,8 @@ data "aws_iam_policy_document" "boundary" {
             "logs:PutLogEvents",
             "logs:Describe*",
             "logs:Get*",
-            "logs:List*"
+            "logs:List*",
+            "logs:Tag*"
         ]
         resources = ["*"]
     }

@@ -254,6 +254,7 @@
         --cache-from type=gha,scope=bkeane/monad/echo \
         --cache-to type=gha,mode=max,scope=bkeane/monad/echo \
         --platform linux/amd64,linux/arm64 --push .
+      "working-directory": "e2e/echo"
 "name": "Deploy"
 "on":
   "workflow_call": {}
