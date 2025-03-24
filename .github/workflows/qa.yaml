@@ -64,7 +64,7 @@ jobs:
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo \
           -t $(monad ecr tag --service echo) \
           --platform linux/amd64,linux/arm64 \
-          --build-context e2e/echo \
+          --build-context echo=e2e/echo \
           --push .
 
   deploy:
