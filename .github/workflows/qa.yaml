@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -33,8 +36,10 @@ jobs:
       - name: Build latest image
         run: |
           docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ github.ref_name }}-monad \
-          --cache-from type=gha,scope=${{ github.ref_name }}-monad \
+          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad \
+          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad \
+          --mount=type=cache,target=/root/.cache/go-build \
+          --mount=type=cache,target=/go/pkg/mod \
           -t ghcr.io/bkeane/monad:latest \
           --platform linux/amd64,linux/arm64 \
           --push .
@@ -46,21 +51,19 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: bkeane/monad-action@main
         with:
           registry_id: 677771948337
           registry_region: us-west-2
           role_arn: arn:aws:iam::677771948337:role/monad-hub-oidc-role
           version: latest
+      - name: monad check
+        run: which monad
       - name: publish
         run: |
           docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ github.ref_name }}-echo \
-          --cache-from type=gha,scope=${{ github.ref_name }}-echo \
+          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-echo \
+          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo \
           -t $(monad ecr tag echo) \
           --platform linux/amd64,linux/arm64 \
           --build-context e2e/echo \
