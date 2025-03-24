@@ -63,6 +63,7 @@ jobs:
           --cache-from type=gha,scope=${{ github.ref_name }}-echo \
           -t $(monad ecr tag echo) \
           --platform linux/amd64,linux/arm64 \
+          --build-context e2e/echo \
           --push .
 
   deploy:
