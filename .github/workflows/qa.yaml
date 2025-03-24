@@ -55,6 +55,7 @@ jobs:
           registry_region: us-west-2
           role_arn: arn:aws:iam::677771948337:role/monad-hub-oidc-role
           version: latest
+          setup_docker: true
       - name: monad check
         run: which monad
       - name: publish
