@@ -242,14 +242,15 @@
       "name": "setup"
       "uses": "bkeane/monad-action@main"
       "with":
-        "configure_for_build": true
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+        "setup_docker": true
         "version": "latest"
     - "id": "release"
       "name": "release"
-      "run": "monad compose | docker compose -f - build --push"
+      "run": "docker build -t $(monad ecr tag) --platform linux/amd64,linux/arm64
+        --push ."
 "name": "Deploy"
 "on":
   "workflow_call": {}
