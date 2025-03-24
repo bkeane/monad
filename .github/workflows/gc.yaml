@@ -10,4 +10,5 @@ jobs:
     uses: ./.github/workflows/down.yml
   untag:
     needs: down
+    if: "!failure() && !cancelled()"
     uses: ./.github/workflows/untag.yml

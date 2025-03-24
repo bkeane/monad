@@ -6,7 +6,6 @@
   "MONAD_SHA": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
     || github.sha }}"
 "jobs":
-  "if": "!failure() && !cancelled()"
   "name": "untag"
   "runs-on": "ubuntu-latest"
   "steps":
