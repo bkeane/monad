@@ -249,8 +249,11 @@
         "version": "latest"
     - "id": "release"
       "name": "release"
-      "run": "docker buildx build -t $(monad ecr tag) --cache-from type=gha --cache-to
-        type=gha,mode=max --platform linux/amd64,linux/arm64 --push ."
+      "run": |
+        docker buildx build -t $(monad ecr tag) \
+        --cache-from type=gha,scope=bkeane/monad/echo \
+        --cache-to type=gha,mode=max,scope=bkeane/monad/echo \
+        --platform linux/amd64,linux/arm64 --push .
 "name": "Deploy"
 "on":
   "workflow_call": {}
