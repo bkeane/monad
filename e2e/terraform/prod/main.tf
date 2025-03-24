@@ -129,4 +129,8 @@ resource "local_file" "untag" {
   filename = "../../../.github/workflows/untag.yml"
 }
 
+resource "local_file" "build" {
+  content  = module.hub.build
+  filename = "../../../.github/workflows/build.yml"
+}
 
