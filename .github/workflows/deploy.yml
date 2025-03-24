@@ -249,8 +249,8 @@
         "version": "latest"
     - "id": "release"
       "name": "release"
-      "run": "docker build -t $(monad ecr tag) --platform linux/amd64,linux/arm64
-        --push ."
+      "run": "docker buildx build -t $(monad ecr tag) --cache-from type=gha --cache-to
+        type=gha,mode=max --platform linux/amd64,linux/arm64 --push ."
 "name": "Deploy"
 "on":
   "workflow_call": {}

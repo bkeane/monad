@@ -31,7 +31,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build latest image
         run: |
-          docker build \
+          docker buildx build \
+          --cache-from type=gha \
+          --cache-to type=gha,mode=max \
           -t ghcr.io/bkeane/monad:latest \
           --platform linux/amd64,linux/arm64 \
           --push .

@@ -13,8 +13,8 @@
                 "logs:List*"
             ],
             "Resource": [
-                "{{.Cloudwatch.LogGroup.Arn}}*",
-                "{{.Cloudwatch.LogGroup.Arn}}:log-stream:*"
+                "{{.Cloudwatch.LogGroupArn}}*",
+                "{{.Cloudwatch.LogGroupArn}}:log-stream:*"
             ]
         },
         {
