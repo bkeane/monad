@@ -22,8 +22,8 @@ func Route(ctx context.Context, r route.Root) error {
 			return err
 		}
 
-	case r.Compose != nil:
-		if err := r.Compose.Route(ctx, r); err != nil {
+	case r.Template != nil:
+		if err := r.Template.Route(ctx, r); err != nil {
 			return err
 		}
 

@@ -11,6 +11,7 @@ import (
 type Caller struct {
 	Client    *sts.Client `arg:"-" json:"-"`
 	AccountId string      `arg:"-" json:"-"`
+	Region    string      `arg:"-" json:"-"`
 	Arn       string      `arg:"-" json:"-"`
 	UserId    string      `arg:"-" json:"-"`
 }
@@ -26,10 +27,12 @@ func (c *Caller) Validate(ctx context.Context, awsconfig aws.Config) error {
 	c.AccountId = *caller.Account
 	c.Arn = *caller.Arn
 	c.UserId = *caller.UserId
+	c.Region = awsconfig.Region
 
 	return v.ValidateStruct(c,
 		v.Field(&c.AccountId, v.Required),
 		v.Field(&c.Arn, v.Required),
 		v.Field(&c.UserId, v.Required),
+		v.Field(&c.Region, v.Required),
 	)
 }

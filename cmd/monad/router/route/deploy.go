@@ -9,14 +9,19 @@ import (
 
 type Deploy struct {
 	param.Aws
+	param.Target
 }
 
 func (d *Deploy) Route(ctx context.Context, r Root) error {
-	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git); err != nil {
+	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git, d.Target); err != nil {
 		return err
 	}
 
-	image, err := d.Registry.GetImage(ctx, r.Git.ImagePath, r.Git.Branch)
+	if err := d.Target.Validate(r.Git); err != nil {
+		return err
+	}
+
+	image, err := d.Registry.GetImage(ctx, d.Target.Image, r.Git.Branch)
 	if err != nil {
 		return err
 	}

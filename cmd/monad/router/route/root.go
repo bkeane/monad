@@ -17,7 +17,8 @@ type Root struct {
 	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a service"`
 	Ecr       *Ecr       `arg:"subcommand:ecr" help:"ecr commands"`
 	Init      *Scaffold  `arg:"subcommand:init" help:"initialize a service"`
-	Compose   *Compose   `arg:"subcommand:compose" help:"compose a service"`
+	Template  *Template  `arg:"subcommand:template" help:"template a service"`
+	// Compose   *Compose   `arg:"subcommand:compose" help:"compose a service"`
 }
 
 func (r *Root) Validate(ctx context.Context) error {

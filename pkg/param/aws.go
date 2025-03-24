@@ -12,7 +12,8 @@ import (
 )
 
 type Aws struct {
-	Git Git `arg:"-" json:"-"`
+	Git    Git    `arg:"-" json:"-"`
+	Target Target `arg:"-" json:"-"`
 	Caller
 	Registry
 	Lambda
@@ -23,8 +24,13 @@ type Aws struct {
 	EventBridge
 }
 
-func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error {
+func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, target Target) error {
 	c.Git = git
+	c.Target = target
+
+	if err := c.Target.Validate(c.Git); err != nil {
+		return err
+	}
 
 	if err := c.Caller.Validate(ctx, awsconfig); err != nil {
 		return err
@@ -63,13 +69,20 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error
 
 // Computed Properties
 
+func (c *Aws) ResourceNamePrefix() string {
+	return fmt.Sprintf("%s-%s", c.Git.Repository, c.Git.Branch)
+}
+
 func (c *Aws) ResourceName() string {
-	branch := strings.ReplaceAll(c.Git.Branch, "/", "-")
-	return fmt.Sprintf("%s-%s-%s", c.Git.Repository, branch, c.Git.Service)
+	return fmt.Sprintf("%s-%s", c.ResourceNamePrefix(), c.Target.Service)
+}
+
+func (c *Aws) ResourcePathPrefix() string {
+	return fmt.Sprintf("%s/%s", c.Git.Repository, c.Git.Branch)
 }
 
 func (c *Aws) ResourcePath() string {
-	return fmt.Sprintf("%s/%s/%s", c.Git.Repository, c.Git.Branch, c.Git.Service)
+	return fmt.Sprintf("%s/%s", c.ResourcePathPrefix(), c.Target.Service)
 }
 
 func (c *Aws) CloudwatchLogGroup() string {
@@ -179,9 +192,10 @@ func (c *Aws) EventBridgeStatementId() string {
 
 func (c *Aws) Tags() map[string]string {
 	return map[string]string{
+		"Monad":      "true",
+		"Service":    c.Target.Service,
 		"Owner":      c.Git.Owner,
 		"Repository": c.Git.Repository,
-		"Service":    c.Git.Service,
 		"Branch":     c.Git.Branch,
 		"Sha":        c.Git.Sha,
 	}

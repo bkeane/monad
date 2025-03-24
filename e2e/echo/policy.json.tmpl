@@ -13,8 +13,8 @@
                 "logs:List*"
             ],
             "Resource": [
-                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*",
-                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}:log-stream:*"
+                "{{.Cloudwatch.LogGroup.Arn}}*",
+                "{{.Cloudwatch.LogGroup.Arn}}:log-stream:*"
             ]
         },
         {
@@ -24,7 +24,7 @@
                 "lambda:GetFunction",
                 "lambda:GetFunctionConfiguration"
             ],
-            "Resource": "{{.FunctionArn}}"
+            "Resource": "{{.Lambda.FunctionArn}}"
         },
         {
             "Sid": "AllowIAMIntrospection",
@@ -37,8 +37,8 @@
                 "iam:GetPolicyVersion"
             ],
             "Resource": [
-                "{{.PolicyArn}}",
-                "{{.RoleArn}}"
+                "{{.Lambda.PolicyArn}}",
+                "{{.Lambda.RoleArn}}"
             ]
         }
     ]
