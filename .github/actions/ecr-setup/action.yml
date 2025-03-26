@@ -1,5 +1,23 @@
 "description": "Composite action to configure environment for build and push to the
   hub ECR registry"
+"inputs":
+  "monad_branch":
+    "default": "${{ github.head_ref || github.ref_name }}"
+    "required": false
+    "type": "string"
+  "monad_sha":
+    "default": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+      || github.sha }}"
+    "required": false
+    "type": "string"
+  "registry_id":
+    "default": "677771948337"
+    "required": true
+    "type": "string"
+  "registry_region":
+    "default": "us-west-2"
+    "required": true
+    "type": "string"
 "name": "hub config"
 "runs":
   "steps":
@@ -15,8 +33,8 @@
     "uses": "actions/github-script@v7"
     "with":
       "script": |
-        core.exportVariable('MONAD_BRANCH', '${{ github.head_ref || github.ref_name }}');
-        core.exportVariable('MONAD_REGISTRY_ID', '677771948337');
-        core.exportVariable('MONAD_REGISTRY_REGION', 'us-west-2');
-        core.exportVariable('MONAD_SHA', '${{ github.event_name == "pull_request" && github.event.pull_request.head.sha || github.sha }}');
+        core.exportVariable('MONAD_REGISTRY_ID', '${{ inputs.registry_id }}');
+        core.exportVariable('MONAD_REGISTRY_REGION', '${{ inputs.registry_region }}');
+        core.exportVariable('MONAD_BRANCH', '${{ inputs.monad_branch }}');
+        core.exportVariable('MONAD_SHA', '${{ inputs.monad_sha }}');
   "using": "composite"
