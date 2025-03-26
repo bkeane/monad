@@ -8,7 +8,7 @@ import (
 )
 
 type Destroy struct {
-	param.Aws
+	param.Aws `arg:"-"`
 	param.Target
 }
 
