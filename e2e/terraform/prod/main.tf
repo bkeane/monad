@@ -12,8 +12,8 @@ locals {
     "--env", "file://e2e/echo/.env.tmpl"
   ]
   vpc_config = [
-    "--sg-ids", "basic",
-    "--sn-ids", "private-a,private-b"
+    "--vpc-sg", "basic",
+    "--vpc-sn", "private-a,private-b"
   ]
 }
 
