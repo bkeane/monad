@@ -13,7 +13,7 @@ locals {
   ]
   vpc_config = [
     "--vpc-sg", "basic",
-    "--vpc-sn", "private-a,private-b"
+    "--vpc-sn", "private-a private-b"
   ]
 }
 

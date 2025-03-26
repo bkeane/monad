@@ -71,7 +71,7 @@
     - "name": "deploy echo-vpc to dev"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
-        --env file://e2e/echo/.env.tmpl --vpc-sg basic --vpc-sn private-a,private-b"
+        --env file://e2e/echo/.env.tmpl --vpc-sg basic --vpc-sn private-a private-b"
   "deploy-prod-echo":
     "env":
       "MONAD_SERVICE": "echo"
@@ -137,7 +137,7 @@
     - "name": "deploy echo-vpc to prod"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
-        --env file://e2e/echo/.env.tmpl --vpc-sg basic --vpc-sn private-a,private-b"
+        --env file://e2e/echo/.env.tmpl --vpc-sg basic --vpc-sn private-a private-b"
   "dev":
     "name": "dev"
     "outputs":
