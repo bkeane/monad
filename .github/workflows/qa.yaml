@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/docker-setup
+      - uses: ./.github/actions/ghcr-setup
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build latest image
@@ -54,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: build setup
-        uses: ./.github/actions/monad-build-setup
+        uses: ./.github/actions/ecr-setup
       - name: publish
         run: |
           docker buildx build \

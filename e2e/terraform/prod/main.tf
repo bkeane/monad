@@ -115,22 +115,22 @@ module "spoke" {
 }
 
 resource "local_file" "up" {
-  content  = module.hub.up
+  content  = module.hub.up_shared_workflow
   filename = "../../../.github/workflows/up.yml"
 }
 
 resource "local_file" "down" {
-  content  = module.hub.down
+  content  = module.hub.down_shared_workflow
   filename = "../../../.github/workflows/down.yml"
 }
 
 resource "local_file" "untag" {
-  content  = module.hub.untag
+  content  = module.hub.untag_shared_workflow
   filename = "../../../.github/workflows/untag.yml"
 }
 
 resource "local_file" "build" {
-  content  = module.hub.build
-  filename = "../../../.github/actions/monad-build-setup/action.yml"
+  content  = module.hub.build_composite_action
+  filename = "../../../.github/actions/ecr-setup/action.yml"
 }
 
