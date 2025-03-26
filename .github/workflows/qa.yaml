@@ -38,20 +38,20 @@ jobs:
           docker buildx build \
           --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          -t ghcr.io/bkeane/monad:latest \
-          --platform linux/amd64 .
+          --platform linux/amd64 --load .
       - name: build arm64
         run: |
           docker buildx build \
           --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --platform linux/arm64  .
+          --platform linux/arm64 --load .
       - name: publish
         run: |
           docker buildx build \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          --platform linux/arm64,linux/amd64 . --push
+          -t ghcr.io/bkeane/monad:latest \
+          --platform linux/arm64,linux/amd64 --push . 
 
   echo:
     needs: monad
@@ -72,22 +72,22 @@ jobs:
           docker buildx build \
           --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
-          -t $(monad ecr tag --service echo) \
-          --platform linux/amd64 .
+          --platform linux/amd64 --load .
       - name: build arm64
         working-directory: e2e/echo
         run: |
           docker buildx build \
           --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
-          --platform linux/arm64 .
+          --platform linux/arm64 --load .
       - name: publish
         working-directory: e2e/echo
         run: |
           docker buildx build \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
           --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
-          --platform linux/arm64,linux/amd64 . --push
+          -t $(monad ecr tag --service echo) \
+          --platform linux/arm64,linux/amd64 --push . 
 
   deploy:
     needs: echo
