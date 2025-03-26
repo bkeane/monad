@@ -43,7 +43,7 @@ jobs:
   #         --push .
   
   echo:
-    needs: monad
+    # needs: monad
     runs-on: ubuntu-latest
     permissions:
       contents: read
