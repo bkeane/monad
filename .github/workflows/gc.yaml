@@ -1,0 +1,14 @@
+name: GC
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+jobs:
+  destroy:
+    uses: ./.github/workflows/down.yml
+  untag:
+    needs: destroy
+    if: "!failure() && !cancelled()"
+    uses: ./.github/workflows/untag.yml

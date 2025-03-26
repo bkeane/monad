@@ -3,8 +3,17 @@ FROM --platform=$BUILDPLATFORM golang:alpine AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
-COPY . .
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o monad ./cmd/monad
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go mod download
+
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+COPY internal/ internal/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o monad ./cmd/monad
 
 FROM scratch
 COPY --from=build --chmod=755 /src/monad /monad

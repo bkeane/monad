@@ -10,7 +10,7 @@ import (
 
 type CloudWatch struct {
 	Client    *cloudwatchlogs.Client `arg:"-" json:"-"`
-	Region    string                 `arg:"--log-region,env:MONAD_LOG_REGION" placeholder:"name" default:"caller-region"`
+	Region    string                 `arg:"--log-region,env:MONAD_LOG_REGION" placeholder:"name" help:"cloudwatch log region"  default:"caller-region"`
 	Retention int32                  `arg:"--log-retention,env:MONAD_LOG_RETENTION" placeholder:"days" help:"1, 3, 5, 7, 14, 30..." default:"3"`
 }
 

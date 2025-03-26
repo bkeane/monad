@@ -13,7 +13,7 @@ import (
 
 type Lambda struct {
 	Client           *lambda.Client `arg:"-" json:"-"`
-	Region           string         `arg:"--lambda-region,env:MONAD_LAMBDA_REGION" placeholder:"name" help:"lambda region name" default:"caller-region"`
+	Region           string         `arg:"--lambda-region,env:MONAD_LAMBDA_REGION" placeholder:"name" help:"lambda region" default:"caller-region"`
 	EnvTemplate      string         `arg:"--env,env:MONAD_ENV" placeholder:"template" help:"string | file://env.tmpl" default:"minimal-env"`
 	EphemeralStorage int32          `arg:"--disk,env:MONAD_DISK" placeholder:"mb" help:"ephemeral storage size" default:"512"`
 	MemorySize       int32          `arg:"--memory,env:MONAD_MEMORY" placeholder:"mb" help:"memory size" default:"128"`

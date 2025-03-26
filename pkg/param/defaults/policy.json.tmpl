@@ -5,13 +5,11 @@
             "Sid": "AllowLogWrite",
             "Effect": "Allow",
             "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
+                "logs:*",
             ],
             "Resource": [
-                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}*",
-                "arn:aws:logs:{{.Lambda.Region}}:{{.Caller.AccountId}}:log-group:{{.CloudwatchLogGroup}}:log-stream:*"
+                "{{.Cloudwatch.LogGroupArn}}*",
+                "{{.Cloudwatch.LogGroupArn}}:log-stream:*"
             ]
         }
     ]

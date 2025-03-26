@@ -8,11 +8,12 @@ import (
 )
 
 type Destroy struct {
-	param.Aws `arg:"-"`
+	param.Aws
+	param.Target
 }
 
 func (d *Destroy) Route(ctx context.Context, r Root) error {
-	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git); err != nil {
+	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git, d.Target); err != nil {
 		return err
 	}
 

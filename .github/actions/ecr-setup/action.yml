@@ -1,0 +1,40 @@
+"description": "Composite action to configure environment for build and push to the
+  hub ECR registry"
+"inputs":
+  "monad_branch":
+    "default": "${{ github.head_ref || github.ref_name }}"
+    "required": false
+    "type": "string"
+  "monad_sha":
+    "default": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+      || github.sha }}"
+    "required": false
+    "type": "string"
+  "registry_id":
+    "default": "677771948337"
+    "required": true
+    "type": "string"
+  "registry_region":
+    "default": "us-west-2"
+    "required": true
+    "type": "string"
+"name": "hub config"
+"runs":
+  "steps":
+  - "name": "setup"
+    "uses": "bkeane/monad-action@main"
+    "with":
+      "registry_id": "677771948337"
+      "registry_region": "us-west-2"
+      "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
+      "setup_docker": true
+      "version": "latest"
+  - "name": "export"
+    "uses": "actions/github-script@v7"
+    "with":
+      "script": |
+        core.exportVariable('MONAD_REGISTRY_ID', '${{ inputs.registry_id }}');
+        core.exportVariable('MONAD_REGISTRY_REGION', '${{ inputs.registry_region }}');
+        core.exportVariable('MONAD_BRANCH', '${{ inputs.monad_branch }}');
+        core.exportVariable('MONAD_SHA', '${{ inputs.monad_sha }}');
+  "using": "composite"

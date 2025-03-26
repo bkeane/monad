@@ -12,7 +12,9 @@ import (
 )
 
 type Aws struct {
-	Git Git `arg:"-" json:"-"`
+	Git          Git               `arg:"-" json:"-"`
+	Target       Target            `arg:"-" json:"-"`
+	TemplateData tmpl.TemplateData `arg:"-" json:"-"`
 	Caller
 	Registry
 	Lambda
@@ -23,8 +25,13 @@ type Aws struct {
 	EventBridge
 }
 
-func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error {
+func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, target Target) error {
 	c.Git = git
+	c.Target = target
+
+	if err := c.Target.Validate(c.Git); err != nil {
+		return err
+	}
 
 	if err := c.Caller.Validate(ctx, awsconfig); err != nil {
 		return err
@@ -58,18 +65,50 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git) error
 		return err
 	}
 
+	// Map data into templating struct
+	c.TemplateData.Git.Sha = c.Git.Sha
+	c.TemplateData.Git.Branch = c.Git.Branch
+	c.TemplateData.Git.Owner = c.Git.Owner
+	c.TemplateData.Git.Repo = c.Git.Repository
+	c.TemplateData.Caller.AccountId = c.Caller.AccountId
+	c.TemplateData.Caller.Region = c.Caller.Region
+	c.TemplateData.Registry.Id = c.Registry.Id
+	c.TemplateData.Registry.Region = c.Registry.Region
+	c.TemplateData.Resource.Name.Prefix = c.ResourceNamePrefix()
+	c.TemplateData.Resource.Name.Full = c.ResourceName()
+	c.TemplateData.Resource.Path.Prefix = c.ResourcePathPrefix()
+	c.TemplateData.Resource.Path.Full = c.ResourcePath()
+	c.TemplateData.Lambda.Region = c.Lambda.Region
+	c.TemplateData.Lambda.FunctionArn = c.FunctionArn()
+	c.TemplateData.Lambda.PolicyArn = c.PolicyArn()
+	c.TemplateData.Lambda.RoleArn = c.RoleArn()
+	c.TemplateData.Cloudwatch.Region = c.CloudWatch.Region
+	c.TemplateData.Cloudwatch.LogGroupArn = c.CloudwatchLogGroupArn()
+	c.TemplateData.ApiGateway.Region = c.ApiGateway.Region
+	c.TemplateData.ApiGateway.Id = c.ApiGateway.Id
+	c.TemplateData.EventBridge.Region = c.EventBridge.Region
+	c.TemplateData.EventBridge.Rule.Arn = c.ResourcePath()
+	c.TemplateData.EventBridge.Bus.Name = c.EventBridge.BusName
+
 	return nil
 }
 
 // Computed Properties
 
+func (c *Aws) ResourceNamePrefix() string {
+	return fmt.Sprintf("%s-%s", c.Git.Repository, c.Git.Branch)
+}
+
 func (c *Aws) ResourceName() string {
-	branch := strings.ReplaceAll(c.Git.Branch, "/", "-")
-	return fmt.Sprintf("%s-%s-%s", c.Git.Repository, branch, c.Git.Service)
+	return fmt.Sprintf("%s-%s", c.ResourceNamePrefix(), c.Target.Service)
+}
+
+func (c *Aws) ResourcePathPrefix() string {
+	return fmt.Sprintf("%s/%s", c.Git.Repository, c.Git.Branch)
 }
 
 func (c *Aws) ResourcePath() string {
-	return fmt.Sprintf("%s/%s/%s", c.Git.Repository, c.Git.Branch, c.Git.Service)
+	return fmt.Sprintf("%s/%s", c.ResourcePathPrefix(), c.Target.Service)
 }
 
 func (c *Aws) CloudwatchLogGroup() string {
@@ -85,7 +124,7 @@ func (c *Aws) CloudwatchLogRetention() int32 {
 }
 
 func (c *Aws) Env() (map[string]string, error) {
-	env, err := tmpl.Template("env", c.Lambda.EnvTemplate, c)
+	env, err := tmpl.Template("env", c.Lambda.EnvTemplate, c.TemplateData)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +138,7 @@ func (c *Aws) FunctionArn() string {
 }
 
 func (c *Aws) RoleDocument() (string, error) {
-	return tmpl.Template("role document", c.Iam.RoleTemplate, c)
+	return tmpl.Template("role document", c.Iam.RoleTemplate, c.TemplateData)
 }
 
 func (c *Aws) RoleArn() string {
@@ -107,7 +146,7 @@ func (c *Aws) RoleArn() string {
 }
 
 func (c *Aws) PolicyDocument() (string, error) {
-	return tmpl.Template("policy document", c.Iam.PolicyTemplate, c)
+	return tmpl.Template("policy document", c.Iam.PolicyTemplate, c.TemplateData)
 }
 
 func (c *Aws) PolicyArn() string {
@@ -165,7 +204,7 @@ func (c *Aws) RuleDocument() (string, error) {
 		return "", nil
 	}
 
-	content, err := tmpl.Template("rule document", c.EventBridge.RuleTemplate, c)
+	content, err := tmpl.Template("rule document", c.EventBridge.RuleTemplate, c.TemplateData)
 	if err != nil {
 		return "", err
 	}
@@ -179,9 +218,10 @@ func (c *Aws) EventBridgeStatementId() string {
 
 func (c *Aws) Tags() map[string]string {
 	return map[string]string{
+		"Monad":      "true",
+		"Service":    c.Target.Service,
 		"Owner":      c.Git.Owner,
 		"Repository": c.Git.Repository,
-		"Service":    c.Git.Service,
 		"Branch":     c.Git.Branch,
 		"Sha":        c.Git.Sha,
 	}

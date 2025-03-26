@@ -9,12 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/rs/zerolog/log"
 )
 
 type Vpc struct {
 	Client           *ec2.Client `arg:"-" json:"-"`
-	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS" placeholder:"id|name" help:"vpc-default,sg-456... [default: []]"`
-	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS" placeholder:"id|name" help:"private,subnet-456... [default: []]"`
+	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS" placeholder:"id|name" help:"vpc-default sg-456... (space separated) [default: []]"`
+	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS" placeholder:"id|name" help:"private subnet-456... (space separated) [default: []]"`
 	SecurityGroupIds []string    `arg:"-"`
 	SubnetIds        []string    `arg:"-"`
 }
@@ -100,6 +101,10 @@ func (c *Vpc) ResolveSubnets(ctx context.Context) error {
 					c.SubnetIds = append(c.SubnetIds, *subnet.SubnetId)
 				}
 			}
+		}
+
+		if len(c.SubnetIds) == 0 {
+			log.Warn().Str("given", nameOrId).Msg("no subnets found for given")
 		}
 	}
 

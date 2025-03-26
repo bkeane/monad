@@ -1,7 +1,6 @@
 package param
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/bkeane/monad/internal/git"
@@ -12,13 +11,13 @@ import (
 
 type Git struct {
 	cwd        string `arg:"-" json:"-"`
-	Chdir      string `arg:"--chdir,env:MONAD_CHDIR" placeholder:"path" default:"cwd"`
+	Chdir      string `arg:"--chdir,env:MONAD_CHDIR" placeholder:"path" default:"."`
 	Owner      string `arg:"--owner,env:MONAD_OWNER" placeholder:"name" default:"github.com/<owner>/repo.git"`
 	Repository string `arg:"--repo,env:MONAD_REPO" placeholder:"name" default:"github.com/owner/<repo>.git"`
-	Service    string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" default:"current directory name"`
 	Branch     string `arg:"--branch,env:MONAD_BRANCH" placeholder:"name" default:"current git branch"`
 	Sha        string `arg:"--sha,env:MONAD_SHA" placeholder:"sha" default:"current git sha"`
-	ImagePath  string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" default:"${owner}/${repo}/${service}"`
+	// Service    string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" default:"current directory name"`
+	// ImagePath  string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" default:"${owner}/${repo}/${service}"`
 }
 
 func (g *Git) Validate() error {
@@ -56,13 +55,13 @@ func (g *Git) Validate() error {
 		g.Repository = git.Repo
 	}
 
-	if g.Service == "" {
-		git, err := git.Parse(g.cwd)
-		if err != nil {
-			return err
-		}
-		g.Service = git.BasePath
-	}
+	// if g.Service == "" {
+	// 	git, err := git.Parse(g.cwd)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	g.Service = git.BasePath
+	// }
 
 	if g.Branch == "" {
 		git, err := git.Parse(g.cwd)
@@ -80,15 +79,14 @@ func (g *Git) Validate() error {
 		g.Sha = git.Sha
 	}
 
-	if g.ImagePath == "" {
-		g.ImagePath = fmt.Sprintf("%s/%s/%s", g.Owner, g.Repository, g.Service)
-	}
+	// if g.ImagePath == "" {
+	// 	g.ImagePath = fmt.Sprintf("%s/%s/%s", g.Owner, g.Repository, g.Service)
+	// }
 
 	log.Info().
 		Str("cwd", g.cwd).
 		Str("owner", g.Owner).
 		Str("repo", g.Repository).
-		Str("service", g.Service).
 		Str("branch", g.Branch).
 		Str("sha", g.Sha).
 		Msg("fetching git")
@@ -97,9 +95,7 @@ func (g *Git) Validate() error {
 		v.Field(&g.Chdir, v.Required),
 		v.Field(&g.Owner, v.Required),
 		v.Field(&g.Repository, v.Required),
-		v.Field(&g.Service, v.Required),
 		v.Field(&g.Branch, v.Required),
 		v.Field(&g.Sha, v.Required),
-		v.Field(&g.ImagePath, v.Required),
 	)
 }

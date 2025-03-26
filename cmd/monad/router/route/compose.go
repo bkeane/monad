@@ -12,6 +12,7 @@ import (
 
 type Compose struct {
 	param.Registry
+	param.Target
 	Dockerfile   string `arg:"-f,--file" help:"path to dockerfile"`
 	BuildContext string `arg:"--build-context" help:"path to build context"`
 }
@@ -37,8 +38,8 @@ func (c *Compose) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	name := r.Git.Service
-	tag := fmt.Sprintf("%s/%s:%s", c.Registry.Client.Url, r.Git.ImagePath, r.Git.Branch)
+	name := c.Target.Service
+	tag := fmt.Sprintf("%s/%s:%s", c.Registry.Client.Url, c.Target.Image, r.Git.Branch)
 
 	compose := &ctypes.Config{}
 
