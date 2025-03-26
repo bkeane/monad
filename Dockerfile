@@ -4,7 +4,11 @@ ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
 
-COPY . .
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go mod download
+
+COPY cmd pkg internal ./
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o monad ./cmd/monad
