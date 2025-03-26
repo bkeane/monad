@@ -17,14 +17,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo in dev"
       "run": "monad destroy"
   "destroy-dev-echo-oauth":
     "env":
@@ -37,14 +37,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo-oauth in dev"
       "run": "monad destroy"
   "destroy-dev-echo-vpc":
     "env":
@@ -57,14 +57,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo-vpc in dev"
       "run": "monad destroy"
   "destroy-prod-echo":
     "env":
@@ -77,14 +77,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo in prod"
       "run": "monad destroy"
   "destroy-prod-echo-oauth":
     "env":
@@ -97,14 +97,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo-oauth in prod"
       "run": "monad destroy"
   "destroy-prod-echo-vpc":
     "env":
@@ -117,14 +117,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "destroy"
+    - "name": "destroy echo-vpc in prod"
       "run": "monad destroy"
   "dev":
     "name": "dev"

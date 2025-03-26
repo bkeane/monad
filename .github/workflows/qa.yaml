@@ -54,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: build setup
-        uses: ./.github/workflows/build.yml
+        uses: ./.github/actions/monad-build-setup
       - name: publish
         run: |
           docker buildx build \

@@ -17,14 +17,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo to dev"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
         --env file://e2e/echo/.env.tmpl"
@@ -39,14 +39,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo-oauth to dev"
       "run": "monad deploy --auth auth0 --image bkeane/monad/echo --disk 1024 --memory
         256 --timeout 10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule
         file://e2e/echo/rule.json.tmpl --env file://e2e/echo/.env.tmpl"
@@ -61,14 +61,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "dev spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.dev.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo-vpc to dev"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
         --env file://e2e/echo/.env.tmpl --sg-ids basic --sn-ids private-a,private-b"
@@ -83,14 +83,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo to prod"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
         --env file://e2e/echo/.env.tmpl"
@@ -105,14 +105,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo-oauth to prod"
       "run": "monad deploy --auth auth0 --image bkeane/monad/echo --disk 1024 --memory
         256 --timeout 10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule
         file://e2e/echo/rule.json.tmpl --env file://e2e/echo/.env.tmpl"
@@ -127,14 +127,14 @@
       "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
-    - "name": "setup monad"
+    - "name": "prod spoke config"
       "uses": "bkeane/monad-action@main"
       "with":
         "registry_id": "${{ env.MONAD_REGISTRY_ID }}"
         "registry_region": "${{ env.MONAD_REGISTRY_REGION }}"
         "role_arn": "${{ needs.prod.outputs.roleArn }}"
         "version": "latest"
-    - "name": "deploy"
+    - "name": "deploy echo-vpc to prod"
       "run": "monad deploy --image bkeane/monad/echo --disk 1024 --memory 256 --timeout
         10 --api kaixo --policy file://e2e/echo/policy.json.tmpl --rule file://e2e/echo/rule.json.tmpl
         --env file://e2e/echo/.env.tmpl --sg-ids basic --sn-ids private-a,private-b"

@@ -131,6 +131,6 @@ resource "local_file" "untag" {
 
 resource "local_file" "build" {
   content  = module.hub.build
-  filename = "../../../.github/workflows/build.yml"
+  filename = "../../../.github/actions/monad-build-setup/action.yml"
 }
 
