@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bkeane/monad/pkg/param"
 	"github.com/bkeane/monad/pkg/saga"
@@ -21,7 +22,9 @@ func (d *Deploy) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	image, err := d.Registry.GetImage(ctx, d.Target.Image, r.Git.Branch)
+	img := strings.Split(d.Target.Image, ":")
+
+	image, err := d.Registry.GetImage(ctx, img[0], img[1])
 	if err != nil {
 		return err
 	}

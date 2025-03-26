@@ -39,7 +39,7 @@ func (e *Ecr) Route(ctx context.Context, r Root) error {
 			return err
 		}
 
-		if err := e.Registry.Untag(ctx, e.Untag.Target.Image, r.Git.Branch); err != nil {
+		if err := e.Registry.Untag(ctx, e.Untag.Target.ImagePath, e.Untag.Target.ImageTag); err != nil {
 			return err
 		}
 	case r.Ecr.Tag != nil:
@@ -47,7 +47,7 @@ func (e *Ecr) Route(ctx context.Context, r Root) error {
 			return err
 		}
 
-		fmt.Printf("%s/%s:%s", e.Registry.Client.Url, e.Tag.Target.Image, r.Git.Branch)
+		fmt.Printf("%s/%s", e.Registry.Client.Url, e.Tag.Target.Image)
 	}
 
 	return nil
