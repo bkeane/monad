@@ -8,6 +8,9 @@
 "jobs":
   "untag":
     "name": "untag"
+    "permissions":
+      "contents": "read"
+      "id-token": "write"
     "runs-on": "ubuntu-latest"
     "steps":
     - "name": "setup"
@@ -18,7 +21,7 @@
         "role_arn": "arn:aws:iam::677771948337:role/monad-hub-oidc-role"
         "version": "latest"
     - "name": "untag bkeane/monad/echo"
-      "run": "monad ecr untag --image bkeane/monad/echo"
+      "run": "monad ecr untag --image bkeane/monad/echo:${{env.MONAD_BRANCH}}"
 "name": "Untag"
 "on":
   "workflow_call": {}
