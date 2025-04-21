@@ -6,6 +6,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue(), svgLoader()],
   build: {
-    outDir: 'static',
+    emptyOutDir: true,
+    outDir: '../docs',
   },
 })
