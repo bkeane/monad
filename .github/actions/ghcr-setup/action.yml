@@ -22,10 +22,18 @@ runs:
 
     - name: Configure Docker Buildx
       uses: docker/setup-buildx-action@v3
+      with:
+        version: latest
+    
+    - name: Set up Docker Compose
+      uses: docker/setup-compose-action@v1
+      with:
+        version: latest
 
     - name: Enable containerd registry
       uses: docker/setup-docker-action@v4
       with:
+        version: latest
         daemon-config: |
           {
             "debug": true,

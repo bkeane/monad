@@ -1,8 +1,13 @@
 <template> 
-    <div>
-        <h2>More</h2>
-        <pre><code class="bash">
+    <div class="grid">
+            <div>
+                <h2>And more...</h2>
+
+<pre><code class="bash">
 monad -h
-        </code></pre>
+
+</code></pre>
+            </div>
+    <div></div>
     </div>
 </template>

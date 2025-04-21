@@ -1,8 +1,7 @@
 <template>
     <div>
         <h2>Install</h2>
-        <h6><a href="https://github.com/bkeane/monad/releases">Releases</a></h6>
-        <h5>Homebrew</h5>
+        <h4>Homebrew (or <a href="https://github.com/bkeane/monad/releases">Releases</a>)</h4>
         <div class="grid">
             <div>
                 <pre><code class="bash">
