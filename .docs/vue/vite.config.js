@@ -8,6 +8,6 @@ export default defineConfig({
   base: '/monad/',
   build: {
     emptyOutDir: true,
-    outDir: '../docs',
+    outDir: '../../docs',
   },
 })
