@@ -30,7 +30,11 @@ terraform:
 
 # open docs in browser for development
 docs: 
-    cd docs/vue && npm run dev
+    cd .docs/vue && npm run dev
+
+# build docs
+build-docs:
+    cd .docs/vue && npm run build
 
 # build diagrams
 diagrams:
@@ -39,23 +43,23 @@ diagrams:
     # We are using the main branch of mermaid-cli for icon support.
     # In the future, when this is in a release, we should lock to a specific version.
     
-    rm docs/vue/assets/diagrams/*.svg
+    rm .docs/vue/assets/diagrams/*.svg
 
-    for file in docs/mermaid/deployments/*.md; do
+    for file in .docs/mermaid/deployments/*.md; do
         npx github:mermaid-js/mermaid-cli \
         --iconPacks @iconify-json/bitcoin-icons @iconify-json/logos \
         --theme dark \
         --backgroundColor transparent \
         --cssFile $(dirname $file)/style.css \
         --input $file \
-        --output docs/vue/assets/diagrams/$(basename $file .md).svg
+        --output .docs/vue/assets/diagrams/$(basename $file .md).svg
     done
 
-    for file in docs/mermaid/git/*.md; do
+    for file in .docs/mermaid/git/*.md; do
          npx github:mermaid-js/mermaid-cli \
         --iconPacks @iconify-json/bitcoin-icons @iconify-json/logos \
         --theme neutral \
         --backgroundColor transparent \
         --input $file \
-        --output docs/vue/assets/diagrams/$(basename $file .md).svg
+        --output .docs/vue/assets/diagrams/$(basename $file .md).svg
     done
