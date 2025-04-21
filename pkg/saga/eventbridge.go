@@ -47,7 +47,7 @@ func (s *EventBridge) Do(ctx context.Context) error {
 		Str("bus", busName).
 		Str("rule", s.config.ResourceName()).
 		Str("action", action).
-		Msg("ensuring eventbridge rules")
+		Msg("eventbridge")
 
 	if err := s.Ensure(ctx); err != nil {
 		return err
@@ -65,7 +65,7 @@ func (s *EventBridge) Undo(ctx context.Context) error {
 		Str("bus", "*").
 		Str("rule", s.config.ResourceName()).
 		Str("action", "delete").
-		Msg("destroying eventbridge rules")
+		Msg("eventbridge")
 
 	if err := s.Destroy(ctx); err != nil {
 		return err

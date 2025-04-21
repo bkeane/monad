@@ -28,9 +28,9 @@ func (s Lambda) Init(ctx context.Context, c param.Aws) *Lambda {
 
 func (s *Lambda) Do(ctx context.Context, image registry.ImagePointer) error {
 	log.Info().
+		Str("action", "put").
 		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.FunctionArn()).
-		Msg("ensuring lambda function")
+		Msg("lambda")
 
 	if _, err := s.PutFunction(ctx, image); err != nil {
 		return err
@@ -41,9 +41,9 @@ func (s *Lambda) Do(ctx context.Context, image registry.ImagePointer) error {
 
 func (s *Lambda) Undo(ctx context.Context) error {
 	log.Info().
+		Str("action", "delete").
 		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.FunctionArn()).
-		Msg("destroying lambda function")
+		Msg("lambda")
 
 	if _, err := s.DeleteFunction(ctx); err != nil {
 		return err

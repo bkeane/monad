@@ -2,16 +2,12 @@ package param
 
 import (
 	"context"
-	"embed"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-//go:embed defaults/*
-var defaults embed.FS
-
 func ReadDefault(name string) (string, error) {
-	content, err := defaults.ReadFile(name)
+	content, err := Defaults.ReadFile(name)
 	if err != nil {
 		return "", err
 	}

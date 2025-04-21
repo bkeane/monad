@@ -24,9 +24,10 @@ func (s Cloudwatch) Init(ctx context.Context, c param.Aws) *Cloudwatch {
 
 func (s *Cloudwatch) Do(ctx context.Context) error {
 	log.Info().
-		Str("arn", s.config.CloudwatchLogGroup()).
+		Str("action", "put").
+		Str("group", s.config.CloudwatchLogGroup()).
 		Int32("retention", s.config.CloudwatchLogRetention()).
-		Msg("ensuring log group exists")
+		Msg("cloudwatch")
 
 	if err := s.PutLogGroup(ctx); err != nil {
 		return err
@@ -41,8 +42,9 @@ func (s *Cloudwatch) Do(ctx context.Context) error {
 
 func (s *Cloudwatch) Undo(ctx context.Context) error {
 	log.Info().
-		Str("arn", s.config.CloudwatchLogGroup()).
-		Msg("deleting log group")
+		Str("action", "delete").
+		Str("group", s.config.CloudwatchLogGroup()).
+		Msg("cloudwatch")
 
 	if err := s.DeleteLogGroup(ctx); err != nil {
 		return err

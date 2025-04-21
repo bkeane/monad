@@ -3,6 +3,7 @@ package param
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,12 +14,12 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	"github.com/aws/smithy-go"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type Registry struct {
 	ecrc   *ecr.Client      `arg:"-" json:"-"`
-	git    Git              `arg:"-" json:"-"`
 	Client *registry.Client `arg:"-" json:"-"`
 	Id     string           `arg:"--ecr-id,env:MONAD_REGISTRY_ID" placeholder:"id" help:"ecr registry id" default:"caller-account-id"`
 	Region string           `arg:"--ecr-region,env:MONAD_REGISTRY_REGION" placeholder:"name" help:"ecr registry region" default:"caller-region"`
@@ -97,22 +98,84 @@ func (r *Registry) Login(ctx context.Context) error {
 
 func (r *Registry) Untag(ctx context.Context, repo, tag string) error {
 	log.Info().
-		Str("registry", r.Client.Url).
-		Str("repository", repo).
+		Str("action", "untag").
+		Str("registry", r.Id).
+		Str("region", r.Region).
+		Str("repo", repo).
 		Str("tag", tag).
-		Msg("deleting tag")
+		Msg("ecr")
 
 	return r.Client.Untag(ctx, repo, tag)
 }
 
 func (r *Registry) GetImage(ctx context.Context, repo, tag string) (registry.ImagePointer, error) {
 	log.Info().
-		Str("registry", r.Client.Url).
-		Str("repository", repo).
+		Str("action", "get").
+		Str("registry", r.Id).
+		Str("region", r.Region).
+		Str("repo", repo).
 		Str("tag", tag).
-		Msg("fetching image")
+		Msg("ecr")
 
 	return r.Client.FromPath(ctx, repo, tag)
+}
+
+func (r *Registry) CreateRepository(ctx context.Context, repo string) error {
+	var apiErr smithy.APIError
+
+	log.Info().
+		Str("action", "put").
+		Str("registry", r.Id).
+		Str("region", r.Region).
+		Str("repo", repo).
+		Msg("ecr")
+
+	err := r.Client.CreateRepository(ctx, repo)
+	if err != nil {
+		switch errors.As(err, &apiErr) {
+		case apiErr.ErrorCode() == "RepositoryAlreadyExistsException":
+			log.Warn().
+				Str("registry", r.Id).
+				Str("region", r.Region).
+				Str("repo", repo).
+				Msg("repository already exists")
+			return nil
+
+		default:
+			return err
+
+		}
+	}
+
+	return nil
+}
+
+func (r *Registry) DeleteRepository(ctx context.Context, repo string) error {
+	var apiErr smithy.APIError
+
+	log.Info().
+		Str("action", "delete").
+		Str("registry", r.Id).
+		Str("region", r.Region).
+		Str("repo", repo).
+		Msg("ecr")
+
+	err := r.Client.DeleteRepository(ctx, repo)
+	if err != nil {
+		switch errors.As(err, &apiErr) {
+		case apiErr.ErrorCode() == "RepositoryNotFoundException":
+			log.Warn().
+				Str("registry", r.Id).
+				Str("region", r.Region).
+				Str("repo", repo).
+				Msg("repository not found")
+			return nil
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func parseToken(token *string) (username string, password string, err error) {

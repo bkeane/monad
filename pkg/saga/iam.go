@@ -24,37 +24,38 @@ func (s IAM) Init(ctx context.Context, c param.Aws) *IAM {
 
 func (s *IAM) Do(ctx context.Context) error {
 	log.Info().
-		Str("name", s.config.EniRoleName()).
-		Str("arn", s.config.EniRoleArn()).
-		Msg("ensuring eni role")
+		Str("action", "put").
+		Str("role", s.config.EniRoleName()).
+		Msg("iam")
 
 	if err := s.PutEniRole(ctx); err != nil {
 		return err
 	}
 
 	log.Info().
-		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.PolicyArn()).
-		Msg("ensuring policy")
+		Str("action", "put").
+		Str("policy", s.config.ResourceName()).
+		Msg("iam")
 
 	if err := s.PutPolicy(ctx); err != nil {
 		return err
 	}
 
 	log.Info().
-		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.RoleArn()).
-		Msg("ensuring role")
+		Str("action", "put").
+		Str("role", s.config.ResourceName()).
+		Msg("iam")
 
 	if err := s.PutRole(ctx); err != nil {
 		return err
 	}
 
 	log.Info().
-		Str("role", s.config.RoleArn()).
-		Str("policy", s.config.PolicyArn()).
-		Str("boundary", s.config.BoundaryPolicyArn()).
-		Msg("ensuring role policy attachment")
+		Str("action", "attach").
+		Str("role", s.config.ResourceName()).
+		Str("policy", s.config.ResourceName()).
+		Str("boundary", s.config.BoundaryPolicy()).
+		Msg("iam")
 
 	if err := s.AttachRolePolicy(ctx); err != nil {
 		return err
@@ -65,28 +66,29 @@ func (s *IAM) Do(ctx context.Context) error {
 
 func (s *IAM) Undo(ctx context.Context) error {
 	log.Info().
-		Str("role", s.config.RoleArn()).
-		Str("policy", s.config.PolicyArn()).
-		Str("boundary", s.config.BoundaryPolicyArn()).
-		Msg("deleting role policy attachment")
+		Str("action", "detach").
+		Str("role", s.config.ResourceName()).
+		Str("policy", s.config.ResourceName()).
+		Str("boundary", s.config.BoundaryPolicy()).
+		Msg("iam")
 
 	if err := s.DetachRolePolicy(ctx); err != nil {
 		return err
 	}
 
 	log.Info().
-		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.RoleArn()).
-		Msg("deleting role")
+		Str("action", "delete").
+		Str("role", s.config.ResourceName()).
+		Msg("iam")
 
 	if err := s.DeleteRole(ctx); err != nil {
 		return err
 	}
 
 	log.Info().
-		Str("name", s.config.ResourceName()).
-		Str("arn", s.config.PolicyArn()).
-		Msg("deleting policy")
+		Str("action", "delete").
+		Str("policy", s.config.ResourceName()).
+		Msg("iam")
 
 	if err := s.DeletePolicy(ctx); err != nil {
 		return err

@@ -7,21 +7,15 @@ import (
 	"github.com/bkeane/monad/pkg/param"
 )
 
-type Untag struct {
-	param.Target
-}
-
-type Tag struct {
-	param.Target
-}
-
-type Login struct{}
+type SubCommand struct{}
 
 type Ecr struct {
 	param.Registry
-	Untag *Untag `arg:"subcommand:untag"`
-	Login *Login `arg:"subcommand:login"`
-	Tag   *Tag   `arg:"subcommand:tag"`
+	Init   *SubCommand `arg:"subcommand:init" help:"initialize a repository"`
+	Delete *SubCommand `arg:"subcommand:delete" help:"delete a repository"`
+	Tag    *SubCommand `arg:"subcommand:tag" help:"tag an image"`
+	Untag  *SubCommand `arg:"subcommand:untag" help:"untag an image"`
+	Login  *SubCommand `arg:"subcommand:login" help:"login to a registry"`
 }
 
 func (e *Ecr) Route(ctx context.Context, r Root) error {
@@ -35,19 +29,19 @@ func (e *Ecr) Route(ctx context.Context, r Root) error {
 			return err
 		}
 	case r.Ecr.Untag != nil:
-		if err := e.Untag.Target.Validate(r.Git); err != nil {
-			return err
-		}
-
-		if err := e.Registry.Untag(ctx, e.Untag.Target.ImagePath, e.Untag.Target.ImageTag); err != nil {
+		if err := e.Registry.Untag(ctx, r.Service.ImagePath, r.Service.ImageTag); err != nil {
 			return err
 		}
 	case r.Ecr.Tag != nil:
-		if err := e.Tag.Target.Validate(r.Git); err != nil {
+		fmt.Printf("%s/%s", e.Registry.Client.Url, r.Service.Image)
+	case r.Ecr.Init != nil:
+		if err := e.Registry.CreateRepository(ctx, r.Service.ImagePath); err != nil {
 			return err
 		}
-
-		fmt.Printf("%s/%s", e.Registry.Client.Url, e.Tag.Target.Image)
+	case r.Ecr.Delete != nil:
+		if err := e.Registry.DeleteRepository(ctx, r.Service.ImagePath); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -30,6 +30,7 @@ const (
 type Client struct {
 	Url   string
 	token string
+	ecrc  *ecr.Client
 }
 
 type Catalogue struct {
@@ -107,8 +108,8 @@ func Init(ctx context.Context, awsconfig aws.Config, url string) (*Client, error
 	r := &Client{}
 	r.Url = url
 
-	ecrc := ecr.NewFromConfig(awsconfig)
-	ecrauth, err := ecrc.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
+	r.ecrc = ecr.NewFromConfig(awsconfig)
+	ecrauth, err := r.ecrc.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +136,20 @@ func (r *Client) GetRepositories(ctx context.Context) (Catalogue, error) {
 	}
 
 	return catalogue, nil
+}
+
+func (r *Client) CreateRepository(ctx context.Context, repository string) error {
+	_, err := r.ecrc.CreateRepository(ctx, &ecr.CreateRepositoryInput{
+		RepositoryName: aws.String(repository),
+	})
+	return err
+}
+
+func (r *Client) DeleteRepository(ctx context.Context, repository string) error {
+	_, err := r.ecrc.DeleteRepository(ctx, &ecr.DeleteRepositoryInput{
+		RepositoryName: aws.String(repository),
+	})
+	return err
 }
 
 func (r *Client) GetTags(ctx context.Context, repository string) (Tags, error) {
