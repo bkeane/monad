@@ -62,7 +62,7 @@ func (s *ApiGatewayV2) Do(ctx context.Context) error {
 		Str("route", s.config.RouteKey()).
 		Str("auth", s.config.ApiGateway.Auth).
 		Str("action", action).
-		Msg("ensuring apigatewayv2 routes")
+		Msg("apigatewayv2")
 
 	return s.Ensure(ctx)
 }
@@ -73,7 +73,7 @@ func (s *ApiGatewayV2) Undo(ctx context.Context) error {
 		Str("route", s.config.RouteKey()).
 		Str("auth", s.config.ApiGateway.Auth).
 		Str("action", "delete").
-		Msg("destroying apigatewayv2 routes")
+		Msg("apigatewayv2")
 	return s.Destroy(ctx)
 }
 
@@ -251,9 +251,10 @@ func (s *ApiGatewayV2) DeleteRoute(ctx context.Context, route Route) (*apigatewa
 	}
 
 	log.Debug().
+		Str("action", "delete").
 		Str("api_id", route.ApiId).
 		Str("route_key", s.config.RouteKey()).
-		Msg("deleting route")
+		Msg("apigatewayv2")
 
 	return s.config.ApiGateway.Client.DeleteRoute(ctx, input)
 }

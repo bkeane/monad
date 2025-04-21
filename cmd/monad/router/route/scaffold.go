@@ -2,51 +2,54 @@ package route
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/bkeane/monad/pkg/param"
+
 	"github.com/rs/zerolog/log"
 )
 
-//go:embed scaffolds/*
-var templates embed.FS
-
 type Scaffold struct {
-	Scaffold string `arg:"positional,required" help:"go, python, node, ruby"`
-	Name     string `arg:"positional,required" help:"function name"`
+	Scaffold string `arg:"positional,required" help:"go, python, node, ruby, shell"`
+	Policy   bool   `arg:"--policy" help:"create policy.json.tmpl"`
+	Role     bool   `arg:"--role" help:"create role.json.tmpl"`
+	Env      bool   `arg:"--env" help:"create .env.tmpl"`
 }
 
 func (s *Scaffold) Route(ctx context.Context, r Root) error {
-	scaffold := fmt.Sprintf("scaffolds/%s", s.Scaffold)
-	if _, err := templates.Open(scaffold); err != nil {
+	scaffoldPath := filepath.Join("scaffolds", s.Scaffold)
+	if _, err := param.Scaffolds.Open(scaffoldPath); err != nil {
 		return fmt.Errorf("invalid scaffold type '%s'", s.Scaffold)
 	}
 
-	if err := os.MkdirAll(s.Name, 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	err := fs.WalkDir(templates, scaffold, func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(param.Scaffolds, scaffoldPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		relPath := strings.TrimPrefix(path, scaffold)
+		relPath := strings.TrimPrefix(path, scaffoldPath)
 		if relPath == "" {
 			return nil
 		}
 
-		destPath := filepath.Join(s.Name, relPath)
+		destPath := filepath.Base(relPath)
 
 		if d.IsDir() {
-			return os.MkdirAll(destPath, 0755)
+			return nil
 		}
 
-		content, err := templates.ReadFile(path)
+		if _, err := os.Stat(destPath); err == nil {
+			log.Info().Str("file", destPath).Msgf("skipping")
+			return nil
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to check file existence: %w", err)
+		}
+
+		content, err := param.Scaffolds.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed to read embedded file: %w", err)
 		}
@@ -54,10 +57,43 @@ func (s *Scaffold) Route(ctx context.Context, r Root) error {
 		return os.WriteFile(destPath, content, 0644)
 	})
 
+	writeDefault := func(name string) error {
+		defaultPath := filepath.Join("defaults", name)
+		policy, err := param.Defaults.ReadFile(defaultPath)
+		if err != nil {
+			return fmt.Errorf("failed to open policy template: %w", err)
+		}
+
+		if _, err := os.Stat(name); err == nil {
+			log.Info().Str("file", name).Msgf("skipping")
+			return nil
+		}
+
+		return os.WriteFile(name, policy, 0644)
+	}
+
+	if s.Policy {
+		if err := writeDefault("policy.json.tmpl"); err != nil {
+			return fmt.Errorf("failed to write policy template: %w", err)
+		}
+	}
+
+	if s.Role {
+		if err := writeDefault("role.json.tmpl"); err != nil {
+			return fmt.Errorf("failed to write role template: %w", err)
+		}
+	}
+
+	if s.Env {
+		if err := writeDefault(".env.tmpl"); err != nil {
+			return fmt.Errorf("failed to write env template: %w", err)
+		}
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to copy scaffold: %w", err)
 	}
 
-	log.Info().Msgf("Initialized new %s function in ./%s", s.Scaffold, s.Name)
+	log.Info().Msgf("initialized new %s scaffold in current directory", s.Scaffold)
 	return nil
 }

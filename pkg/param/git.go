@@ -70,12 +70,11 @@ func (g *Git) Validate() error {
 	}
 
 	log.Info().
-		Str("cwd", g.cwd).
 		Str("owner", g.Owner).
 		Str("repo", g.Repository).
 		Str("branch", g.Branch).
-		Str("sha", g.Sha).
-		Msg("fetching git")
+		Str("sha", truncate(g.Sha)).
+		Msg("git")
 
 	return v.ValidateStruct(g,
 		v.Field(&g.Chdir, v.Required),
@@ -84,4 +83,11 @@ func (g *Git) Validate() error {
 		v.Field(&g.Branch, v.Required),
 		v.Field(&g.Sha, v.Required),
 	)
+}
+
+func truncate(s string) string {
+	if len(s) <= 7 {
+		return s
+	}
+	return s[:7]
 }

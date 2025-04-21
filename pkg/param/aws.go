@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bkeane/monad/internal/tmpl"
+	"github.com/rs/zerolog/log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	dotenvlib "github.com/joho/godotenv"
@@ -13,7 +14,7 @@ import (
 
 type Aws struct {
 	Git          Git               `arg:"-" json:"-"`
-	Target       Target            `arg:"-" json:"-"`
+	Service      Service           `arg:"-" json:"-"`
 	TemplateData tmpl.TemplateData `arg:"-" json:"-"`
 	Caller
 	Registry
@@ -25,13 +26,9 @@ type Aws struct {
 	EventBridge
 }
 
-func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, target Target) error {
+func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, service Service) error {
 	c.Git = git
-	c.Target = target
-
-	if err := c.Target.Validate(c.Git); err != nil {
-		return err
-	}
+	c.Service = service
 
 	if err := c.Caller.Validate(ctx, awsconfig); err != nil {
 		return err
@@ -90,6 +87,11 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, targe
 	c.TemplateData.EventBridge.Rule.Arn = c.ResourcePath()
 	c.TemplateData.EventBridge.Bus.Name = c.EventBridge.BusName
 
+	log.Info().
+		Str("region", awsconfig.Region).
+		Str("account", c.Caller.AccountId).
+		Msgf("aws")
+
 	return nil
 }
 
@@ -100,7 +102,7 @@ func (c *Aws) ResourceNamePrefix() string {
 }
 
 func (c *Aws) ResourceName() string {
-	return fmt.Sprintf("%s-%s", c.ResourceNamePrefix(), c.Target.Service)
+	return fmt.Sprintf("%s-%s", c.ResourceNamePrefix(), c.Service.Name)
 }
 
 func (c *Aws) ResourcePathPrefix() string {
@@ -108,7 +110,7 @@ func (c *Aws) ResourcePathPrefix() string {
 }
 
 func (c *Aws) ResourcePath() string {
-	return fmt.Sprintf("%s/%s", c.ResourcePathPrefix(), c.Target.Service)
+	return fmt.Sprintf("%s/%s", c.ResourcePathPrefix(), c.Service.Name)
 }
 
 func (c *Aws) CloudwatchLogGroup() string {
@@ -151,6 +153,14 @@ func (c *Aws) PolicyDocument() (string, error) {
 
 func (c *Aws) PolicyArn() string {
 	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.Caller.AccountId, c.ResourceName())
+}
+
+func (c *Aws) BoundaryPolicy() string {
+	if strings.HasPrefix(c.Iam.BoundaryPolicy, "arn:aws:iam::") {
+		return strings.Split(c.Iam.BoundaryPolicy, ":policy/")[1]
+	}
+
+	return c.Iam.BoundaryPolicy
 }
 
 func (c *Aws) BoundaryPolicyArn() string {
@@ -219,7 +229,7 @@ func (c *Aws) EventBridgeStatementId() string {
 func (c *Aws) Tags() map[string]string {
 	return map[string]string{
 		"Monad":      "true",
-		"Service":    c.Target.Service,
+		"Service":    c.Service.Name,
 		"Owner":      c.Git.Owner,
 		"Repository": c.Git.Repository,
 		"Branch":     c.Git.Branch,
