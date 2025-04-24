@@ -2,11 +2,24 @@
     <div class="grid">
         <div>
             <h2>Publish</h2>
-            <pre><code class="bash">
-{{`docker build -t $(monad ecr tag <service>) --push`}}
-        </code></pre>
+            <Code :code="code" />
         </div>
         <div>
         </div>
     </div>
 </template>
+
+<script>
+import Code from '../Common/Code.vue';
+import endent from 'endent';
+
+export default {
+    components: { Code },
+    data() {
+        return {
+            code: endent`
+docker build -t $(monad --service <name> ecr tag) --push .`
+        }
+    }
+}
+</script>
