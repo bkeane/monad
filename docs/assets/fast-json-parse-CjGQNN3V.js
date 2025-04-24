@@ -1,0 +1,1 @@
+var e,t;function n(){if(t)return e;t=1;function r(s){if(!(this instanceof r))return new r(s);this.err=null,this.value=null;try{this.value=JSON.parse(s)}catch(i){this.err=i}}return e=r,e}export{n as r};

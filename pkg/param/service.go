@@ -10,8 +10,8 @@ import (
 )
 
 type Service struct {
-	Name      string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" help:"deployed service name" default:"${basename $PWD}"`
-	Image     string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" help:"deployed service ecr image" default:"${owner}/${repo}/${service}:${branch}"`
+	Name      string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" help:"service name" default:"basename $PWD"`
+	Image     string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" help:"service ecr image path" default:"${owner}/${repo}/${service}:${branch}"`
 	ImagePath string `arg:"-"`
 	ImageTag  string `arg:"-"`
 }

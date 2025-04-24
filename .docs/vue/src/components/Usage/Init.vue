@@ -1,23 +1,19 @@
 <template>
-        <div class="grid">
-            <div>
-                <h2>Init</h2>
-                <pre><code class="bash">
-git init
-git add origin https://github.com/{{ git.owner }}/{{ git.repo }}
-git checkout -b {{ git.branch }}
-monad init {{ `<language>` }}
-
-</code></pre>
-            </div>
-            <div style="margin-top: 25%; margin-left: 10%;">
-                <git-graph />
-            </div>
+    <div class="grid">
+        <div>
+            <h2>Init</h2>
+            <Code :code="code" />
         </div>
+        <div style="margin-top: 25%; margin-left: 10%;">
+            <GitGraph />
+        </div>
+    </div>
 </template>
 
 <script>
 import GitGraph from '../../../assets/diagrams/git-graph-1.svg?component';
+import Code from '../Common/Code.vue';
+import endent from 'endent';
 
 export default {
     props: {
@@ -33,7 +29,18 @@ export default {
         },
     },
     components: {
+        Code,
         GitGraph
+    },
+    data() {
+        return {
+            code: endent`
+git init
+git add origin https://github.com/${ this.git.owner }/${ this.git.repo }
+git checkout -b ${ this.git.branch }
+monad init <language>
+            `
+        }
     }
 }
 </script>

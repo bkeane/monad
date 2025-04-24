@@ -1,10 +1,12 @@
 <template>
-    <Install :git="git"/>
-    <Init :git="git"/>
-    <Publish />
-    <Deploy :git="git" :resource="resource" />
-    <Destroy />
-    <More />
+    <div class="outer">
+        <Install :git="git" />
+        <Init :git="git" />
+        <Publish />
+        <Deploy :git="git" :resource="resource" />
+        <Destroy />
+        <More />
+    </div>
 </template>
 
 <script>
@@ -68,3 +70,9 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.outer {
+    margin-left: 15%;
+}
+</style>
