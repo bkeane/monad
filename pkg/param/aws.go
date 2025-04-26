@@ -12,6 +12,17 @@ import (
 	dotenvlib "github.com/joho/godotenv"
 )
 
+type StateMetadata struct {
+	Service string `json:",omitempty"`
+	Repo    string `json:",omitempty"`
+	Sha     string `json:",omitempty"`
+	Branch  string `json:",omitempty"`
+	Owner   string `json:",omitempty"`
+	Image   string `json:",omitempty"`
+	Api     string `json:",omitempty"`
+	Bus     string `json:",omitempty"`
+}
+
 type Aws struct {
 	Git          Git               `arg:"-" json:"-"`
 	Service      Service           `arg:"-" json:"-"`
@@ -84,8 +95,8 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, servi
 	c.TemplateData.ApiGateway.Region = c.ApiGateway.Region
 	c.TemplateData.ApiGateway.Id = c.ApiGateway.Id
 	c.TemplateData.EventBridge.Region = c.EventBridge.Region
-	c.TemplateData.EventBridge.Rule.Arn = c.ResourcePath()
-	c.TemplateData.EventBridge.Bus.Name = c.EventBridge.BusName
+	c.TemplateData.EventBridge.RuleArn = c.ResourcePath()
+	c.TemplateData.EventBridge.BusName = c.EventBridge.BusName
 
 	log.Info().
 		Str("region", awsconfig.Region).
@@ -131,7 +142,30 @@ func (c *Aws) Env() (map[string]string, error) {
 		return nil, err
 	}
 
-	return dotenvlib.Parse(strings.NewReader(env))
+	envMap, err := dotenvlib.Parse(strings.NewReader(env))
+	if err != nil {
+		return nil, err
+	}
+
+	// Inject default environment variables
+	// Generally useful and used for efficient state lookup
+	metadata := c.ServiceStateMetadata()
+	envMap["MONAD_SERVICE"] = metadata.Service
+	envMap["MONAD_REPO"] = metadata.Repo
+	envMap["MONAD_SHA"] = metadata.Sha
+	envMap["MONAD_BRANCH"] = metadata.Branch
+	envMap["MONAD_OWNER"] = metadata.Owner
+	envMap["MONAD_IMAGE"] = metadata.Image
+
+	if c.ApiGateway.Id != "" {
+		envMap["MONAD_API"] = c.ApiGateway.Api
+	}
+
+	if c.EventBridge.RuleTemplate != "" {
+		envMap["MONAD_BUS"] = c.EventBridge.BusName
+	}
+
+	return envMap, nil
 }
 
 func (c *Aws) FunctionArn() string {
@@ -227,12 +261,24 @@ func (c *Aws) EventBridgeStatementId() string {
 }
 
 func (c *Aws) Tags() map[string]string {
+	metadata := c.ServiceStateMetadata()
+
 	return map[string]string{
-		"Monad":      "true",
-		"Service":    c.Service.Name,
-		"Owner":      c.Git.Owner,
-		"Repository": c.Git.Repository,
-		"Branch":     c.Git.Branch,
-		"Sha":        c.Git.Sha,
+		"Monad":   "true",
+		"Service": metadata.Service,
+		"Owner":   metadata.Owner,
+		"Repo":    metadata.Repo,
+		"Branch":  metadata.Branch,
+		"Sha":     metadata.Sha,
+	}
+}
+
+func (c *Aws) ServiceStateMetadata() *StateMetadata {
+	return &StateMetadata{
+		Service: c.Service.Name,
+		Owner:   c.Git.Owner,
+		Repo:    c.Git.Repository,
+		Branch:  c.Git.Branch,
+		Sha:     c.Git.Sha,
 	}
 }

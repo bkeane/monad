@@ -16,6 +16,7 @@ type Root struct {
 	AwsConfig aws.Config `arg:"-" json:"-"`
 	Deploy    *Deploy    `arg:"subcommand:deploy" help:"deploy a service"`
 	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a service"`
+	List      *List      `arg:"subcommand:list" help:"list services"`
 	Ecr       *Ecr       `arg:"subcommand:ecr" help:"ecr commands"`
 	Init      *Scaffold  `arg:"subcommand:init" help:"initialize a service"`
 	Data      *Data      `arg:"subcommand:data" help:"contextual template data"`
