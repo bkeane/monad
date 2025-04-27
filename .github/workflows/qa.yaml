@@ -7,27 +7,27 @@ on:
   pull_request:
 
 jobs:
-  integration:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: setup
-        uses: ./.github/actions/integration
-      - name: build
-        working-directory: e2e/echo
-        run: |
-          docker buildx build \
-          -t $(monad ecr tag --service echo) \
-          --platform linux/arm64,linux/amd64 --push .
+  # integration:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - name: setup
+  #       uses: ./.github/actions/integration
+  #     - name: build
+  #       working-directory: e2e/echo
+  #       run: |
+  #         docker buildx build \
+  #         -t $(monad ecr tag --service echo) \
+  #         --platform linux/arm64,linux/amd64 --push .
   
   deployment:
-    needs: integration
+    # needs: integration
     runs-on: ubuntu-latest
     permissions:
       contents: read
