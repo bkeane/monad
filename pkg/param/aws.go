@@ -280,5 +280,6 @@ func (c *Aws) ServiceStateMetadata() *StateMetadata {
 		Repo:    c.Git.Repository,
 		Branch:  c.Git.Branch,
 		Sha:     c.Git.Sha,
+		Image:   c.Service.Image,
 	}
 }

@@ -44,11 +44,11 @@ func (l *List) Route(ctx context.Context, r Root) error {
 
 	// mutate
 	for _, service := range filtered {
-		service.Sha = safeShorten(service.Sha)
+		service.Sha = shorten(service.Sha)
 	}
 
 	// highlight contextual matches
-	ink := lipgloss.NewStyle().Foreground(lipgloss.Color("150")).Render
+	ink := lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Render
 	for _, service := range filtered {
 		if service.Service == l.Service.Name {
 			service.Service = ink(service.Service)
@@ -62,12 +62,16 @@ func (l *List) Route(ctx context.Context, r Root) error {
 			service.Repo = ink(service.Repo)
 		}
 
-		if safeShorten(service.Sha) == safeShorten(l.Git.Sha) {
+		if shorten(service.Sha) == shorten(l.Git.Sha) {
 			service.Sha = ink(service.Sha)
 		}
 
 		if service.Branch == l.Git.Branch {
 			service.Branch = ink(service.Branch)
+		}
+
+		if service.Image == l.Service.Image {
+			service.Image = ink(service.Image)
 		}
 	}
 
@@ -78,7 +82,7 @@ func (l *List) Route(ctx context.Context, r Root) error {
 	return nil
 }
 
-func safeShorten(sha string) string {
+func shorten(sha string) string {
 	if len(sha) > 7 {
 		return sha[:7]
 	}
