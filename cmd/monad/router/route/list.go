@@ -2,16 +2,18 @@ package route
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bkeane/monad/pkg/param"
 	"github.com/bkeane/monad/pkg/state"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 type List struct {
 	param.Aws   `arg:"-"`
-	AllMonad    bool `arg:"--all-monads"`
-	AllBranches bool `arg:"--all-branches"`
+	All         bool `arg:"--all" help:"show services of all branches of all repos"`
+	AllBranches bool `arg:"--all-branches" help:"show all services of all branches of current repo"`
 }
 
 func (l *List) Route(ctx context.Context, r Root) error {
@@ -26,7 +28,7 @@ func (l *List) Route(ctx context.Context, r Root) error {
 	}
 
 	var filtered []*param.StateMetadata
-	if l.AllMonad {
+	if l.All {
 		filtered = services
 	} else {
 		for _, service := range services {
@@ -45,10 +47,18 @@ func (l *List) Route(ctx context.Context, r Root) error {
 	// mutate
 	for _, service := range filtered {
 		service.Sha = shorten(service.Sha)
+
+		if service.Api == "" {
+			service.Api = "none"
+		}
+
+		if service.Bus == "" {
+			service.Bus = "none"
+		}
 	}
 
 	// highlight contextual matches
-	ink := lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Render
+	ink := lipgloss.NewStyle().Foreground(lipgloss.Color("69")).Render
 	for _, service := range filtered {
 		if service.Service == l.Service.Name {
 			service.Service = ink(service.Service)
@@ -75,11 +85,7 @@ func (l *List) Route(ctx context.Context, r Root) error {
 		}
 	}
 
-	if err := state.DrawTable(ctx, filtered); err != nil {
-		return err
-	}
-
-	return nil
+	return draw(filtered)
 }
 
 func shorten(sha string) string {
@@ -87,4 +93,16 @@ func shorten(sha string) string {
 		return sha[:7]
 	}
 	return sha
+}
+
+func draw(services []*param.StateMetadata) error {
+	tbl := table.New()
+	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha", "Image", "Api", "Bus")
+	for _, service := range services {
+		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, service.Sha, service.Image, service.Api, service.Bus)
+	}
+
+	fmt.Println(tbl.Render())
+
+	return nil
 }

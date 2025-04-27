@@ -2,13 +2,11 @@ package state
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bkeane/monad/pkg/param"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
-	"github.com/charmbracelet/lipgloss/table"
 )
 
 type State struct {
@@ -37,18 +35,6 @@ func (s *State) List(ctx context.Context) ([]*param.StateMetadata, error) {
 	}
 
 	return services, nil
-}
-
-func (s *State) DrawTable(ctx context.Context, services []*param.StateMetadata) error {
-	tbl := table.New()
-	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha", "Image", "Api", "Bus")
-	for _, service := range services {
-		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, service.Sha, service.Image, service.Api, service.Bus)
-	}
-
-	fmt.Println(tbl.Render())
-
-	return nil
 }
 
 func match(function types.FunctionConfiguration) (bool, *param.StateMetadata) {

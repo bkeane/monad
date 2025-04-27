@@ -43,18 +43,14 @@ func (d *Data) Route(ctx context.Context, r Root) error {
 		fmt.Print(rendered)
 
 	case d.Table != nil:
-		tbl, err := d.DrawTable()
-		if err != nil {
-			return err
-		}
-		fmt.Print(*tbl)
+		return d.draw()
 
 	}
 
 	return nil
 }
 
-func (d *Data) DrawTable() (*string, error) {
+func (d *Data) draw() error {
 	tbl := table.New()
 	tbl.Headers("Interpolation", "Result")
 	tbl.Row("{{.Git.Branch}}", d.TemplateData.Git.Branch)
@@ -80,6 +76,6 @@ func (d *Data) DrawTable() (*string, error) {
 	tbl.Row("{{.EventBridge.Region}}", d.TemplateData.EventBridge.Region)
 	tbl.Row("{{.EventBridge.RuleArn}}", d.TemplateData.EventBridge.RuleArn)
 	tbl.Row("{{.EventBridge.BusName}}", d.TemplateData.EventBridge.BusName)
-	result := tbl.Render()
-	return &result, nil
+	fmt.Println(tbl.Render())
+	return nil
 }
