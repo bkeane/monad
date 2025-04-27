@@ -39,10 +39,10 @@ jobs:
           fetch-depth: 0
       - name: setup
         uses: ./.github/actions/deployment
-      - name: deploy
-        working-directory: e2e/echo
         with:
           account: dev
+      - name: deploy
+        working-directory: e2e/echo
         run: |
           monad deploy \
           --service echo \
