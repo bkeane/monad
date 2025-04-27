@@ -41,6 +41,8 @@ jobs:
         uses: ./.github/actions/deployment
       - name: deploy
         working-directory: e2e/echo
+        with:
+          account: dev
         run: |
           monad deploy \
           --service echo \

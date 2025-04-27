@@ -29,7 +29,7 @@
       "checkout": true
       "registry_id": "677771948337"
       "registry_region": "us-west-2"
-      "role_arn": "${{ needs.validation.outputs.role_arn }}"
+      "role_arn": "${{ steps.validation.outputs.role_arn }}"
       "setup_docker": false
       "version": "latest"
   - "name": "export"
