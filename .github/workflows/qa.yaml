@@ -6,89 +6,36 @@ on:
       - main
   pull_request:
 
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v4
-        with:
-          go-version: 1.24.0
-      - name: test
-        run: go test ./...
-  
-  monad:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/ghcr-setup
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: build amd64
-        run: |
-          docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          --platform linux/amd64 --load .
-      - name: build arm64
-        run: |
-          docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --platform linux/arm64 --load .
-      - name: publish
-        run: |
-          docker buildx build \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          -t ghcr.io/bkeane/monad:latest \
-          --platform linux/arm64,linux/amd64 --push . 
-
-  echo:
-    needs: monad
+  integration:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: build setup
-        uses: ./.github/actions/ecr-setup
-      - name: build amd64
+      - name: setup
+        uses: ./.github/actions/integration
+      - name: build
         working-directory: e2e/echo
         run: |
           docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
-          --platform linux/amd64 --load .
-      - name: build arm64
-        working-directory: e2e/echo
-        run: |
-          docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
-          --platform linux/arm64 --load .
-      - name: publish
-        working-directory: e2e/echo
-        run: |
-          docker buildx build \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-echo-amd64 \
           -t $(monad ecr tag --service echo) \
-          --platform linux/arm64,linux/amd64 --push . 
-
-  deploy:
-    needs: echo
-    uses: ./.github/workflows/up.yml
+          --platform linux/arm64,linux/amd64 --push .
+  
+  deployment:
+    needs: integration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: setup
+        uses: ./.github/actions/deployment
+      - name: deploy
+        working-directory: e2e/echo
+        run: |
+          monad deploy \
+          --service echo \
+          --policy file://policy.json.tmpl \
+          --rule file://rule.json.tmpl \
+          --api kaixo

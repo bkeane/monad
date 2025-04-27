@@ -1,0 +1,43 @@
+"description": "Monad composite action for continuous deployment"
+"inputs":
+  "account":
+    "required": true
+    "type": "string"
+"name": "monad continuous deployment"
+"runs":
+  "steps":
+  - "env":
+      "ACCOUNT_ROLE_ARNS": "{\"dev\":\"arn:aws:iam::831926600600:role/monad-deployment-oidc-role\",\"prod\":\"arn:aws:iam::677771948337:role/monad-deployment-oidc-role\"}"
+    "name": "validation"
+    "outputs":
+      "role_arn": "${{ steps.validation.outputs.role_arn }}"
+    "uses": "actions/github-script@v7"
+    "with":
+      "script": |
+        const account_role_arns = JSON.parse(process.env.ACCOUNT_ROLE_ARNS);
+        const given_account = '${{ inputs.account }}';
+        const valid_accounts = Object.keys(account_role_arns).join(', ');
+        if (!(given_account in account_role_arns)) {
+          console.error('Invalid account name given: ' + given_account);
+          console.error('Valid accounts are: ' + valid_accounts);
+          core.setFailed('input validation failed');
+        }
+        core.setOutput('role_arn', account_role_arns[given_account]);
+  - "name": "setup"
+    "uses": "bkeane/monad-action@main"
+    "with":
+      "checkout": true
+      "registry_id": "677771948337"
+      "registry_region": "us-west-2"
+      "role_arn": "${{ needs.validation.outputs.role_arn }}"
+      "setup_docker": false
+      "version": "latest"
+  - "name": "export"
+    "uses": "actions/github-script@v7"
+    "with":
+      "script": |
+        core.exportVariable('MONAD_REGISTRY_ID', '${{ inputs.registry_id }}');
+        core.exportVariable('MONAD_REGISTRY_REGION', '${{ inputs.registry_region }}');
+        core.exportVariable('MONAD_BRANCH', '${{ github.head_ref || github.ref_name }}');
+        core.exportVariable('MONAD_SHA', '${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}');
+  "using": "composite"
