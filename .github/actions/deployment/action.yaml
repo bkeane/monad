@@ -7,7 +7,6 @@
 "outputs":
   "role_arn":
     "description": "The role arn for the given account"
-    "type": "string"
     "value": "${{ steps.validation.outputs.role_arn }}"
 "runs":
   "steps":
