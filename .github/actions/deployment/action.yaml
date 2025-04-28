@@ -3,14 +3,6 @@
   "account":
     "required": true
     "type": "string"
-  "boundary_enable":
-    "default": true
-    "required": false
-    "type": "boolean"
-  "boundary_name":
-    "default": "monad-boundary-policy"
-    "required": false
-    "type": "string"
 "name": "monad continuous deployment"
 "outputs":
   "role_arn":
@@ -37,16 +29,11 @@
   - "name": "setup"
     "uses": "bkeane/monad-action@actionsOnly"
     "with":
+      "boundary_policy": "monad-boundary-policy"
       "checkout": true
       "registry_id": "677771948337"
       "registry_region": "us-west-2"
       "role_arn": "${{ steps.validation.outputs.role_arn }}"
       "setup_docker": false
       "version": "latest"
-  - "if": "inputs.boundary_enable == true"
-    "name": "boundary"
-    "uses": "actions/github-script@v7"
-    "with":
-      "script": |
-        core.exportVariable('MONAD_BOUNDARY', '${{ inputs.boundary_name }}');
   "using": "composite"
