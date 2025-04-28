@@ -32,6 +32,10 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    matrix:
+      account: [dev, prod]
+    environment:
+      name: ${{ matrix.account }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -40,7 +44,7 @@ jobs:
       - name: setup
         uses: ./.github/actions/deployment
         with:
-          account: dev
+          account: ${{ matrix.account }}
       - name: deploy
         working-directory: e2e/echo
         run: |
