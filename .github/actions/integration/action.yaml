@@ -4,7 +4,7 @@
 "runs":
   "steps":
   - "name": "setup"
-    "uses": "bkeane/monad-action@actionsOnly"
+    "uses": "bkeane/monad-action@main"
     "with":
       "checkout": true
       "registry_id": "677771948337"

@@ -67,6 +67,8 @@ module "extended" {
 module "topology" {
   source = "../../../../monad-action/modules/topology"
   origin = "https://github.com/bkeane/monad.git"
+
+  enable_boundary_policy = false
   
   integration_account_name = "prod"
   integration_account_id = "677771948337"
@@ -96,16 +98,16 @@ module "deployment" {
   topology                 = module.topology
   api_gateway_ids          = toset([module.api_gateway.api_id])
   boundary_policy_document = module.boundary
-  extended_policy_document = module.extended
+  oidc_policy_document     = module.extended
 }
 
 resource "local_file" "integration_action" {
-  content = module.integration.integration_action
+  content = module.topology.action.integration
   filename = "../../../.github/actions/integration/action.yaml"
 }
 
 resource "local_file" "deployment_action" {
-  content = module.integration.deployment_action
+  content = module.topology.action.deployment
   filename = "../../../.github/actions/deployment/action.yaml"
 }
 

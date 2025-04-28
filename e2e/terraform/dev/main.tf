@@ -63,7 +63,7 @@ module "deployment" {
     topology = data.terraform_remote_state.prod.outputs.topology
     api_gateway_ids = toset([module.api_gateway.api_id])
     boundary_policy_document = module.boundary
-    extended_policy_document = module.extended
+    oidc_policy_document = module.extended
 }
 
 output "topology" {
