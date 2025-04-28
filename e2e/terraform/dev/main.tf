@@ -56,12 +56,16 @@ module "extended" {
     api_gateway_ids = toset([module.api_gateway.api_id])
 }
 
-module "spoke" {
+module "deployment" {
     # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
-    source = "../../../../monad-action/modules/spoke"
+    source = "../../../../monad-action/modules/deployment"
     depends_on = [aws_iam_openid_connect_provider.github]
-    origin = "https://github.com/bkeane/monad.git"
+    topology = data.terraform_remote_state.prod.outputs.topology
     api_gateway_ids = toset([module.api_gateway.api_id])
     boundary_policy_document = module.boundary
     extended_policy_document = module.extended
+}
+
+output "topology" {
+    value = data.terraform_remote_state.prod.outputs.topology
 }

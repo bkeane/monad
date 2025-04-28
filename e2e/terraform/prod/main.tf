@@ -108,3 +108,7 @@ resource "local_file" "deployment_action" {
   content = module.integration.deployment_action
   filename = "../../../.github/actions/deployment/action.yaml"
 }
+
+output "topology" {
+  value = module.topology
+}
