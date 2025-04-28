@@ -4,7 +4,7 @@
     "required": true
     "type": "string"
   "boundary_enable":
-    "default": false
+    "default": true
     "required": false
     "type": "boolean"
   "boundary_name":

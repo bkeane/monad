@@ -68,7 +68,7 @@ module "topology" {
   source = "../../../../monad-action/modules/topology"
   origin = "https://github.com/bkeane/monad.git"
 
-  enable_boundary_policy = false
+  enable_boundary_policy = true
   
   integration_account_name = "prod"
   integration_account_id = "677771948337"
