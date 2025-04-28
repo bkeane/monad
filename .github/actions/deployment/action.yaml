@@ -3,10 +3,6 @@
   "account":
     "required": true
     "type": "string"
-  "action_branch":
-    "default": "actionsOnly"
-    "required": false
-    "type": "string"
 "name": "monad continuous deployment"
 "outputs":
   "role_arn":
@@ -31,7 +27,7 @@
         }
         core.setOutput('role_arn', account_role_arns[given_account]);
   - "name": "setup"
-    "uses": "bkeane/monad-action@${{ inputs.action_branch }}"
+    "uses": "bkeane/monad-action@actionsOnly"
     "with":
       "checkout": true
       "registry_id": "677771948337"
