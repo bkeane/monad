@@ -32,8 +32,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    matrix:
-      account: [dev, prod]
+    strategy:
+      matrix:
+        account: [dev, prod]
     environment:
       name: ${{ matrix.account }}
     steps:
