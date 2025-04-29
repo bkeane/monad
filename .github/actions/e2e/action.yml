@@ -10,15 +10,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Cache
-      id: shellspec-bin-cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/bin/
-        key: ${{ runner.os }}-${{ runner.arch }}-shellspec-bin
-
     - name: Install Shellspec
-      if: steps.shellspec-bin-cache.outputs.cache-hit != 'true'
       id: install-shellspec-bin
       shell: bash
       run: |
