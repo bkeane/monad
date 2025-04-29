@@ -12,6 +12,7 @@ spec_helper_precheck() {
   # Available functions: info, warn, error, abort, setenv, unsetenv
   # Available variables: VERSION, SHELL_TYPE, SHELL_VERSION
   setenv LOG_LEVEL=warn
+  setenv AWS_DEFAULT_REGION=us-west-2
   setenv MONAD_REPO=${MONAD_REPO:=monad}
   setenv MONAD_BRANCH=${MONAD_BRANCH:=$(git rev-parse --abbrev-ref HEAD)}
   setenv MONAD_SHA=${MONAD_SHA:=$(git rev-parse HEAD)}
