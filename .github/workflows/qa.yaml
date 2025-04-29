@@ -76,9 +76,10 @@ jobs:
         uses: ./.github/actions/deployment
         with:
           account: ${{ matrix.account }}
-      - name: did it work?
+      - name: health
         working-directory: e2e
         env:
+          TERM: xterm-color
           MONAD_SERVICE: echo
         run: |
           shellspec spec/health/sigv4_spec.sh
