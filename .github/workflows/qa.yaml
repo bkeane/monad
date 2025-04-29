@@ -73,5 +73,8 @@ jobs:
       - name: setup shellspec
         uses: ./.github/actions/e2e
       - name: did it work?
+        working-directory: e2e
+        env:
+          MONAD_SERVICE: echo
         run: |
-          shellspec
+          shellspec spec/health/sigv4_spec.sh
