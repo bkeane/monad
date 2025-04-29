@@ -72,6 +72,10 @@ jobs:
           fetch-depth: 0
       - name: setup shellspec
         uses: ./.github/actions/e2e
+      - name: setup monad
+        uses: ./.github/actions/deployment
+        with:
+          account: ${{ matrix.account }}
       - name: did it work?
         working-directory: e2e
         env:
