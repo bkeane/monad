@@ -151,10 +151,10 @@ func (c *Aws) Env() (map[string]string, error) {
 	// Generally useful and used for efficient state lookup
 	metadata := c.ServiceStateMetadata()
 	envMap["MONAD_SERVICE"] = metadata.Service
+	envMap["MONAD_OWNER"] = metadata.Owner
 	envMap["MONAD_REPO"] = metadata.Repo
 	envMap["MONAD_SHA"] = metadata.Sha
 	envMap["MONAD_BRANCH"] = metadata.Branch
-	envMap["MONAD_OWNER"] = metadata.Owner
 	envMap["MONAD_IMAGE"] = metadata.Image
 
 	if c.ApiGateway.Id != "" {

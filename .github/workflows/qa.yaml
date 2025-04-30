@@ -7,53 +7,57 @@ on:
   pull_request:
 
 jobs:
-  # integration:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   steps:
-  #     - name: checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: setup
-  #       uses: ./.github/actions/integration
-  #     - name: build
-  #       working-directory: e2e/echo
-  #       run: |
-  #         docker buildx build \
-  #         -t $(monad ecr tag --service echo) \
-  #         --platform linux/arm64,linux/amd64 --push .
+  integration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup
+        uses: ./.github/actions/integration
+      - name: build
+        working-directory: e2e/echo
+        run: |
+          docker buildx build \
+          -t $(monad ecr tag --service echo) \
+          --platform linux/arm64,linux/amd64 --push .
   
-  # deployment:
-  #   needs: integration
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   strategy:
-  #     matrix:
-  #       account: [dev, prod]
-  #   environment:
-  #     name: ${{ matrix.account }}
-  #   steps:
-  #     - name: checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: setup
-  #       uses: ./.github/actions/deployment
-  #       with:
-  #         account: ${{ matrix.account }}
-  #     - name: deploy
-  #       working-directory: e2e/echo
-  #       run: |
-  #         monad deploy \
-  #         --service echo \
-  #         --policy file://policy.json.tmpl \
-  #         --rule file://rule.json.tmpl \
-  #         --api kaixo
+  deployment:
+    needs: integration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        account: [dev, prod]
+    environment:
+      name: ${{ matrix.account }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup
+        uses: ./.github/actions/deployment
+        with:
+          account: ${{ matrix.account }}
+      - name: deploy
+        working-directory: e2e/echo
+        run: |
+          monad deploy \
+            --service echo \
+            --env file://.env.tmpl \
+            --policy file://policy.json.tmpl \
+            --rule file://rule.json.tmpl \
+            --memory 256 \
+            --disk 1024 \
+            --timeout 10 \
+            --api kaixo
 
   e2e:
     runs-on: ubuntu-latest
@@ -82,4 +86,7 @@ jobs:
           TERM: xterm-color
           MONAD_SERVICE: echo
         run: |
-          shellspec spec/health/sigv4_spec.sh
+          shellspec --color spec/health/sigv4_spec.sh
+          shellspec --color spec/config/lambda_spec.sh
+          shellspec --color spec/config/iam_spec.sh
+          shellspec --color spec/config/
