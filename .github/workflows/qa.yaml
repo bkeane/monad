@@ -21,7 +21,8 @@ jobs:
         uses: ./.github/actions/integration
       - name: build
         working-directory: e2e/echo
-        run: docker buildx build \
+        run: |
+          docker buildx build \
           -t $(monad ecr tag --service echo) \
           --platform linux/arm64,linux/amd64 --push .
   
