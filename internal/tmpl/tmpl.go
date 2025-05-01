@@ -53,13 +53,9 @@ type TemplateData struct {
 	}
 
 	EventBridge struct {
-		Region string
-		Rule   struct {
-			Arn string
-		}
-		Bus struct {
-			Name string
-		}
+		Region  string
+		RuleArn string
+		BusName string
 	}
 }
 

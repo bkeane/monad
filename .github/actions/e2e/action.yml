@@ -1,0 +1,26 @@
+name: 'Setup E2E'
+description: 'Sets up E2E environment'
+
+inputs:
+  version:
+    default: '0.28.1'
+    type: string
+    description: 'Version of shellspec to install'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Shellspec
+      id: install-shellspec-bin
+      shell: bash
+      run: |
+        mkdir -p ${{ runner.temp }}/bin
+        wget https://github.com/shellspec/shellspec/releases/download/${{ inputs.version }}/shellspec-dist.tar.gz -O ${{ runner.temp }}/bin/shellspec-dist.tar.gz
+        cd ${{ runner.temp }}/bin && tar -xzf shellspec-dist.tar.gz --strip-components=1
+        rm ${{ runner.temp }}/bin/shellspec-dist.tar.gz
+
+    - name: Add To Path
+      id: export-shellspec-path
+      shell: bash
+      run: |
+        echo "${{ runner.temp }}/bin" >> $GITHUB_PATH

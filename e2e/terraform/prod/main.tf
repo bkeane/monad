@@ -64,73 +64,53 @@ module "extended" {
   api_gateway_ids = [module.api_gateway.api_id]
 }
 
-module "hub" {
-  # source = "github.com/bkeane/monad-action//modules/hub?ref=main"
-  source                   = "../../../../monad-action/modules/hub"
-  depends_on               = [aws_iam_openid_connect_provider.github]
-  origin                   = "https://github.com/bkeane/monad.git"
-  boundary_policy_document = module.boundary
+module "topology" {
+  source = "../../../../monad-action/modules/topology"
+  origin = "https://github.com/bkeane/monad.git"
 
-  spoke_accounts        = [
-    {
-      id = data.aws_caller_identity.current.account_id
-      name = "prod"
-      branches = ["main"]
-    },
-    {
-      id = "831926600600"
-      name = "dev"
-      branches = ["*"]
-    }
+  enable_boundary_policy = true
+  
+  integration_account_name = "prod"
+  integration_account_id = "677771948337"
+  integration_account_ecr_region = "us-west-2"
+  
+  integration_account_ecr_paths = [
+    "bkeane/monad/echo"
   ]
 
-  images = [
-    local.image
-  ]
-
-  services = [
-    {
-      name = "echo"
-      deploy_cmd = concat(["deploy"], local.common_config)
-    },
-    {
-      name = "echo-oauth"
-      deploy_cmd = concat(["deploy", "--auth", "auth0"], local.common_config)
-    },
-    {
-      name = "echo-vpc"
-      deploy_cmd = concat(["deploy"], local.common_config, local.vpc_config)
-    }
-  ]
+  deployment_accounts = {
+    "prod" = "677771948337"
+    "dev" = "831926600600"
+  }
 }
 
-module "spoke" {
-  # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
-  source                   = "../../../../monad-action/modules/spoke"
+module "integration" {
+  # source = "github.com/bkeane/monad-action//modules/hub?ref=main"
+  source                   = "../../../../monad-action/modules/integration"
   depends_on               = [aws_iam_openid_connect_provider.github]
-  origin                   = "https://github.com/bkeane/monad.git"
+  topology                 = module.topology
+}
+
+module "deployment" {
+  # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
+  source                   = "../../../../monad-action/modules/deployment"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  topology                 = module.topology
   api_gateway_ids          = toset([module.api_gateway.api_id])
   boundary_policy_document = module.boundary
-  extended_policy_document = module.extended
+  oidc_policy_document     = module.extended
 }
 
-resource "local_file" "up" {
-  content  = module.hub.up_shared_workflow
-  filename = "../../../.github/workflows/up.yml"
+resource "local_file" "integration_action" {
+  content = module.topology.action.integration
+  filename = "../../../.github/actions/integration/action.yaml"
 }
 
-resource "local_file" "down" {
-  content  = module.hub.down_shared_workflow
-  filename = "../../../.github/workflows/down.yml"
+resource "local_file" "deployment_action" {
+  content = module.topology.action.deployment
+  filename = "../../../.github/actions/deployment/action.yaml"
 }
 
-resource "local_file" "untag" {
-  content  = module.hub.untag_shared_workflow
-  filename = "../../../.github/workflows/untag.yml"
+output "topology" {
+  value = module.topology
 }
-
-resource "local_file" "build" {
-  content  = module.hub.build_composite_action
-  filename = "../../../.github/actions/ecr-setup/action.yml"
-}
-

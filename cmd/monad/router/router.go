@@ -22,6 +22,11 @@ func Route(ctx context.Context, r route.Root) error {
 			return err
 		}
 
+	case r.List != nil:
+		if err := r.List.Route(ctx, r); err != nil {
+			return err
+		}
+
 	case r.Data != nil:
 		if err := r.Data.Route(ctx, r); err != nil {
 			return err

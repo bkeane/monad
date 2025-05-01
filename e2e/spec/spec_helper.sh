@@ -12,9 +12,12 @@ spec_helper_precheck() {
   # Available functions: info, warn, error, abort, setenv, unsetenv
   # Available variables: VERSION, SHELL_TYPE, SHELL_VERSION
   setenv LOG_LEVEL=warn
-  setenv MONAD_API=${MONAD_API:=kaixo}
+  setenv AWS_DEFAULT_REGION=us-west-2
+  setenv MONAD_OWNER=${MONAD_OWNER:=bkeane}
+  setenv MONAD_REPO=${MONAD_REPO:=monad}
   setenv MONAD_BRANCH=${MONAD_BRANCH:=$(git rev-parse --abbrev-ref HEAD)}
   setenv MONAD_SHA=${MONAD_SHA:=$(git rev-parse HEAD)}
+  setenv MONAD_API=${MONAD_API:=kaixo}
   setenv MONAD_HOST=${MONAD_HOST:=$(resolve_api_domain $MONAD_API)}
 
   : minimum_version "0.28.1"
