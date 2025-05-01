@@ -20,7 +20,6 @@ jobs:
       - name: setup
         uses: ./.github/actions/integration
       - name: build
-        working-directory: e2e/echo
         run: |
           docker buildx build --build-context echo=./e2e/echo -t $(monad ecr tag) \
           --platform linux/arm64,linux/amd64 \
