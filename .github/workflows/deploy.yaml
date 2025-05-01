@@ -1,10 +1,13 @@
-name: up
+name: deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   integration:
