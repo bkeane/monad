@@ -8,18 +8,8 @@ install:
 
 # Build docker images locally
 build:
-    # docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
+    docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
     docker build -t ghcr.io/bkeane/shellspec:latest --platform linux/amd64,linux/arm64 --target shellspec .
-
-# approximate github actions tests
-test:
-    #! /usr/bin/env bash
-    session=$(aws sts get-session-token --duration-seconds 3600)
-    export AWS_ACCESS_KEY_ID=$(echo $session | jq -r .Credentials.AccessKeyId)
-    export AWS_SECRET_ACCESS_KEY=$(echo $session | jq -r .Credentials.SecretAccessKey)
-    export AWS_SESSION_TOKEN=$(echo $session | jq -r .Credentials.SessionToken)
-    unset AWS_PROFILE
-    docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e
 
 # apply e2e/terraform
 terraform: 
@@ -68,5 +58,5 @@ echo:
     #! /usr/bin/env bash
     cd e2e/echo
     docker buildx build -t $(monad ecr tag) --platform linux/amd64,linux/arm64 \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo .

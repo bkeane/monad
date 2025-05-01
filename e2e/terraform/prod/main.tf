@@ -67,6 +67,8 @@ module "extended" {
 module "topology" {
   source = "../../../../monad-action/modules/topology"
   origin = "https://github.com/bkeane/monad.git"
+  
+  action_branch = "actionsOnly"
 
   enable_boundary_policy = true
   
