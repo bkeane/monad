@@ -6,10 +6,21 @@ default:
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
+# setup docker buildx builder
+builder:
+    docker buildx create --driver=docker-container --name=monad-builder --driver-opt default-load=true --use
+
 # Build docker images locally
 build:
-    docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
-    docker build -t ghcr.io/bkeane/shellspec:latest --platform linux/amd64,linux/arm64 --target shellspec .
+    docker buildx build --build-context echo=./e2e/echo -t $(monad ecr tag) \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --platform linux/amd64,linux/arm64 .
+
+    docker buildx build --build-context monad=./cmd/monad -t ghcr.io/bkeane/monad:latest \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad,mode=max \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad \
+    --platform linux/amd64,linux/arm64 .
 
 # apply e2e/terraform
 terraform: 
@@ -54,9 +65,3 @@ diagrams:
         --output .docs/vue/assets/diagrams/$(basename $file .md).svg
     done
 
-echo:
-    #! /usr/bin/env bash
-    cd e2e/echo
-    docker buildx build -t $(monad ecr tag) --platform linux/amd64,linux/arm64 \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo .
