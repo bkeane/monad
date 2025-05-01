@@ -1,0 +1,49 @@
+name: down
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        account: [dev, prod]
+    environment:
+      name: ${{ matrix.account }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup
+        uses: ./.github/actions/deployment
+        with:
+          account: ${{ matrix.account }}
+      - name: destroy
+        working-directory: e2e/echo
+        run: monad destroy
+
+  untag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup
+        uses: ./.github/actions/integration
+      - name: untag
+        working-directory: e2e/echo
+        run: monad ecr untag
+
+
+

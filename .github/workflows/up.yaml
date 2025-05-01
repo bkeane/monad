@@ -1,4 +1,4 @@
-name: QA
+name: up
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           docker buildx build \
           -t $(monad ecr tag --service echo) \
           --platform linux/arm64,linux/amd64 --push .
-  
+
   deployment:
     needs: integration
     runs-on: ubuntu-latest
@@ -50,7 +50,6 @@ jobs:
         working-directory: e2e/echo
         run: |
           monad deploy \
-            --service echo \
             --env file://.env.tmpl \
             --policy file://policy.json.tmpl \
             --rule file://rule.json.tmpl \
@@ -96,5 +95,3 @@ jobs:
       - name: eventbridge
         working-directory: e2e
         run: shellspec --color spec/config/eventbridge_spec.sh
-        
-        
