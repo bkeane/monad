@@ -1,10 +1,10 @@
 name: deploy
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 on:
   workflow_dispatch:
@@ -25,9 +25,11 @@ jobs:
       - name: build
         working-directory: e2e/echo
         run: |
-          docker buildx build \
-          -t $(monad ecr tag --service echo) \
-          --platform linux/arm64,linux/amd64 --push .
+          docker buildx build -t $(monad ecr tag) \
+          --platform linux/arm64,linux/amd64 \
+          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+          --push .
 
   deployment:
     needs: integration

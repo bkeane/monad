@@ -1,12 +1,9 @@
-name: down
-
-# on:
-#   pull_request_target:
-#     types:
-#       - closed
+name: destroy
 
 on:
-  workflow_dispatch:
+  pull_request_target:
+    types:
+      - closed
 
 jobs:
   destroy:

@@ -63,3 +63,10 @@ diagrams:
         --input $file \
         --output .docs/vue/assets/diagrams/$(basename $file .md).svg
     done
+
+echo:
+    #! /usr/bin/env bash
+    cd e2e/echo
+    docker buildx build -t $(monad ecr tag) --platform linux/amd64,linux/arm64 \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo .
