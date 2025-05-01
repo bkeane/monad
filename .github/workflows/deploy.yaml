@@ -22,7 +22,7 @@ jobs:
       - name: build
         working-directory: e2e/echo
         run: |
-          docker buildx build -t $(monad ecr tag) \
+          docker buildx build --build-context echo=./e2e/echo -t $(monad ecr tag) \
           --platform linux/arm64,linux/amd64 \
           --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
           --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
