@@ -14,7 +14,7 @@ builder:
 build-echo:
     #! /usr/bin/env bash
     cd e2e/echo
-    docker buildx build -t $(monad ecr tag) \
+    docker buildx build -t test:test \
     --platform linux/arm64,linux/amd64 \
     --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
