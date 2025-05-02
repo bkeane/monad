@@ -20,16 +20,6 @@ build-echo:
     --platform linux/amd64,linux/arm64 .
 
 [private]
-build-test:
-    #! /usr/bin/env bash
-    cd e2e/echo
-    docker buildx prune --all --force
-    docker buildx build -t test:test \
-    --platform linux/amd64,linux/arm64 .
-    # --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=test \
-    # --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=test,mode=max \
-
-[private]
 build-monad:
     #! /usr/bin/env bash
     docker buildx build -t ghcr.io/bkeane/monad:latest \
