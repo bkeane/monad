@@ -7,14 +7,21 @@ install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
 # setup docker buildx builder
-builder:
-    docker buildx create --driver=docker-container --name=monad-builder --driver-opt default-load=true --use
+builder-up:
+    docker buildx create \
+        --driver=docker-container \
+        --name=monad-builder \
+        --driver-opt default-load=true \
+        --use
+
+builder-down:
+    docker buildx rm monad-builder
 
 [private]
 build-echo:
     #! /usr/bin/env bash
     cd e2e/echo
-    docker buildx build -t test:test \
+    SOURCE_DATE_EPOCH=0 docker buildx build -t $(monad ecr tag) \
     --platform linux/arm64,linux/amd64 \
     --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
