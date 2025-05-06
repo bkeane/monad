@@ -26,7 +26,7 @@ build-echo:
     --platform linux/arm64,linux/amd64 \
     --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-    --output type=image,name=test:test,rewrite-timestamp=true \
+    --output type=docker,name=test:test,rewrite-timestamp=true,load=true \
     .
 
 [private]
