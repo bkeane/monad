@@ -24,14 +24,15 @@ jobs:
         with:
           version: v0.23.0
       - name: build
-        working-directory: e2e/echo
         run: |
           docker buildx build \
           --build-arg SOURCE_DATE_EPOCH=0 \
           --platform linux/arm64,linux/amd64 \
           --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
           --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-          --output type=image,name=$(monad ecr tag),rewrite-timestamp=true,push=true .
+          --output type=image,name=$(monad ecr tag),rewrite-timestamp=true,push=true \
+          --file e2e/echo/Dockerfile \
+          e2e/echo
 
   deployment:
     needs: integration
