@@ -24,11 +24,11 @@ jobs:
         env:
           SOURCE_DATE_EPOCH: 0 
         run: |
-          docker buildx build -t $(monad ecr tag) \
+          docker buildx build \
           --platform linux/arm64,linux/amd64 \
           --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
           --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-          --push .
+          --output type=image,name=$(monad ecr tag),rewrite-timestamp=true,push=true .
 
   deployment:
     needs: integration

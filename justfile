@@ -21,10 +21,12 @@ builder-down:
 build-echo:
     #! /usr/bin/env bash
     cd e2e/echo
-    SOURCE_DATE_EPOCH=0 docker buildx build -t $(monad ecr tag) \
+    docker buildx build \
+    --build-arg SOURCE_DATE_EPOCH=0 \
     --platform linux/arm64,linux/amd64 \
     --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --output type=image,name=test:test,rewrite-timestamp=true \
     .
 
 [private]
