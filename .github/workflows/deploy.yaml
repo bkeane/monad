@@ -21,8 +21,6 @@ jobs:
         uses: ./.github/actions/integration
       - name: build
         working-directory: e2e/echo
-        env:
-          SOURCE_DATE_EPOCH: 0 
         run: |
           docker buildx build \
           --platform linux/arm64,linux/amd64 \
