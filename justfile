@@ -21,13 +21,13 @@ builder-down:
 build-echo:
     #! /usr/bin/env bash
     docker buildx build \
-    --file e2e/echo/Dockerfile \
     --build-arg SOURCE_DATE_EPOCH=0 \
-    --platform linux/arm64,linux/amd64 \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-    --output type=docker,name=test:test,rewrite-timestamp=true,load=true \
-    e2e/echo 
-    # --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
+    --output type=docker,name=$(monad ecr tag --service echo),rewrite-timestamp=true \
+    --platform linux/arm64,linux/amd64 \
+    --file e2e/echo/Dockerfile \
+    e2e/echo --load
 
 [private]
 build-monad:

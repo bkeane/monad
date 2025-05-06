@@ -27,12 +27,12 @@ jobs:
         run: |
           docker buildx build \
           --build-arg SOURCE_DATE_EPOCH=0 \
-          --platform linux/arm64,linux/amd64 \
           --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
           --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,push=true \
+          --output type=docker,name=$(monad ecr tag --service echo),rewrite-timestamp=true \
+          --platform linux/arm64,linux/amd64 \
           --file e2e/echo/Dockerfile \
-          e2e/echo
+          e2e/echo --push
 
   deployment:
     needs: integration
