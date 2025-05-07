@@ -5,4 +5,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
 ENV PORT=8090
 ENV READINESS_CHECK_PATH=/health
+ENV AWS_LWA_ERROR_STATUS_CODES=500-599
 ENTRYPOINT ["python", "/src/main.py"]
