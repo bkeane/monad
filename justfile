@@ -20,10 +20,10 @@ builder-down:
 build-echo:
     docker buildx build \
     --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
-    --output type=image,name=test:test,rewrite-timestamp=true,load=true \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,load=true \
     --file e2e/echo/Dockerfile \
+    --platform linux/amd64,linux/arm64 \
     --load \
     -t test:test \
     e2e/echo
