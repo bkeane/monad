@@ -19,38 +19,14 @@ builder-down:
 
 [private]
 build-echo:
-    #! /usr/bin/env bash
-    docker buildx build \
-    --progress=plain \
+    docker buildx build -t $(monad ecr tag --service echo) \
     --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo,mode=max \
-    --output type=docker,name=echo,rewrite-timestamp=true \
-    --platform linux/arm64 \
-    --file e2e/echo/Dockerfile \
-    e2e/echo
-
-    docker buildx build \
-    --progress=plain \
-    --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo,mode=max \
-    --output type=docker,name=echo,rewrite-timestamp=true \
-    --platform linux/amd64 \
-    --file e2e/echo/Dockerfile \
-    e2e/echo
-
-    docker buildx build \
-    -t $(monad ecr tag --service echo) \
-    --progress=plain \
-    --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
     --output type=docker,name=echo,rewrite-timestamp=true,load=true \
     --platform linux/amd64,linux/arm64 \
     --file e2e/echo/Dockerfile \
-    e2e/echo \
-    --push
+    e2e/echo
 
 [private]
 build-monad:

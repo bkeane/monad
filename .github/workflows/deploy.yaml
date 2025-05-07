@@ -8,7 +8,7 @@ on:
 
 jobs:
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       id-token: write
@@ -38,10 +38,13 @@ jobs:
       - name: build
         run: |
           just build-echo
+      - name: push
+        run: |
+          docker push $(monad ecr tag --service echo)
 
   deployment:
     needs: integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       id-token: write
@@ -72,7 +75,7 @@ jobs:
             --api kaixo
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: deployment
     env:
       TERM: xterm-color
