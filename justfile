@@ -21,8 +21,8 @@ builder-down:
 build-echo:
     docker buildx build -t $(monad ecr tag --service echo) \
     --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=min \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --cache-to type=registry,image-manifest=true,oci-mediatypes=true,ref=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:buildcache,mode=max \
+    --cache-from type=registry,ref=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:buildcache \
     --output type=docker,name=echo,rewrite-timestamp=true,load=true \
     --platform linux/amd64,linux/arm64 \
     --file e2e/echo/Dockerfile \
