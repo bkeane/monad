@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  integration:
+  build-arm64:
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
@@ -19,28 +19,73 @@ jobs:
           fetch-depth: 0
       - name: setup monad
         uses: ./.github/actions/integration
-      - name: setup just
-        uses: extractions/setup-just@v3
-      - name: setup containerd
-        uses: docker/setup-docker-action@v4
-        with:
-          version: latest
-          daemon-config: |
-            {
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
       - name: setup buildx
         uses: docker/setup-buildx-action@v3 
         with:
           version: v0.23.0
       - name: build
         run: |
-          just build-echo
-      - name: push
+          docker buildx build \
+          --build-arg SOURCE_DATE_EPOCH=0 \
+          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo,mode=min \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
+          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true \
+          --file e2e/echo/Dockerfile \
+          e2e/echo
+
+  build-amd64:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup monad
+        uses: ./.github/actions/integration
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3 
+        with:
+          version: v0.23.0
+      - name: build
         run: |
-          docker push $(monad ecr tag --service echo)
+          docker buildx build \
+          --build-arg SOURCE_DATE_EPOCH=0 \
+          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo,mode=min \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
+          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true \
+          --file e2e/echo/Dockerfile \
+          e2e/echo
+
+  integration:
+    needs: [build-arm64, build-amd64]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup monad
+        uses: ./.github/actions/integration
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3 
+        with:
+          version: v0.23.0
+      - name: build
+        run: |
+          docker buildx build \
+          --build-arg SOURCE_DATE_EPOCH=0 \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
+          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,push=true \
+          --platform linux/arm64,linux/amd64 \
+          --file e2e/echo/Dockerfile \
+          e2e/echo
 
   deployment:
     needs: integration
