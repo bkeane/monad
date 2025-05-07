@@ -17,22 +17,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup
+      - name: setup monad
         uses: ./.github/actions/integration
-      - name: Set up Docker Buildx
+      - name: setup just
+        uses: extractions/setup-just@v3
+      - name: setup containerd
+        uses: docker/setup-docker-action@v4
+        with:
+          version: latest
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+      - name: setup buildx
         uses: docker/setup-buildx-action@v3 
         with:
           version: v0.23.0
       - name: build
         run: |
-          docker buildx build \
-          --build-arg SOURCE_DATE_EPOCH=0 \
-          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
-          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,push=true \
-          --platform linux/arm64,linux/amd64 \
-          --file e2e/echo/Dockerfile \
-          e2e/echo
+          just build-echo
 
   deployment:
     needs: integration
