@@ -6,20 +6,38 @@ default:
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
-# Build docker images locally
-build:
-    # docker build -t ghcr.io/bkeane/monad:latest --platform linux/amd64,linux/arm64 .
-    docker build -t ghcr.io/bkeane/shellspec:latest --platform linux/amd64,linux/arm64 --target shellspec .
+# setup docker buildx builder
+builder-up:
+    docker buildx create \
+        --driver=docker-container \
+        --name=monad-builder \
+        --use
 
-# approximate github actions tests
-test:
+builder-down:
+    docker buildx rm monad-builder
+
+[private]
+build-echo:
+    docker buildx build \
+    --build-arg SOURCE_DATE_EPOCH=0 \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,load=true \
+    --file e2e/echo/Dockerfile \
+    --platform linux/amd64,linux/arm64 \
+    --load \
+    -t test:test \
+    e2e/echo
+
+[private]
+build-monad:
     #! /usr/bin/env bash
-    session=$(aws sts get-session-token --duration-seconds 3600)
-    export AWS_ACCESS_KEY_ID=$(echo $session | jq -r .Credentials.AccessKeyId)
-    export AWS_SECRET_ACCESS_KEY=$(echo $session | jq -r .Credentials.SecretAccessKey)
-    export AWS_SESSION_TOKEN=$(echo $session | jq -r .Credentials.SessionToken)
-    unset AWS_PROFILE
-    docker run -t --env-file <(env | grep -E '(MONAD|AWS)') -v $(pwd):/src ghcr.io/bkeane/spec:latest --chdir e2e
+    docker buildx build -t ghcr.io/bkeane/monad:latest \
+    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad,mode=max \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad \
+    --platform linux/amd64,linux/arm64 .
+
+# Build docker images locally
+build: build-monad build-echo
 
 # apply e2e/terraform
 terraform: 
@@ -63,3 +81,4 @@ diagrams:
         --input $file \
         --output .docs/vue/assets/diagrams/$(basename $file .md).svg
     done
+

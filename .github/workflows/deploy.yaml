@@ -1,4 +1,4 @@
-name: up
+name: deploy
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
@@ -17,18 +17,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup
+      - name: setup monad
         uses: ./.github/actions/integration
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3 
+        with:
+          version: v0.23.0
       - name: build
-        working-directory: e2e/echo
         run: |
           docker buildx build \
-          -t $(monad ecr tag --service echo) \
-          --platform linux/arm64,linux/amd64 --push .
+          --build-arg SOURCE_DATE_EPOCH=0 \
+          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
+          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,push=true \
+          --platform linux/amd64,linux/arm64 \
+          --file e2e/echo/Dockerfile \
+          e2e/echo
 
   deployment:
     needs: integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       id-token: write
@@ -59,7 +67,7 @@ jobs:
             --api kaixo
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     needs: deployment
     env:
       TERM: xterm-color
