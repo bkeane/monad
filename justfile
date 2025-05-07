@@ -11,7 +11,6 @@ builder-up:
     docker buildx create \
         --driver=docker-container \
         --name=monad-builder \
-        --driver-opt default-load=true \
         --use
 
 builder-down:
@@ -19,13 +18,14 @@ builder-down:
 
 [private]
 build-echo:
-    docker buildx build -t $(monad ecr tag --service echo) \
+    docker buildx build \
     --build-arg SOURCE_DATE_EPOCH=0 \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=amd64,name=echo \
     --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,prefix=arm64,name=echo \
-    --output type=docker,name=echo,rewrite-timestamp=true,load=true \
-    --platform linux/amd64,linux/arm64 \
+    --output type=image,name=test:test,rewrite-timestamp=true,load=true \
     --file e2e/echo/Dockerfile \
+    --load \
+    -t test:test \
     e2e/echo
 
 [private]
