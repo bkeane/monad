@@ -73,6 +73,8 @@ jobs:
       TERM: xterm-color
       MONAD_SERVICE: echo
       AWS_DEFAULT_REGION: us-west-2
+      MONAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+      MONAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     permissions:
       contents: read
       id-token: write
