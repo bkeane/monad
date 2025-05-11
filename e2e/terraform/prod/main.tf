@@ -1,20 +1,5 @@
 locals {
   api_name = "kaixo"
-  image = "bkeane/monad/echo"
-  common_config = [
-    "--image", local.image,
-    "--disk", "1024",
-    "--memory", "256",
-    "--timeout", "10",
-    "--api", local.api_name,
-    "--policy", "file://e2e/echo/policy.json.tmpl",
-    "--rule", "file://e2e/echo/rule.json.tmpl",
-    "--env", "file://e2e/echo/.env.tmpl"
-  ]
-  vpc_config = [
-    "--vpc-sg", "basic",
-    "--vpc-sn", "private-a private-b"
-  ]
 }
 
 data "aws_caller_identity" "current" {}
@@ -68,13 +53,13 @@ module "topology" {
   source = "../../../../monad-action/modules/topology"
   origin = "https://github.com/bkeane/monad.git"
   
-  action_branch = "actionsOnly"
+  monad_action_branch = "actionsOnly"
 
   enable_boundary_policy = true
   
   integration_account_name = "prod"
   integration_account_id = "677771948337"
-  integration_account_ecr_region = "us-west-2"
+  integration_account_region = "us-west-2"
   
   integration_account_ecr_paths = [
     "bkeane/monad/echo"
@@ -100,7 +85,13 @@ module "deployment" {
   topology                 = module.topology
   api_gateway_ids          = toset([module.api_gateway.api_id])
   boundary_policy_document = module.boundary
-  oidc_policy_document     = module.extended
+}
+
+module "hook" {
+  source = "../../../../monad-action/modules/hook"
+  depends_on = [aws_iam_openid_connect_provider.github]
+  topology = module.topology
+  policy_document = module.extended
 }
 
 resource "local_file" "integration_action" {
@@ -111,6 +102,11 @@ resource "local_file" "integration_action" {
 resource "local_file" "deployment_action" {
   content = module.topology.action.deployment
   filename = "../../../.github/actions/deployment/action.yaml"
+}
+
+resource "local_file" "hook_action" {
+  content = module.topology.action.hook
+  filename = "../../../.github/actions/hook/action.yaml"
 }
 
 output "topology" {

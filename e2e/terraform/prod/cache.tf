@@ -12,7 +12,7 @@ resource "aws_s3_bucket_policy" "cache" {
         Sid       = "AllowFullAccess"
         Effect    = "Allow"
         Principal = {
-          AWS = module.topology.oidc.integration_role_arn
+          AWS = module.topology.integration.role_arn
         }
         Action = [
           "s3:*"

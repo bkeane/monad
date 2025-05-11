@@ -19,14 +19,13 @@ builder-down:
 [private]
 build-echo:
     docker buildx build \
-    --build-arg SOURCE_DATE_EPOCH=0 \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-    --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,load=true \
-    --file e2e/echo/Dockerfile \
+    --build-arg SOURCE_DATE_EPOCH=1 \
+    --output type=image,name=test:test,rewrite-timestamp=true \
     --platform linux/amd64,linux/arm64 \
-    --load \
+    --file e2e/echo/Dockerfile \
     -t test:test \
-    e2e/echo
+    e2e/echo \
+    --load
 
 [private]
 build-monad:

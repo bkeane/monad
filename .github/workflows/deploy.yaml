@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup monad
+      - name: setup build context
         uses: ./.github/actions/integration
       - name: setup buildx
         uses: docker/setup-buildx-action@v3 
@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup
+      - name: setup deployment context
         uses: ./.github/actions/deployment
         with:
           account: ${{ matrix.account }}
@@ -85,12 +85,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup shellspec
-        uses: ./.github/actions/e2e
-      - name: setup monad
-        uses: ./.github/actions/deployment
+      - name: setup test context
+        uses: ./.github/actions/hook
         with:
           account: ${{ matrix.account }}
+      - name: setup shellspec
+        uses: ./.github/actions/e2e
       - name: health
         working-directory: e2e
         run: shellspec --color spec/health/sigv4_spec.sh
