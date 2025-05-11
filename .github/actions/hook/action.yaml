@@ -3,6 +3,9 @@
   "account":
     "required": true
     "type": "string"
+  "region":
+    "required": true
+    "type": "string"
 "name": "monad continuous hook action"
 "outputs":
   "role_arn":
@@ -26,4 +29,11 @@
           core.setFailed('input validation failed');
         }
         core.setOutput('role_arn', account_role_arns[given_account]);
+  - "id": "assume-role"
+    "name": "Assume Role"
+    "uses": "aws-actions/configure-aws-credentials@v2"
+    "with":
+      "aws-region": "${{ inputs.region }}"
+      "role-session-name": "monad-session"
+      "role-to-assume": "${{ steps.validation.outputs.role_arn }}"
   "using": "composite"

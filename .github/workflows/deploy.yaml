@@ -92,6 +92,7 @@ jobs:
         uses: ./.github/actions/hook
         with:
           account: ${{ matrix.account }}
+          region: us-west-2
       - name: setup shellspec
         uses: ./.github/actions/e2e
       - name: health
