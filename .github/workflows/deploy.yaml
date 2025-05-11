@@ -72,6 +72,7 @@ jobs:
     env:
       TERM: xterm-color
       MONAD_SERVICE: echo
+      AWS_DEFAULT_REGION: us-west-2
     permissions:
       contents: read
       id-token: write
