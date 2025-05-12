@@ -29,6 +29,9 @@ jobs:
           ECR_TAG=$(monad ecr tag --service echo) \
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
           docker buildx bake --push
+      - name: layers
+        run: |
+          docker buildx du
 
   deployment:
     needs: integration
