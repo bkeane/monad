@@ -28,7 +28,7 @@ jobs:
           touch -d "@$(git log -1 --pretty=%ct)" e2e/echo/requirements.txt
           ECR_TAG=$(monad ecr tag --service echo) \
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
-          docker buildx bake --push
+          docker buildx bake --push --progress=plain
       - name: layers
         run: |
           docker buildx du
