@@ -23,9 +23,9 @@ jobs:
         uses: docker/setup-buildx-action@v3 
         with:
           version: v0.23.0
-      - name: epoch
+      - name: git debug
         run: |
-          echo "GIT EPOCH: $(git log -1 --pretty=%ct)"
+          git log --graph -n 10
       - name: build
         run: |
           touch -d "@1747025952" e2e/echo/requirements.txt
