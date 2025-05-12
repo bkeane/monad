@@ -13,21 +13,13 @@ builder-up:
 builder-down:
     docker buildx rm monad-builder
 
-debug:
-    gtar \
-    --sort=name \
-    --owner=0 --group=0 --numeric-owner \
-    --mtime="@$(git log -1 --pretty=%ct)" \
-    --format=gnu \
-    --exclude=local-context.tar \
-    -cf local-context.tar .
-
 [private]
 build-echo:
     #! /usr/bin/env bash
     # gtouch -d "@$(git log -1 --pretty=%ct)" e2e/echo/requirements.txt
     ECR_TAG=$(monad ecr tag --service echo) \
     SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
+    CACHE_PREFIX=local \
     docker buildx bake --progress=plain
 
 [private]
