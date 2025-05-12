@@ -13,6 +13,14 @@ builder-up:
 builder-down:
     docker buildx rm monad-builder
 
+debug:
+    #! /usr/bin/env bash
+    git rev-parse HEAD
+    git status --porcelain
+    find . -type f | sort | sha256sum
+    find . -type f -exec sha256sum {} + | sort | sha256sum
+    tar --sort=name --mtime="@$(git log -1 --pretty=%ct)" -cf - . | sha256sum
+
 [private]
 build-echo:
     #! /usr/bin/env bash
