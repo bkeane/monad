@@ -17,7 +17,7 @@ target "echo" {
     "type=image,name=${ECR_TAG},rewrite-timestamp=true",
   ]
   cache-from = ["type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo"]
-  cache-to = ["type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max"]
+#   cache-to = ["type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max"]
   args = {
     SOURCE_DATE_EPOCH = "${SOURCE_DATE_EPOCH}"
   }
