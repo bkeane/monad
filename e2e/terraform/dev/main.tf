@@ -65,6 +65,13 @@ module "deployment" {
     boundary_policy_document = module.boundary
 }
 
+module "hook" {
+    source = "../../../../monad-action/modules/hook"
+    depends_on = [aws_iam_openid_connect_provider.github]
+    topology = data.terraform_remote_state.prod.outputs.topology
+    policy_document = module.extended
+}
+
 output "topology" {
     value = data.terraform_remote_state.prod.outputs.topology
 }

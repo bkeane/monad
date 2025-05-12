@@ -8,10 +8,7 @@ install:
 
 # setup docker buildx builder
 builder-up:
-    docker buildx create \
-        --driver=docker-container \
-        --name=monad-builder \
-        --use
+    docker buildx create --driver=docker-container --name=monad-builder --use
 
 builder-down:
     docker buildx rm monad-builder
@@ -19,13 +16,14 @@ builder-down:
 [private]
 build-echo:
     docker buildx build \
-    --build-arg SOURCE_DATE_EPOCH=1 \
-    --output type=image,name=test:test,rewrite-timestamp=true \
+    --build-arg SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
+    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
+    --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,store=true \
     --platform linux/amd64,linux/arm64 \
     --file e2e/echo/Dockerfile \
-    -t test:test \
-    e2e/echo \
-    --load
+    --tag test:test \
+    --load \
+    e2e/echo
 
 [private]
 build-monad:
