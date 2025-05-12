@@ -20,7 +20,7 @@ build-echo:
     ECR_TAG=$(monad ecr tag --service echo) \
     SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
     CACHE_PREFIX=local \
-    docker buildx bake --progress=plain
+    docker buildx bake --progress=plain --load
 
 [private]
 build-monad:
