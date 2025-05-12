@@ -26,6 +26,8 @@ jobs:
           version: v0.23.0
       - name: git debug
         run: |
+          echo "GIT EPOCH: $(git log -1 --pretty=%ct)"
+          echo "================"
           git log --graph -n 10
       - name: build
         run: |
