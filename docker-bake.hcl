@@ -3,7 +3,7 @@ group "default" {
 }
 
 variable "CACHE_PREFIX" {
-  default = "local"
+  default = "ci"
 }
 
 variable "ECR_TAG" {
