@@ -25,14 +25,9 @@ jobs:
           version: v0.23.0
       - name: build
         run: |
-          docker buildx build \
-          --build-arg SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
-          --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo,mode=max \
-          --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=echo \
-          --output type=image,name=$(monad ecr tag --service echo),rewrite-timestamp=true,push=true \
-          --platform linux/amd64,linux/arm64 \
-          --file e2e/echo/Dockerfile \
-          e2e/echo
+          ECR_TAG=$(monad ecr tag --service echo) \
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
+          docker buildx bake --push
 
   deployment:
     needs: integration
