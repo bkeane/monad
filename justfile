@@ -15,9 +15,10 @@ builder-down:
 
 [private]
 build-echo:
+    gtouch -d "@$(git log -1 --pretty=%ct)" e2e/echo/requirements.txt
     ECR_TAG=$(monad ecr tag --service echo) \
     SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) \
-    docker buildx bake 
+    docker buildx bake --load
 
 [private]
 build-monad:
