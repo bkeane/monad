@@ -21,6 +21,9 @@ debug:
     find . -type f -exec sha256sum {} + | sort | sha256sum
     gtar --sort=name --mtime="@$(git log -1 --pretty=%ct)" -cf - . | sha256sum
 
+    find . -type f | sort > filelist-local.txt
+    sha256sum $(< filelist-local.txt) > allfiles-local.txt
+
 [private]
 build-echo:
     #! /usr/bin/env bash
