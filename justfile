@@ -14,15 +14,12 @@ builder-down:
     docker buildx rm monad-builder
 
 debug:
-    #! /usr/bin/env bash
-    git rev-parse HEAD
-    git status --porcelain
-    find . -type f | sort | sha256sum
-    find . -type f -exec sha256sum {} + | sort | sha256sum
-    gtar --sort=name --mtime="@$(git log -1 --pretty=%ct)" -cf - . | sha256sum
-
-    find . -type f | sort > filelist-local.txt
-    sha256sum $(< filelist-local.txt) > allfiles-local.txt
+    gtar \
+    --sort=name \
+    --owner=0 --group=0 --numeric-owner \
+    --mtime="@$(git log -1 --pretty=%ct)" \
+    --format=gnu \
+    -cf local-context.tar .
 
 [private]
 build-echo:

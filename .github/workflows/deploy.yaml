@@ -24,19 +24,15 @@ jobs:
         uses: docker/setup-buildx-action@v3 
         with:
           version: v0.23.0
-      - name: debug context
+      - name: make tar context
         run: |
-          git rev-parse HEAD
-          git status --porcelain
-          find . -type f | sort | sha256sum
-          find . -type f -exec sha256sum {} + | sort | sha256sum
-          tar --sort=name --mtime="@$(git log -1 --pretty=%ct)" -cf - . | sha256sum
-      - name: list files
-        run: |
-          find . -type f | sort > filelist-ci.txt
-          sha256sum $(< filelist-ci.txt) > allfiles-ci.txt
-          aws s3 cp filelist-ci.txt s3://kaixo-buildx-cache/filelist-ci.txt
-          aws s3 cp allfiles-ci.txt s3://kaixo-buildx-cache/allfiles-ci.txt
+          tar \
+            --sort=name \
+            --owner=0 --group=0 --numeric-owner \
+            --mtime="@$(git log -1 --pretty=%ct)" \
+            --format=gnu \
+            -cf context.tar .
+          aws s3 cp context.tar s3://kaixo-buildx-cache/ci-context.tar
       - name: build
         run: |
           # touch -d "@$(git log -1 --pretty=%ct)" e2e/echo/requirements.txt
