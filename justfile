@@ -19,6 +19,7 @@ debug:
     --owner=0 --group=0 --numeric-owner \
     --mtime="@$(git log -1 --pretty=%ct)" \
     --format=gnu \
+    --exclude=local-context.tar \
     -cf local-context.tar .
 
 [private]
