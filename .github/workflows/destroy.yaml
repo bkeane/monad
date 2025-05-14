@@ -1,4 +1,4 @@
-name: down
+name: destroy
 
 on:
   pull_request_target:
