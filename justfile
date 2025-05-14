@@ -17,7 +17,7 @@ builder-down:
 build-echo:
     TAG=$(monad ecr tag --service echo) \
     EPOCH=$(git log -1 --pretty=%ct) \
-    docker buildx bake --progress=plain
+    docker buildx bake --progress=plain --load
 
 [private]
 build-monad:

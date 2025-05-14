@@ -13,9 +13,10 @@ variable "EPOCH" {
 target "echo" {
   context = "e2e/echo"
   platforms = ["linux/amd64", "linux/arm64"]
+  tag = [TAG]
   
   output = [
-    "type=registry,name=${TAG},rewrite-timestamp=true",
+    "type=image,name=${TAG},rewrite-timestamp=true",
     "type=docker,name=${TAG}"
   ]
 
