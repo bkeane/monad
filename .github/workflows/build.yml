@@ -28,32 +28,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PERSONAL_AUTH_TOKEN: ${{ secrets.GR_PAT }}
-  image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/ghcr
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: build amd64
-        run: |
-          docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          --platform linux/amd64 --load .
-      - name: build arm64
-        run: |
-          docker buildx build \
-          --cache-to type=gha,mode=max,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --platform linux/arm64 --load .
-      - name: publish
-        run: |
-          docker buildx build \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-arm64 \
-          --cache-from type=gha,scope=${{ env.BRANCH_NAME }}-monad-amd64 \
-          -t ghcr.io/bkeane/monad:${{ github.ref_name }} \
-          --platform linux/arm64,linux/amd64 --push .

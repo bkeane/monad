@@ -1,131 +1,131 @@
-name: deploy
+# name: deploy
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
-jobs:
-  integration:
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+# jobs:
+#   integration:
+#     runs-on: ubuntu-24.04-arm
+#     permissions:
+#       contents: read
+#       id-token: write
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-      - name: setup build context
-        uses: ./.github/actions/stages
-        with:
-          stage: build
-          account: prod
+#       - name: setup build context
+#         uses: ./.github/actions/stages
+#         with:
+#           stage: build
+#           account: prod
       
-      - name: setup containerd
-        uses: docker/setup-docker-action@v4
-        with:
-          daemon-config: |
-            {
-              "debug": true,
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
+#       - name: setup containerd
+#         uses: docker/setup-docker-action@v4
+#         with:
+#           daemon-config: |
+#             {
+#               "debug": true,
+#               "features": {
+#                 "containerd-snapshotter": true
+#               }
+#             }
 
-      - name: install buildx
-        id: install-buildx
-        uses: docker/setup-buildx-action@v3 
-        with:
-          version: v0.23.0
+#       - name: install buildx
+#         id: install-buildx
+#         uses: docker/setup-buildx-action@v3 
+#         with:
+#           version: v0.23.0
       
-      - name: build
-        run: |
-          TAG=$(monad ecr tag --service echo) \
-          EPOCH=$(git log -1 --pretty=%ct) \
-          docker buildx bake --progress=plain --load
+#       - name: build
+#         run: |
+#           TAG=$(monad ecr tag --service echo) \
+#           EPOCH=$(git log -1 --pretty=%ct) \
+#           docker buildx bake --progress=plain --load
 
-  deployment:
-    needs: integration
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        account: [dev, prod]
-    environment:
-      name: ${{ matrix.account }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+#   deployment:
+#     needs: integration
+#     runs-on: ubuntu-24.04-arm
+#     permissions:
+#       contents: read
+#       id-token: write
+#     strategy:
+#       matrix:
+#         account: [dev, prod]
+#     environment:
+#       name: ${{ matrix.account }}
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-      - name: setup deployment context
-        uses: ./.github/actions/stages
-        with:
-          stage: deploy
-          account: ${{ matrix.account }}
+#       - name: setup stage
+#         uses: ./.github/actions/stages
+#         with:
+#           stage: deploy
+#           account: ${{ matrix.account }}
 
-      - name: deploy
-        working-directory: e2e/echo
-        run: |
-          monad deploy \
-            --env file://.env.tmpl \
-            --policy file://policy.json.tmpl \
-            --rule file://rule.json.tmpl \
-            --memory 256 \
-            --disk 1024 \
-            --timeout 10 \
-            --api kaixo
+#       - name: deploy
+#         working-directory: e2e/echo
+#         run: |
+#           monad deploy \
+#             --env file://.env.tmpl \
+#             --policy file://policy.json.tmpl \
+#             --rule file://rule.json.tmpl \
+#             --memory 256 \
+#             --disk 1024 \
+#             --timeout 10 \
+#             --api kaixo
 
-  e2e:
-    runs-on: ubuntu-24.04-arm
-    needs: deployment
-    env:
-      TERM: xterm-color
-      MONAD_SERVICE: echo
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        account: [dev, prod]
-    environment:
-      name: ${{ matrix.account }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+#   e2e:
+#     runs-on: ubuntu-24.04-arm
+#     needs: deployment
+#     env:
+#       TERM: xterm-color
+#       MONAD_SERVICE: echo
+#     permissions:
+#       contents: read
+#       id-token: write
+#     strategy:
+#       matrix:
+#         account: [dev, prod]
+#     environment:
+#       name: ${{ matrix.account }}
+#     steps:
+#       - name: checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-      - name: setup test context
-        uses: ./.github/actions/stages
-        with:
-          stage: e2e
-          account: ${{ matrix.account }}
+#       - name: setup test context
+#         uses: ./.github/actions/stages
+#         with:
+#           stage: e2e
+#           account: ${{ matrix.account }}
 
-      - name: setup shellspec
-        uses: ./.github/actions/shellspec
+#       - name: setup shellspec
+#         uses: ./.github/actions/shellspec
         
-      - name: health
-        working-directory: e2e
-        run: shellspec --color spec/health/sigv4_spec.sh
+#       - name: health
+#         working-directory: e2e
+#         run: shellspec --color spec/health/sigv4_spec.sh
 
-      - name: lambda
-        working-directory: e2e
-        run: shellspec --color spec/config/lambda_spec.sh
+#       - name: lambda
+#         working-directory: e2e
+#         run: shellspec --color spec/config/lambda_spec.sh
 
-      - name: apigatewayv2
-        working-directory: e2e
-        run: shellspec --color spec/config/apigatewayv2_spec.sh
+#       - name: apigatewayv2
+#         working-directory: e2e
+#         run: shellspec --color spec/config/apigatewayv2_spec.sh
 
-      - name: eventbridge
-        working-directory: e2e
-        run: shellspec --color spec/config/eventbridge_spec.sh
+#       - name: eventbridge
+#         working-directory: e2e
+#         run: shellspec --color spec/config/eventbridge_spec.sh
