@@ -12,7 +12,7 @@
 #         Sid       = "AllowFullAccess"
 #         Effect    = "Allow"
 #         Principal = {
-#           # AWS = module.topology.integration.role_arn
+#           AWS = module.topology.integration.role_arn
 #         }
 #         Action = [
 #           "s3:*"

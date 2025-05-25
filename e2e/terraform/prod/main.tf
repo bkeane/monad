@@ -68,31 +68,26 @@ module "monad_policy" {
   api_gateway_ids = toset([module.api_gateway.api_id])
 }
 
-module "deploy" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  depends_on               = [aws_iam_openid_connect_provider.github]
-  stage                    = "deploy"
-  topology                 = module.topology
-  policy_document          = module.monad_policy
-}
+# module "deploy" {
+#   source = "github.com/bkeane/stage/stage?ref=main"
+#   depends_on               = [aws_iam_openid_connect_provider.github]
+#   stage                    = "deploy"
+#   topology                 = module.topology
+#   policy_document          = module.monad_policy
+# }
 
-module "e2e" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  depends_on               = [aws_iam_openid_connect_provider.github]
-  stage                    = "e2e"
-  topology                 = module.topology
-  policy_document          = module.e2e_policy
-}
+# module "e2e" {
+#   source = "github.com/bkeane/stage/stage?ref=main"
+#   depends_on               = [aws_iam_openid_connect_provider.github]
+#   stage                    = "e2e"
+#   topology                 = module.topology
+#   policy_document          = module.e2e_policy
+# }
 
-resource "local_file" "ecr_action" {
-  content = module.topology.ecr_action
-  filename = "../../../.github/actions/ecr/action.yaml"
-}
-
-resource "local_file" "stage_action" {
-  content = module.topology.stage_action
-  filename = "../../../.github/actions/stage/action.yaml"
-}
+# resource "local_file" "action" {
+#   content = module.topology.action
+#   filename = "../../../.github/actions/stages/action.yaml"
+# }
 
 output "topology" {
   value = module.topology
