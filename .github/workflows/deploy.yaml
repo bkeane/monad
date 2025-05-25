@@ -20,7 +20,7 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: setup build context
-        uses: ./.github/actions/integration
+        uses: ./.github/actions/ecr
       
       - name: setup containerd
         uses: docker/setup-docker-action@v4
@@ -61,10 +61,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
       - name: setup deployment context
-        uses: ./.github/actions/deployment
+        uses: ./.github/actions/stage
         with:
+          stage: deploy
           account: ${{ matrix.account }}
+
       - name: deploy
         working-directory: e2e/echo
         run: |
@@ -83,9 +87,6 @@ jobs:
     env:
       TERM: xterm-color
       MONAD_SERVICE: echo
-      AWS_DEFAULT_REGION: us-west-2
-      MONAD_BRANCH: ${{ github.head_ref || github.ref_name }}
-      MONAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     permissions:
       contents: read
       id-token: write
@@ -99,22 +100,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
       - name: setup test context
-        uses: ./.github/actions/hook
+        uses: ./.github/actions/stage
         with:
+          stage: e2e
           account: ${{ matrix.account }}
-          region: us-west-2
+
       - name: setup shellspec
-        uses: ./.github/actions/e2e
+        uses: ./.github/actions/shellspec
+        
       - name: health
         working-directory: e2e
         run: shellspec --color spec/health/sigv4_spec.sh
+
       - name: lambda
         working-directory: e2e
         run: shellspec --color spec/config/lambda_spec.sh
+
       - name: apigatewayv2
         working-directory: e2e
         run: shellspec --color spec/config/apigatewayv2_spec.sh
+        
       - name: eventbridge
         working-directory: e2e
         run: shellspec --color spec/config/eventbridge_spec.sh

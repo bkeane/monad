@@ -1,14 +1,9 @@
-variable "account_id" {
-    type = string
-}
-
-variable "region" {
-    type = string
-}
-
 variable "api_gateway_ids" {
     type = list(string)
 }
+
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 data "aws_iam_policy_document" "extended" {
     statement {
@@ -17,7 +12,7 @@ data "aws_iam_policy_document" "extended" {
             "execute-api:Invoke"
         ]
         resources = [
-            for api_gateway_id in var.api_gateway_ids : "arn:aws:execute-api:${var.region}:${var.account_id}:${api_gateway_id}/*"
+            for api_gateway_id in var.api_gateway_ids : "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${api_gateway_id}/*"
         ]
     }
 
@@ -35,7 +30,7 @@ data "aws_iam_policy_document" "extended" {
             "events:PutEvents"
         ]
         resources = [
-            "arn:aws:events:${var.region}:${var.account_id}:event-bus/default",
+            "arn:aws:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:event-bus/default",
         ]
     }
 
@@ -50,7 +45,7 @@ data "aws_iam_policy_document" "extended" {
             "kms:Decrypt"
         ]
         resources = [
-            "arn:aws:ssm:${var.region}:${var.account_id}:parameter/monad/*",
+            "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/monad/*",
         ]
     }
 }

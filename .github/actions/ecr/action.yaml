@@ -1,0 +1,15 @@
+"description": ""
+"name": "ecr stage"
+"runs":
+  "steps":
+  - "id": "assume-role"
+    "name": "assume role"
+    "uses": "aws-actions/configure-aws-credentials@v2"
+    "with":
+      "aws-region": "us-west-2"
+      "role-session-name": "monad-ecr-session"
+      "role-to-assume": "arn:aws:iam::677771948337:role/monad-push-role"
+  - "id": "ecr-login"
+    "name": "ecr login"
+    "uses": "aws-actions/amazon-ecr-login@v2"
+  "using": "composite"

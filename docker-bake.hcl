@@ -7,14 +7,14 @@ variable "TAG" {
 }
 
 variable "EPOCH" {
-  default = "0"
+  description = "Epoch timestamp to use for output"
 }
 
 target "echo" {
   context = "e2e/echo"
   platforms = ["linux/amd64", "linux/arm64"]
   tag = [TAG]
-  
+
   output = [
     "type=image,name=${TAG},rewrite-timestamp=true",
     "type=docker,name=${TAG}"

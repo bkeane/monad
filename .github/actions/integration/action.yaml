@@ -1,13 +1,23 @@
-"description": "Composite action for continuous integration"
-"inputs": {}
-"name": "continuous integration"
-"runs":
-  "steps":
-  - "name": "setup"
-    "uses": "bkeane/monad-action@actionsOnly"
-    "with":
-      "registry_id": "677771948337"
-      "registry_region": "us-west-2"
-      "role_arn": "arn:aws:iam::677771948337:role/monad-integration-oidc-role"
-      "version": "latest"
-  "using": "composite"
+|
+  "description": "Composite action for continuous integration"
+  "name": "continuous integration"
+  "runs":
+    "steps":
+    - "name": "setup"
+      "uses": "bkeane/monad-action@main"
+      "with":
+        "checkout": true
+        "registry_id": "677771948337"
+        "registry_region": "us-west-2"
+        "role_arn": "arn:aws:iam::677771948337:role/monad-integration-oidc-role"
+        "setup_docker": true
+        "version": "latest"
+    - "name": "export"
+      "uses": "actions/github-script@v7"
+      "with":
+        "script": |
+          core.exportVariable('MONAD_REGISTRY_ID', '${{ inputs.registry_id }}');
+          core.exportVariable('MONAD_REGISTRY_REGION', '${{ inputs.registry_region }}');
+          core.exportVariable('MONAD_BRANCH', '${{ github.head_ref || github.ref_name }}');
+          core.exportVariable('MONAD_SHA', '${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}');
+    "using": "composite"
