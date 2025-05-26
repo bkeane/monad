@@ -37,7 +37,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: setup monad
-        uses: bkeane/monad-action@v0.1.4
+        uses: bkeane/monad-action@v1
         with:
           ecr_registry_id: 677771948337
           ecr_registry_region: us-west-2
@@ -72,7 +72,7 @@ jobs:
           account: ${{ matrix.account }}
       
       - name: monad-action
-        uses: bkeane/monad-action@v0.1.4
+        uses: bkeane/monad-action@v1
         with:
           ecr_registry_id: 677771948337
           ecr_registry_region: us-west-2
