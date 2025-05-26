@@ -1,12 +1,13 @@
 locals {
-    private_subnet_ids = [
-        "subnet-0f00afaf6cb110510",
-        "subnet-05129d09890492ffd"
-    ]
+    topology = data.terraform_remote_state.prod.outputs.topology
+    # private_subnet_ids = [
+    #     "subnet-0f00afaf6cb110510",
+    #     "subnet-05129d09890492ffd"
+    # ]
 
-    security_group_ids = [
-        "sg-0018ec3d366c44cc1"
-    ]
+    # security_group_ids = [
+    #     "sg-0018ec3d366c44cc1"
+    # ]
 }
 
 data "aws_caller_identity" "current" {}
@@ -45,25 +46,34 @@ module "api_gateway" {
     }
 }
 
-module "boundary" {
-    source = "../modules/boundary"
+module "e2e_policy" {
+  source = "../modules/e2e"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  api_gateway_ids = [module.api_gateway.api_id]
 }
 
-module "extended" {
-    source = "../modules/extended"
-    account_id = data.aws_caller_identity.current.account_id
-    region = data.aws_region.current.name
-    api_gateway_ids = toset([module.api_gateway.api_id])
+module "monad_policy" {
+  source = "../modules/monad"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  git_repo_name = local.topology.git.repo
+  repositories = local.topology.repositories
+  api_gateway_ids = toset([module.api_gateway.api_id])
 }
 
-module "deployment" {
-    # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
-    source = "../../../../monad-action/modules/deployment"
-    depends_on = [aws_iam_openid_connect_provider.github]
-    topology = data.terraform_remote_state.prod.outputs.topology
-    api_gateway_ids = toset([module.api_gateway.api_id])
-    boundary_policy_document = module.boundary
-    oidc_policy_document = module.extended
+module "deploy" {
+  source = "github.com/bkeane/stage/stage?ref=main"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  stage                    = "deploy"
+  topology                 = local.topology
+  policy_document          = module.monad_policy
+}
+
+module "e2e" {
+  source = "github.com/bkeane/stage/stage?ref=main"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  stage                    = "e2e"
+  topology                 = local.topology
+  policy_document          = module.e2e_policy
 }
 
 output "topology" {

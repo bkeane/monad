@@ -1,22 +1,3 @@
-locals {
-  api_name = "kaixo"
-  image = "bkeane/monad/echo"
-  common_config = [
-    "--image", local.image,
-    "--disk", "1024",
-    "--memory", "256",
-    "--timeout", "10",
-    "--api", local.api_name,
-    "--policy", "file://e2e/echo/policy.json.tmpl",
-    "--rule", "file://e2e/echo/rule.json.tmpl",
-    "--env", "file://e2e/echo/.env.tmpl"
-  ]
-  vpc_config = [
-    "--vpc-sg", "basic",
-    "--vpc-sn", "private-a private-b"
-  ]
-}
-
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
@@ -33,7 +14,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 module "api_gateway" {
   source = "terraform-aws-modules/apigateway-v2/aws"
 
-  name          = local.api_name
+  name          = "kaixo"
   description   = "gateway for mounting functions to prod.kaixo.io"
   protocol_type = "HTTP"
 
@@ -53,62 +34,59 @@ module "api_gateway" {
   }
 }
 
-module "boundary" {
-  source = "../modules/boundary"
-}
-
-module "extended" {
-  source          = "../modules/extended"
-  account_id      = data.aws_caller_identity.current.account_id
-  region          = data.aws_region.current.name
-  api_gateway_ids = [module.api_gateway.api_id]
-}
-
 module "topology" {
-  source = "../../../../monad-action/modules/topology"
+  source = "github.com/bkeane/stage/topology?ref=main"
+  depends_on               = [aws_iam_openid_connect_provider.github]
   origin = "https://github.com/bkeane/monad.git"
-
-  enable_boundary_policy = true
   
-  integration_account_name = "prod"
-  integration_account_id = "677771948337"
-  integration_account_ecr_region = "us-west-2"
-  
-  integration_account_ecr_paths = [
-    "bkeane/monad/echo"
-  ]
-
-  deployment_accounts = {
+  accounts = {
     "prod" = "677771948337"
     "dev" = "831926600600"
   }
+
+  repositories = [
+    "bkeane/monad/echo"
+  ]
+
+  stages = [
+    "deploy",
+    "e2e"
+  ]
 }
 
-module "integration" {
-  # source = "github.com/bkeane/monad-action//modules/hub?ref=main"
-  source                   = "../../../../monad-action/modules/integration"
+module "e2e_policy" {
+  source = "../modules/e2e"
   depends_on               = [aws_iam_openid_connect_provider.github]
-  topology                 = module.topology
+  api_gateway_ids = [module.api_gateway.api_id]
 }
 
-module "deployment" {
-  # source = "github.com/bkeane/monad-action//modules/spoke?ref=main"
-  source                   = "../../../../monad-action/modules/deployment"
+module "monad_policy" {
+  source = "../modules/monad"
   depends_on               = [aws_iam_openid_connect_provider.github]
+  git_repo_name = module.topology.git.repo
+  repositories = module.topology.repositories
+  api_gateway_ids = toset([module.api_gateway.api_id])
+}
+
+module "deploy" {
+  source = "github.com/bkeane/stage/stage?ref=main"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  stage                    = "deploy"
   topology                 = module.topology
-  api_gateway_ids          = toset([module.api_gateway.api_id])
-  boundary_policy_document = module.boundary
-  oidc_policy_document     = module.extended
+  policy_document          = module.monad_policy
 }
 
-resource "local_file" "integration_action" {
-  content = module.topology.action.integration
-  filename = "../../../.github/actions/integration/action.yaml"
+module "e2e" {
+  source = "github.com/bkeane/stage/stage?ref=main"
+  depends_on               = [aws_iam_openid_connect_provider.github]
+  stage                    = "e2e"
+  topology                 = module.topology
+  policy_document          = module.e2e_policy
 }
 
-resource "local_file" "deployment_action" {
-  content = module.topology.action.deployment
-  filename = "../../../.github/actions/deployment/action.yaml"
+resource "local_file" "action" {
+  content = module.topology.action
+  filename = "../../../.github/actions/stages/action.yaml"
 }
 
 output "topology" {
