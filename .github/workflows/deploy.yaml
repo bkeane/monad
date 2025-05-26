@@ -44,8 +44,9 @@ jobs:
 
       - name: build
         run: |
-          TAG=$(monad ecr tag --service echo) \
-          docker buildx bake --push
+          export TAG=$(monad ecr tag --service echo)
+          docker buildx bake build
+          docker buildx bake join --push
 
   deployment:
     needs: integration

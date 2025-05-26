@@ -1,12 +1,8 @@
-group "default" {
-  targets = ["build"]
-}
-
 variable "TAG" {
   description = "Image tag to use for output"
 }
 
-target "build_arch" {
+target "build" {
   matrix = {
     arch = ["amd64", "arm64"]
   }
@@ -15,16 +11,17 @@ target "build_arch" {
   context = "e2e/echo"
   platforms = ["linux/${arch}"]
   tag = ["${arch}"]
+  load = true
 
   output = [
-    "type=image,name=${TAG}",
+    "type=docker,name=${TAG}"
   ]
 
   cache-from = [{
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
-    prefix = "${arch}/"
+    prefix = "bkeane/monad/echo/${arch}/"
     name = "echo"
   }]
 
@@ -32,19 +29,18 @@ target "build_arch" {
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
-    prefix = "${arch}/"
+    prefix = "bkeane/monad/echo/${arch}/"
     name = "echo"
     mode = "max"
   }]
 }
 
-target "build" {
+target "join" {
   context = "e2e/echo"
   platforms = ["linux/amd64", "linux/arm64"]
   tag = [TAG]
   load = true
   output = [
-    "type=image,name=${TAG}",
     "type=docker,name=${TAG}"
   ]
 }
