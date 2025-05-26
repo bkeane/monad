@@ -33,9 +33,8 @@ jobs:
           account: ${{ matrix.account }}
 
       - name: setup monad
-        uses: bkeane/monad-action@v0
+        uses: bkeane/monad-action@v0.1.4
         with:
-          version: v0.1.4
           ecr_account_id: 677771948337
           ecr_account_region: us-west-2
 
