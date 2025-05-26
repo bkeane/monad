@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.RELEVANT_SHA }}
 
-      - name: setup build context
+      - name: setup stage
         uses: ./.github/actions/stages
         with:
           stage: build
