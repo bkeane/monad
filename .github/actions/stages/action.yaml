@@ -50,7 +50,7 @@
         core.setOutput('role_arn', resources[account][stage].role_arn);
   - "id": "assume-role"
     "name": "assume role"
-    "uses": "aws-actions/configure-aws-credentials@v2"
+    "uses": "aws-actions/configure-aws-credentials@v4"
     "with":
       "aws-region": "${{ inputs.region }}"
       "role-session-name": "${{ inputs.account }}-${{ inputs.stage }}-session"
