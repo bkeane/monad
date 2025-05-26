@@ -44,6 +44,7 @@ jobs:
 
       - name: build
         run: |
+          echo "TAG=$(monad ecr tag --service echo)"
           TAG=$(monad ecr tag --service echo) docker buildx bake build
           TAG=$(monad ecr tag --service echo) docker buildx bake join --push
 
