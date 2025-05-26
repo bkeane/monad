@@ -25,7 +25,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEVANT_BRANCH }}
 
       - name: setup stage
         uses: ./.github/actions/stages
@@ -41,7 +40,7 @@ jobs:
 
       - name: destroy
         working-directory: e2e/echo
-        run: monad destroy
+        run: monad destroy --branch ${{ env.RELEVANT_BRANCH }}
 
   untag:
     runs-on: ubuntu-latest
@@ -53,7 +52,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEVANT_BRANCH }}
 
       - name: setup stage
         uses: ./.github/actions/stages
@@ -73,7 +71,7 @@ jobs:
 
       - name: untag
         working-directory: e2e/echo
-        run: monad ecr untag
+        run: monad ecr untag --branch ${{ env.RELEVANT_BRANCH }}
 
 
 
