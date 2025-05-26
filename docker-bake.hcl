@@ -42,7 +42,9 @@ target "build" {
   context = "e2e/echo"
   platforms = ["linux/amd64", "linux/arm64"]
   tag = [TAG]
+  load = true
   output = [
-    "type=image,name=${TAG},push=true",
+    "type=image,name=${TAG}",
+    "type=docker,name=${TAG}"
   ]
 }
