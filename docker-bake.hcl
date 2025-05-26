@@ -14,7 +14,7 @@ target "build" {
   load = true
 
   output = [
-    "type=docker,name=${TAG}"
+    "type=docker,name=echo-${arch}"
   ]
 
   cache-from = [{
@@ -41,6 +41,6 @@ target "join" {
   tag = ["${TAG}"]
   load = true
   output = [
-    "type=docker,name=${TAG}"
+    "type=docker,name=echo"
   ]
 }
