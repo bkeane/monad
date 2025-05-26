@@ -1,29 +1,30 @@
 group "default" {
-  targets = ["echo"]
+  targets = ["build"]
 }
 
 variable "TAG" {
   description = "Image tag to use for output"
 }
 
-variable "EPOCH" {
-  description = "Epoch timestamp to use for output"
-}
+target "build_arch" {
+  matrix = {
+    arch = ["amd64", "arm64"]
+  }
 
-target "echo" {
+  name = "${arch}"
   context = "e2e/echo"
-  platforms = ["linux/amd64", "linux/arm64"]
-  tag = [TAG]
+  platforms = ["linux/${arch}"]
+  tag = ["${arch}"]
 
   output = [
-    "type=image,name=${TAG},rewrite-timestamp=true",
-    "type=docker,name=${TAG}"
+    "type=image,name=${TAG}",
   ]
 
   cache-from = [{
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
+    prefix = "${arch}/"
     name = "echo"
   }]
 
@@ -31,11 +32,17 @@ target "echo" {
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
+    prefix = "${arch}/"
     name = "echo"
     mode = "max"
   }]
+}
 
-  args = {
-    SOURCE_DATE_EPOCH = "${EPOCH}"
-  }
+target "build" {
+  context = "e2e/echo"
+  platforms = ["linux/amd64", "linux/arm64"]
+  tag = [TAG]
+  output = [
+    "type=image,name=${TAG},push=true",
+  ]
 }

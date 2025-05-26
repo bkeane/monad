@@ -8,6 +8,7 @@ on:
 
 env:
   RELEVANT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+  RELEVANT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   integration:
@@ -20,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEVANT_SHA }}
+          ref: ${{ env.RELEVANT_BRANCH }}
 
       - name: setup stage
         uses: ./.github/actions/stages
@@ -34,8 +35,7 @@ jobs:
       - name: build
         run: |
           TAG=$(monad ecr tag --service echo) \
-          EPOCH=$(git log -1 --pretty=%ct) \
-          docker buildx bake --progress=plain --load
+          docker buildx bake
 
   deployment:
     needs: integration
@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEVANT_SHA }}
+          ref: ${{ env.RELEVANT_BRANCH }}
       
       - name: setup stage
         uses: ./.github/actions/stages
@@ -98,7 +98,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.RELEVANT_BRANCH }}
 
       - name: setup stage
         uses: ./.github/actions/stages
