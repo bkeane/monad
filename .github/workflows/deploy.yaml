@@ -23,14 +23,20 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.RELEVANT_BRANCH }}
 
+      - name: setup docker
+        uses: ./.github/actions/docker
+
+      - name: setup monad
+        uses: bkeane/monad-action@v0.1.4
+        with:
+          ecr_account_id: 677771948337
+          ecr_account_region: us-west-2
+
       - name: setup stage
         uses: ./.github/actions/stages
         with:
           stage: build
           account: prod
-
-      - name: setup docker
-        uses: ./.github/actions/docker
 
       - name: build
         run: |
