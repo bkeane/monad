@@ -1,0 +1,22 @@
+name: 'setup-docker'
+description: 'common docker setup'
+
+runs:
+  using: "composite"
+  steps:
+      - name: setup containerd
+        uses: docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "debug": true,
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+
+      - name: install buildx
+        id: install-buildx
+        uses: docker/setup-buildx-action@v3 
+        with:
+          version: v0.23.0

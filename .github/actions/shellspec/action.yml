@@ -1,5 +1,5 @@
-name: 'Setup E2E'
-description: 'Sets up E2E environment'
+name: 'setup-shellspec'
+description: 'Sets up shellspec'
 
 inputs:
   version:
@@ -10,8 +10,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install Shellspec
-      id: install-shellspec-bin
+    - name: install shellspec
+      id: install-shellspec
       shell: bash
       run: |
         mkdir -p ${{ runner.temp }}/bin
