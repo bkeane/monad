@@ -61,7 +61,7 @@ jobs:
           stage: build
           account: prod
 
-      - name: Login to Amazon ECR
+      - name: ecr login
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 

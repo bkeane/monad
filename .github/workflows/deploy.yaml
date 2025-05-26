@@ -26,6 +26,10 @@ jobs:
       - name: setup docker
         uses: ./.github/actions/docker
 
+      - name: ecr login
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: setup monad
         uses: bkeane/monad-action@v0.1.4
         with:
@@ -66,10 +70,6 @@ jobs:
         with:
           stage: deploy
           account: ${{ matrix.account }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
       
       - name: monad-action
         uses: bkeane/monad-action@v0.1.4
