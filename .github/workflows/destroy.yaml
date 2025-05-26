@@ -36,8 +36,8 @@ jobs:
       - name: setup monad
         uses: bkeane/monad-action@v0.1.4
         with:
-          ecr_account_id: 677771948337
-          ecr_account_region: us-west-2
+          ecr_registry_id: 677771948337
+          ecr_registry_region: us-west-2
 
       - name: destroy
         working-directory: e2e/echo
@@ -61,11 +61,15 @@ jobs:
           stage: build
           account: prod
 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: setup monad
         uses: bkeane/monad-action@v0.1.4
         with:
-          ecr_account_id: 677771948337
-          ecr_account_region: us-west-2
+          ecr_registry_id: 677771948337
+          ecr_registry_region: us-west-2
 
       - name: untag
         working-directory: e2e/echo

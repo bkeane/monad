@@ -53,7 +53,7 @@ module "e2e_policy" {
 }
 
 module "monad_policy" {
-  source = "github.com/bkeane/monad-action/policy?ref=actionsOnly"
+  source = "../modules/monad"
   depends_on               = [aws_iam_openid_connect_provider.github]
   git_repo_name = local.topology.git.repo
   repositories = local.topology.repositories

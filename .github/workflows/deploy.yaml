@@ -29,8 +29,8 @@ jobs:
       - name: setup monad
         uses: bkeane/monad-action@v0.1.4
         with:
-          ecr_account_id: 677771948337
-          ecr_account_region: us-west-2
+          ecr_registry_id: 677771948337
+          ecr_registry_region: us-west-2
 
       - name: setup stage
         uses: ./.github/actions/stages
@@ -66,12 +66,16 @@ jobs:
         with:
           stage: deploy
           account: ${{ matrix.account }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
       
       - name: monad-action
         uses: bkeane/monad-action@v0.1.4
         with:
-          ecr_account_id: 677771948337
-          ecr_account_region: us-west-2
+          ecr_registry_id: 677771948337
+          ecr_registry_region: us-west-2
 
       - name: deploy
         working-directory: e2e/echo
