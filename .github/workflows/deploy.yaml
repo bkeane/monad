@@ -36,16 +36,9 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: setup monad
-        uses: bkeane/monad-action@v1
-        with:
-          ecr_registry_id: 677771948337
-          ecr_registry_region: us-west-2
-
       - name: build
         run: |
           BRANCH=${{ env.RELEVANT_BRANCH }} \
-          TAG=$(monad ecr tag --service echo) \
           docker buildx bake --push
 
   deployment:

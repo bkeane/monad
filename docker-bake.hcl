@@ -3,11 +3,8 @@ group "default" {
 }
 
 variable "BRANCH" {
-  description = "Branch name to use for caching"
-}
-
-variable "TAG" {
-  description = "Image tag to use for output"
+  description = "Branch name"
+  required = true
 }
 
 target "build" {
@@ -15,14 +12,14 @@ target "build" {
   platforms = ["linux/amd64", "linux/arm64"]
 
   output = [
-    "type=image,name=${TAG},push=true"
+    "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:${BRANCH},push=true"
   ]
 
   cache-to = [{
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
-    prefix = "bkeane/monad/${BRANCH}"
+    prefix = "bkeane/monad/${BRANCH}/"
     name = "echo"
     mode = "max"
   }]
@@ -32,14 +29,14 @@ target "build" {
       type = "s3"
       region = "us-west-2"
       bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/${BRANCH}"
+      prefix = "bkeane/monad/${BRANCH}/"
       name = "echo"
     },
     {
       type = "s3"
       region = "us-west-2"
       bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/main"
+      prefix = "bkeane/monad/main/"
       name = "echo"
     }
   ]
