@@ -7,7 +7,6 @@ on:
   pull_request:
 
 env:
-  AWS_DEFAULT_REGION: us-west-2
   RELEVANT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
   RELEVANT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
@@ -27,6 +26,12 @@ jobs:
       - name: setup docker
         uses: ./.github/actions/docker
 
+      - name: setup stage
+        uses: ./.github/actions/stages
+        with:
+          stage: build
+          account: prod
+
       - name: ecr login
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -36,12 +41,6 @@ jobs:
         with:
           ecr_registry_id: 677771948337
           ecr_registry_region: us-west-2
-
-      - name: setup stage
-        uses: ./.github/actions/stages
-        with:
-          stage: build
-          account: prod
 
       - name: build
         run: |
