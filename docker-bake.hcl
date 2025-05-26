@@ -1,3 +1,7 @@
+group "default" {
+  targets = ["build"]
+}
+
 variable "BRANCH" {
   description = "Branch name to use for caching"
 }
