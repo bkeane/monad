@@ -38,7 +38,7 @@ target "build" {
 target "join" {
   context = "e2e/echo"
   platforms = ["linux/amd64", "linux/arm64"]
-  tag = [TAG]
+  tag = ["${TAG}"]
   load = true
   output = [
     "type=docker,name=${TAG}"
