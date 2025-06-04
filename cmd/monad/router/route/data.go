@@ -74,7 +74,7 @@ func (d *Data) draw() error {
 	tbl.Row("{{.ApiGateway.Region}}", d.TemplateData.ApiGateway.Region)
 	tbl.Row("{{.ApiGateway.Id}}", d.TemplateData.ApiGateway.Id)
 	tbl.Row("{{.EventBridge.Region}}", d.TemplateData.EventBridge.Region)
-	tbl.Row("{{.EventBridge.RuleArn}}", d.TemplateData.EventBridge.RuleArn)
+	tbl.Row("{{.EventBridge.RuleName}}", d.TemplateData.EventBridge.RuleName)
 	tbl.Row("{{.EventBridge.BusName}}", d.TemplateData.EventBridge.BusName)
 	fmt.Println(tbl.Render())
 	return nil

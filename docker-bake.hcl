@@ -19,7 +19,7 @@ target "build" {
     type = "s3"
     region = "us-west-2"
     bucket = "kaixo-buildx-cache"
-    prefix = "bkeane/monad/${BRANCH}/"
+    prefix = "bkeane/monad/echo/${BRANCH}/"
     name = "echo"
     mode = "max"
   }]
@@ -29,14 +29,14 @@ target "build" {
       type = "s3"
       region = "us-west-2"
       bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/${BRANCH}/"
+      prefix = "bkeane/monad/echo/${BRANCH}/"
       name = "echo"
     },
     {
       type = "s3"
       region = "us-west-2"
       bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/main/"
+      prefix = "bkeane/monad/echo/main/"
       name = "echo"
     }
   ]

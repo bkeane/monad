@@ -39,8 +39,7 @@ resource "aws_ecr_repository" "echo" {
 }
 
 module "topology" {
-  source = "github.com/bkeane/stage/topology?ref=main"
-  # source = "../../../../stage/topology"
+  source = "github.com/bkeane/stage/topology?ref=v0.1.0"
   depends_on = [aws_iam_openid_connect_provider.github]
   origin = "https://github.com/bkeane/monad.git"
   
@@ -74,8 +73,7 @@ module "monad_policy" {
 }
 
 module "deploy" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  # source = "../../../../stage/stage"
+  source = "github.com/bkeane/stage/stage?ref=v0.1.0"
   depends_on               = [aws_iam_openid_connect_provider.github]
   stage                    = "deploy"
   topology                 = module.topology
@@ -83,8 +81,7 @@ module "deploy" {
 }
 
 module "e2e" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  # source = "../../../../stage/stage"
+  source = "github.com/bkeane/stage/stage?ref=v0.1.0"
   depends_on               = [aws_iam_openid_connect_provider.github]
   stage                    = "e2e"
   topology                 = module.topology

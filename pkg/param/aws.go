@@ -95,7 +95,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, servi
 	c.TemplateData.ApiGateway.Region = c.ApiGateway.Region
 	c.TemplateData.ApiGateway.Id = c.ApiGateway.Id
 	c.TemplateData.EventBridge.Region = c.EventBridge.Region
-	c.TemplateData.EventBridge.RuleArn = c.ResourcePath()
+	c.TemplateData.EventBridge.RuleName = c.ResourceName()
 	c.TemplateData.EventBridge.BusName = c.EventBridge.BusName
 
 	log.Info().
