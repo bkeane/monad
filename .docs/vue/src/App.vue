@@ -34,7 +34,7 @@ window.addEventListener('hashchange', () => {
 })
 
 const currentView = computed(() => {
-  return routes[currentPath.value.slice(1) || '/usage'] || NotFound
+  return routes[currentPath.value.slice(1) || '/design'] || NotFound
 })
 </script>
 

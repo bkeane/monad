@@ -1,13 +1,5 @@
 locals {
     topology = data.terraform_remote_state.prod.outputs.topology
-    # private_subnet_ids = [
-    #     "subnet-0f00afaf6cb110510",
-    #     "subnet-05129d09890492ffd"
-    # ]
-
-    # security_group_ids = [
-    #     "sg-0018ec3d366c44cc1"
-    # ]
 }
 
 data "aws_caller_identity" "current" {}
@@ -61,8 +53,7 @@ module "monad_policy" {
 }
 
 module "deploy" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  # source = "../../../../stage/stage"
+  source = "github.com/bkeane/stage/stage?ref=v0.1.0"
   depends_on = [aws_iam_openid_connect_provider.github]
   stage                    = "deploy"
   topology                 = local.topology
@@ -70,8 +61,7 @@ module "deploy" {
 }
 
 module "e2e" {
-  source = "github.com/bkeane/stage/stage?ref=main"
-  # source = "../../../../stage/stage"
+  source = "github.com/bkeane/stage/stage?ref=v0.1.0"
   depends_on = [aws_iam_openid_connect_provider.github]
   stage                    = "e2e"
   topology                 = local.topology
