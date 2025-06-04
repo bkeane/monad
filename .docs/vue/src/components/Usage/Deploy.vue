@@ -2,24 +2,27 @@
     <div>
         <h2>Deploy</h2>
         <div v-for="diagram in diagrams" :key="diagram.title">
+            <Header :columns="[diagram.title, ``]" />
             <div class="grid">
                 <Code :code="diagram.command" :title="diagram.title" />
-                <Diagram :content="diagram.svg" />
+                <Diagram :png="diagram.png" />
             </div>
         </div>
     </div>
 </template>
 
 <script>
+import Header from '../Common/Header.vue';
 import Code from '../Common/Code.vue';
 import Diagram from '../Common/Diagram.vue';
-import basicSvg from '../../../assets/diagrams/deployment-basic-1.svg?raw';
-import webserverSvg from '../../../assets/diagrams/deployment-webserver-1.svg?raw';
-import workerSvg from '../../../assets/diagrams/deployment-worker-1.svg?raw';
-import comboSvg from '../../../assets/diagrams/deployment-combo-1.svg?raw';
+import deployBasic from '../../../assets/diagrams/deployment-basic-1.png';
+import deployWebserver from '../../../assets/diagrams/deployment-webserver-1.png';
+import deployWorker from '../../../assets/diagrams/deployment-worker-1.png';
+import deployCombo from '../../../assets/diagrams/deployment-combo-1.png';
 
 export default {
     components: {
+        Header,
         Code,
         Diagram
     },
@@ -52,28 +55,28 @@ export default {
                     command: 'monad --service <name> deploy',
                     gateway: false,
                     rule: false,
-                    svg: basicSvg
+                    png: deployBasic
                 },
                 {
                     title: 'Webserver',
                     command: 'monad --service <name> deploy --api $api_gateway_name',
                     gateway: true,
                     rule: false,
-                    svg: webserverSvg
+                    png: deployWebserver
                 },
                 {
                     title: 'Worker',
                     command: 'monad --service <name> deploy --rule file://rule.json',
                     gateway: false,
                     rule: true,
-                    svg: workerSvg
+                    png: deployWorker
                 },
                 {
                     title: 'Webserver + Worker',
                     command: 'monad --service <name> deploy --rule file://rule.json --api $api_gateway_name',
                     gateway: true,
                     rule: true,
-                    svg: comboSvg
+                    png: deployCombo
                 }
             ]
         }

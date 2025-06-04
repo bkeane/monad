@@ -1,18 +1,18 @@
 <template>
-    <div class="grid">
-        <div>
-            <h2>Init</h2>
+    <div>
+        <h2>Init</h2>
+        <div class="grid">
             <Code :code="code" />
-        </div>
-        <div style="margin-top: 25%; margin-left: 10%;">
-            <GitGraph />
+            <Diagram :png="png" />
         </div>
     </div>
 </template>
 
 <script>
-import GitGraph from '../../../assets/diagrams/git-graph-1.svg?component';
+import Header from '../Common/Header.vue';
 import Code from '../Common/Code.vue';
+import Diagram from '../Common/Diagram.vue';
+import gitGraph from '../../../assets/diagrams/git-graph-1.png';
 import endent from 'endent';
 
 export default {
@@ -29,11 +29,13 @@ export default {
         },
     },
     components: {
+        Header,
         Code,
-        GitGraph
+        Diagram
     },
     data() {
         return {
+            png: gitGraph,
             code: endent`
 git init
 git add origin https://github.com/${ this.git.owner }/${ this.git.repo }

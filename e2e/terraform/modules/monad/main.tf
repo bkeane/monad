@@ -31,7 +31,7 @@ data "aws_iam_policy_document" "deployment" {
     ]
 
     resources = [
-        for repo in var.repositories : "arn:aws:ecr:*:${local.account_id}:repository/${repo}"
+        for repo in var.ecr_repositories : repo.arn
     ]
   }
 

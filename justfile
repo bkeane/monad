@@ -51,25 +51,32 @@ diagrams:
     
     # We are using the main branch of mermaid-cli for icon support.
     # In the future, when this is in a release, we should lock to a specific version.
-    
-    rm .docs/vue/assets/diagrams/*.svg
 
+    # remove all svg diagrams
+    rm .docs/vue/assets/diagrams/*.png
+
+    # generate deployment diagrams
     for file in .docs/mermaid/deployments/*.md; do
         npx github:mermaid-js/mermaid-cli \
         --iconPacks @iconify-json/bitcoin-icons @iconify-json/logos \
         --theme dark \
         --backgroundColor transparent \
-        --cssFile $(dirname $file)/style.css \
         --input $file \
-        --output .docs/vue/assets/diagrams/$(basename $file .md).svg
+        --cssFile $(dirname $file)/style.css \
+        --outputFormat png \
+        --output .docs/vue/assets/diagrams/$(basename $file .md).png
     done
 
+    # generate git diagrams
     for file in .docs/mermaid/git/*.md; do
          npx github:mermaid-js/mermaid-cli \
         --iconPacks @iconify-json/bitcoin-icons @iconify-json/logos \
         --theme neutral \
         --backgroundColor transparent \
         --input $file \
-        --output .docs/vue/assets/diagrams/$(basename $file .md).svg
+        --outputFormat png \
+        --output .docs/vue/assets/diagrams/$(basename $file .md).png
     done
 
+    # trim all empty space from the diagrams
+    mogrify -trim +repage .docs/vue/assets/diagrams/*.png

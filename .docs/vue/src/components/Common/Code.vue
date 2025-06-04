@@ -1,6 +1,5 @@
 <template>
     <div>
-        <h4 v-if="title">{{ title }}</h4>
         <pre><code :class="language">
 {{ code }}
         </code></pre>
@@ -12,10 +11,6 @@ import highlight from 'highlight.js/lib/core';
 
 export default {
     props: {
-        title: {
-            type: String,
-            required: false,
-        },
         language: {
             type: String,
             required: false,
