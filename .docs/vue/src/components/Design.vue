@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h2>Design</h2>
+        <article>Monad is a tool for deploying OCI image based services to AWS.</article>
         <h3>Three Factor Deployments</h3>
         <p>
             Monad uses convention to reduce the number of factors necessary for deploying an application
@@ -65,7 +65,9 @@
 </template>
 
 <style scoped>
-div {
-    margin: 0 15%;
+article {
+    text-align: center;
+    margin-top: 3rem;
+    margin-bottom: 4rem;
 }
 </style>

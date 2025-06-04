@@ -48,21 +48,22 @@ module "api_gateway" {
 
 module "e2e_policy" {
   source = "../modules/e2e"
-  depends_on               = [aws_iam_openid_connect_provider.github]
+  depends_on = [aws_iam_openid_connect_provider.github]
   api_gateway_ids = [module.api_gateway.api_id]
 }
 
 module "monad_policy" {
   source = "../modules/monad"
-  depends_on               = [aws_iam_openid_connect_provider.github]
+  depends_on = [aws_iam_openid_connect_provider.github]
   git_repo_name = local.topology.git.repo
-  repositories = local.topology.repositories
+  ecr_repositories = local.topology.ecr_repositories
   api_gateway_ids = toset([module.api_gateway.api_id])
 }
 
 module "deploy" {
   source = "github.com/bkeane/stage/stage?ref=main"
-  depends_on               = [aws_iam_openid_connect_provider.github]
+  # source = "../../../../stage/stage"
+  depends_on = [aws_iam_openid_connect_provider.github]
   stage                    = "deploy"
   topology                 = local.topology
   policy_document          = module.monad_policy
@@ -70,7 +71,8 @@ module "deploy" {
 
 module "e2e" {
   source = "github.com/bkeane/stage/stage?ref=main"
-  depends_on               = [aws_iam_openid_connect_provider.github]
+  # source = "../../../../stage/stage"
+  depends_on = [aws_iam_openid_connect_provider.github]
   stage                    = "e2e"
   topology                 = local.topology
   policy_document          = module.e2e_policy

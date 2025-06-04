@@ -34,9 +34,14 @@ module "api_gateway" {
   }
 }
 
+resource "aws_ecr_repository" "echo" {
+  name = "bkeane/monad/echo"
+}
+
 module "topology" {
   source = "github.com/bkeane/stage/topology?ref=main"
-  depends_on               = [aws_iam_openid_connect_provider.github]
+  # source = "../../../../stage/topology"
+  depends_on = [aws_iam_openid_connect_provider.github]
   origin = "https://github.com/bkeane/monad.git"
   
   accounts = {
@@ -44,8 +49,8 @@ module "topology" {
     "dev" = "831926600600"
   }
 
-  repositories = [
-    "bkeane/monad/echo"
+  ecr_repositories = [
+    aws_ecr_repository.echo,
   ]
 
   stages = [
@@ -64,12 +69,13 @@ module "monad_policy" {
   source = "../modules/monad"
   depends_on               = [aws_iam_openid_connect_provider.github]
   git_repo_name = module.topology.git.repo
-  repositories = module.topology.repositories
+  ecr_repositories = module.topology.ecr_repositories
   api_gateway_ids = toset([module.api_gateway.api_id])
 }
 
 module "deploy" {
   source = "github.com/bkeane/stage/stage?ref=main"
+  # source = "../../../../stage/stage"
   depends_on               = [aws_iam_openid_connect_provider.github]
   stage                    = "deploy"
   topology                 = module.topology
@@ -78,6 +84,7 @@ module "deploy" {
 
 module "e2e" {
   source = "github.com/bkeane/stage/stage?ref=main"
+  # source = "../../../../stage/stage"
   depends_on               = [aws_iam_openid_connect_provider.github]
   stage                    = "e2e"
   topology                 = module.topology

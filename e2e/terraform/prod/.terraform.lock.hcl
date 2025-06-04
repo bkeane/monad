@@ -36,29 +36,6 @@ provider "registry.opentofu.org/hashicorp/local" {
   ]
 }
 
-provider "registry.opentofu.org/isometry/deepmerge" {
-  version     = "1.0.0"
-  constraints = "1.0.0"
-  hashes = [
-    "h1:F469XTnIA5k6fxFcBcm4chSo5jt3JJlgVkHvvh/aaO8=",
-    "zh:101fdefbcd51dc71906654e6f7c3259844794737c3da9f2ee3a87fc39fcddde6",
-    "zh:1510effa1a654673264ffe949307436c55751ef7b317c09ee385d2ab2ba366bb",
-    "zh:3ed13962032ec99830050657ffe5f82e0f1d118f93f70389bcf061898a731a95",
-    "zh:3f9bf8c52636e16244f243363ab00943f0df28deedc09e8ed42ffc9759128f09",
-    "zh:511272694efa0351942f2334c36cfbb37883a55c8f53fd1b596ff2c024aea107",
-    "zh:5501d7ef653bd9e582337e8e5400747b39e02a7bcaf20b6b4c83e3df71aac97f",
-    "zh:589c2e41b5c1db31635190a913c07ee8c442c715a53c6c570668872273d99c40",
-    "zh:614d59e38592471a9c8b3fb30f4a78c7bba2e10022dc7ff37e8e5d2a4694d994",
-    "zh:7b0b362dcf769bd210287f2ca98a3277ddb838598454b255c2552fd3154ec81a",
-    "zh:7d2cb25a73f3a61387c7f08d5e0a821a87642d7d2aa6769cb4ae4090f318ce5b",
-    "zh:890df766e9b839623b1f0437355032a3c006226a6c200cd911e15ee1a9014e9f",
-    "zh:a04db51e34b5b3e442a452223357d6f3931a26e3afc7f2c1e65e97b004be836c",
-    "zh:a2e8e1bcee859ce85a563b77dca52591354bcf4fd7362c75f93af868aba99e56",
-    "zh:aaa7681f0bbaca2b1504f9f7c80dcf59e40d9d708cee9390af3e7ff1e1a0bafb",
-    "zh:fca06c704d274ee0d609d1b3339eded3f5cd5a7a2f8a42e419eaccfe0a064940",
-  ]
-}
-
 provider "registry.opentofu.org/northwood-labs/corefunc" {
   version     = "1.5.1"
   constraints = "~> 1.0"

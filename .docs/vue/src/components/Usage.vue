@@ -1,5 +1,5 @@
 <template>
-    <div class="outer">
+    <div>
         <Install :git="git" />
         <Init :git="git" />
         <Publish />
@@ -70,9 +70,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.outer {
-    margin-left: 15%;
-}
-</style>

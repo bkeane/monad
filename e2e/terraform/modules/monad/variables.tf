@@ -9,9 +9,12 @@ variable "git_repo_name" {
     type = string
 }
 
-variable "repositories" {
+variable "ecr_repositories" {
     description = "The ecr repositories under management"
-    type = list(string)
+    type = list(object({
+        arn = string
+        repository_url = string
+    }))
 }
 
 variable "api_gateway_ids" {
