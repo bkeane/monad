@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
@@ -54,9 +55,19 @@ func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error 
 	}
 
 	if e.RuleTemplate != "" {
-		content, err := uriopt.Json(e.RuleTemplate)
-		if err != nil {
-			return fmt.Errorf("failed to read provided rule template: %w", err)
+		var content string
+		var err error
+
+		if strings.HasSuffix(e.RuleTemplate, ".json") {
+			content, err = uriopt.Json(e.RuleTemplate)
+			if err != nil {
+				return fmt.Errorf("failed to read provided rule template: %w", err)
+			}
+		} else {
+			content, err = uriopt.String(e.RuleTemplate)
+			if err != nil {
+				return fmt.Errorf("failed to read provided rule template: %w", err)
+			}
 		}
 
 		e.RuleTemplate = content
