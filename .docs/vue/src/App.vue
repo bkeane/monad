@@ -13,6 +13,7 @@
         <li><a class="contrast" href="#/design">Design</a></li>
         <li><a class="contrast" href="#/usage">Usage</a></li>
         <li><a class="contrast" href="#/dive">Dive</a></li>
+        <li><a class="contrast" href="https://github.com/bkeane/monad">Source</a></li>
       </ul>
     </nav>
     <component :is="currentView" />

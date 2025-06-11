@@ -1,14 +1,14 @@
 <template>
     <div>
-        <h3>Environment</h3>
-        <h5>Non-Sensitive</h5>
+        <h4>Environment</h4>
+        <h6>Non-Sensitive</h6>
         <p>
             A dotenv file can be provided to set non-sensitive environment variables.
         </p>
         <p>
             <Code :code="dotenv" :language="`bash`" />
         </p>
-        <h5>Sensitive</h5>
+        <h6>Sensitive</h6>
         <p>
             Sensitive environment variables should be provided by alternate means at runtime.
         </p>
@@ -48,6 +48,7 @@ CMD ["./webserver"]
 <style scoped>
 .doc-ref {
     text-align: right;
+    font-size: 0.9rem;
 }
 
 .doc-ref a {
