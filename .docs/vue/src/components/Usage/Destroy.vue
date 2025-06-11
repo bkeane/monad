@@ -1,7 +1,7 @@
 <template>
     <div class="grid">
         <div>
-            <h2>Destroy</h2>
+            <h4>Destroy</h4>
             <Code :code="`monad --service <name> destroy`" />
         </div>
         <div>

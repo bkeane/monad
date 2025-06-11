@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h3>OCI</h3>
+        <h4>Artifact</h4>
         <p>
             The deployable artifact of Monad is an OCI / Docker image hosted on AWS ECR.
         </p>
@@ -37,7 +37,7 @@ export default {
     },
     data() {
         return {
-            tag: "$id.dkr.ecr.$region.amazonaws.com/${owner}/${repo}/${service}:${branch}",
+            tag: "${id}.dkr.ecr.${region}.amazonaws.com/${owner}/${repo}/${service}:${branch}",
             entrypoint: endent`
             COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
             ENTRYPOINT ["./webserver"]

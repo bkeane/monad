@@ -1,7 +1,7 @@
 <template>
     <div class="grid">
         <div>
-            <h2>Publish</h2>
+            <h4>Publish</h4>
             <Code :code="code" />
         </div>
         <div>

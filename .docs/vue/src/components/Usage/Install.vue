@@ -1,12 +1,12 @@
 <template>
     <div>
-        <h2>Install</h2>
-        <h4>Homebrew (<a href="https://github.com/bkeane/monad/releases">releases</a>)</h4>
+        <h4>Install</h4>
+        <h6>Homebrew (<a href="https://github.com/bkeane/monad/releases">releases</a>)</h6>
         <div class="grid">
             <Code :code="brew" />
             <div></div>
         </div>
-        <h4>Github Actions (<a href="https://github.com/marketplace/actions/monad-action">releases</a>)</h4>
+        <h6>Github Actions (<a href="https://github.com/marketplace/actions/monad-action">releases</a>)</h6>
         <div class="grid">
             <Code :code="action" />
             <div></div>

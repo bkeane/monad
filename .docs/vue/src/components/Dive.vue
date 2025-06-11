@@ -1,7 +1,7 @@
 <template>
     <div>
-        <h2>Dive</h2>
-        <OCI />
+        <h3>Dive</h3>
+        <Artifact />
         <Environment />
         <IAM />
         <EventBridge />
@@ -14,7 +14,7 @@ import IAM from './Dive/IAM.vue';
 import EventBridge from './Dive/EventBridge.vue';
 import ApiGateway from './Dive/ApiGateway.vue';
 import Environment from './Dive/Environment.vue';
-import OCI from './Dive/OCI.vue';
+import Artifact from './Dive/Artifact.vue';
 
 export default {
     name: 'Dive',
@@ -23,7 +23,7 @@ export default {
         EventBridge,
         ApiGateway,
         Environment,
-        OCI
+        Artifact
     }
 }
 </script>

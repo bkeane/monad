@@ -43,7 +43,7 @@ export default {
         return {
             mount: `monad deploy --api $api_id_or_name`,
             authorizers: `monad deploy --api name --auth $authorizer_id_or_name`,
-            curl: "curl https://$api_gateway_url/${repo}/${branch}/${service}/",
+            curl: "curl https://${api_gateway_url}/${repo}/${branch}/${service}/",
         }
     }
 }

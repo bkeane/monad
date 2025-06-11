@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h2>Deploy</h2>
+        <h4>Deploy</h4>
         <div v-for="diagram in diagrams" :key="diagram.title">
             <Header :columns="[diagram.title, ``]" />
             <div class="grid">

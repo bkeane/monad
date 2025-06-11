@@ -1,7 +1,7 @@
 <template> 
     <div class="grid">
             <div>
-                <h2>And more...</h2>
+                <h4>More</h4>
                 <Code :code="code" />
             </div>
     <div></div>

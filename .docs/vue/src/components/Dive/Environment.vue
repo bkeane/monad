@@ -37,7 +37,7 @@ export default {
             dotenv: `monad deploy --env file://.env`,
             df: endent`
 COPY --from=raylas/mapenv:latest /bin/mapenv /bin/mapenv
-ENTRYPOINT ["/bin/mapenv", "ssm", "-p", "/path/to/env", "--"]
+ENTRYPOINT ["/bin/mapenv", "ssm", "-i", "-p", "/path/to/env", "--"]
 CMD ["./webserver"]
             `
         }
