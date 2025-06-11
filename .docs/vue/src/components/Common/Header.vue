@@ -1,7 +1,7 @@
 <template>
     <div class="grid">
         <div v-for="column in columns" :key="column">
-            <h4>{{ column }}</h4>
+            <h6>{{ column }}</h6>
         </div>
     </div>
 </template>

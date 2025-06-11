@@ -1,25 +1,6 @@
 <template>
     <div>
-        <article>Monad is a tool for deploying OCI image based services to AWS.</article>
-        <h3>Three Factor Deployments</h3>
-        <p>
-            Monad uses convention to reduce the number of factors necessary for deploying an application
-            from <a href="https://12factor.net/">twelve factors</a> to three.
-        </p>
-        The remaining factors are:
-        <ol>
-            <li>
-                <strong>Codebase</strong> - A git repository.
-            </li>
-            <li>
-                <strong>Dependencies</strong> - ECR image/s.
-            </li>
-            <li>
-                <strong>Configuration</strong> - Environment variables.
-            </li>
-        </ol>
-
-        <h3>Design Principles</h3>
+        <h3>Design</h3>
         <h5>Single Binary</h5>
         <p>
             Monad is a single binary that can be used directly from developer machines and from CI/CD pipelines.

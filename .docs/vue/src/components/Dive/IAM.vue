@@ -1,10 +1,10 @@
 <template>
     <div>
-        <h3>IAM</h3>
+        <h4>IAM</h4>
         <p>
             By default monad will deploy your lambda function with minimum role and policy adequate for execution.
         </p>
-        <h5>Custom Policy</h5>
+        <h6>Custom Policy</h6>
         <p>
             <Code :code="policy" :language="`bash`" />
         </p>
@@ -13,7 +13,7 @@
             <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-conditions.html">Policy Simulator</a><br>
             <a href="https://docs.aws.amazon.com/service-authorization/latest/reference/reference_policies_actions-resources-contextkeys.html">Actions, Resources & Conditions</a>
         </p>
-        <h5>Custom Role Policy</h5>
+        <h6>Custom Role Policy</h6>
         <p>
             <Code :code="trust" :language="`bash`" />
         </p>
@@ -43,6 +43,7 @@ export default {
 <style scoped>
 .doc-ref {
     text-align: right;
+    font-size: 0.9rem;
 }
 
 .doc-ref a {

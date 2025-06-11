@@ -1,5 +1,6 @@
 <template>
     <div>
+        <h3>Usage</h3>
         <Install :git="git" />
         <Init :git="git" />
         <Publish />

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h2>Init</h2>
+        <h4>Init</h4>
         <div class="grid">
             <Code :code="code" />
             <Diagram :png="png" />

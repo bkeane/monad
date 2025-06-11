@@ -1,10 +1,10 @@
 <template>
     <div>
-        <h3>EventBridge</h3>
+        <h4>EventBridge</h4>
         <p>
             To wire up your lambda function to be invoked by eventbridge events you can provide both a bus and rule.
         </p>
-        <h5>Rule</h5>
+        <h6>Rule</h6>
         <p>
             <Code :code="rule" :language="`bash`" />
         </p>
@@ -12,7 +12,7 @@
             <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-conditions.html">Rule Documentation</a><br>
             <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-pattern-sandbox.html">Rule Sandbox</a>
         </p>
-        <h5>Bus</h5>
+        <h6>Bus</h6>
         <p>
             <Code :code="bus" :language="`bash`" />
         </p>
@@ -42,6 +42,7 @@ export default {
 <style scoped>
 .doc-ref {
     text-align: right;
+    font-size: 0.9rem;
 }
 
 .doc-ref a {

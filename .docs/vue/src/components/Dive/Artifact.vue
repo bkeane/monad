@@ -1,17 +1,17 @@
 <template>
     <div>
-        <h3>OCI</h3>
+        <h4>Artifact</h4>
         <p>
             The deployable artifact of Monad is an OCI / Docker image hosted on AWS ECR.
         </p>
-        <h5>Tag</h5>
+        <h6>Tag</h6>
         <p>
             By default, Monad assumes the tag of your deployable artifact to follow:
         </p>
         <p>
             <Code :code="tag" :language="`bash`" />
         </p>
-        <h5>Entrypoint</h5>
+        <h6>Entrypoint</h6>
         <p>
             All service scaffolds provided by <code>monad init</code> implement a language agnostic pattern
             which assumes the entrypoint of your application is a webserver. This approach is not strictly necessary. 
@@ -37,7 +37,7 @@ export default {
     },
     data() {
         return {
-            tag: "$id.dkr.ecr.$region.amazonaws.com/${owner}/${repo}/${service}:${branch}",
+            tag: "${id}.dkr.ecr.${region}.amazonaws.com/${owner}/${repo}/${service}:${branch}",
             entrypoint: endent`
             COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
             ENTRYPOINT ["./webserver"]
@@ -50,6 +50,7 @@ export default {
 <style scoped>
 .doc-ref {
     text-align: right;
+    font-size: 0.9rem;
 }
 
 .doc-ref a {

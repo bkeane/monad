@@ -1,10 +1,10 @@
 <template>
     <div>
-        <h3>API Gateway V2</h3>
+        <h4>API Gateway V2</h4>
         <p>
             To reverse proxy https traffic to your lambda function you can provide it an HTTP API Gateway V2 on which to mount.
         </p>
-        <h5>Mount</h5>
+        <h6>Mount</h6>
         <p>
             <Code :code="mount" :language="`bash`" />
         </p>
@@ -12,7 +12,7 @@
             <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-set-up-simple-proxy.html">Greedy Proxies</a><br>
             <a href="https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-9.0">X-Forwarded-Prefix</a>
         </p>
-        <h5>Authorizors</h5>
+        <h6>Authorizors</h6>
         <p>
             <Code :code="authorizers" :language="`bash`" />
         </p>
@@ -21,7 +21,7 @@
             <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html">JWT Authentication</a><br>
             <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-authorizer.html">Custom Authentication</a>
         </p>
-        <h5>Invoke</h5>
+        <h6>Invoke</h6>
         <p>
             <Code :code="curl" :language="`bash`" />
         </p>
@@ -43,7 +43,7 @@ export default {
         return {
             mount: `monad deploy --api $api_id_or_name`,
             authorizers: `monad deploy --api name --auth $authorizer_id_or_name`,
-            curl: "curl https://$api_gateway_url/${repo}/${branch}/${service}/",
+            curl: "curl https://${api_gateway_url}/${repo}/${branch}/${service}/",
         }
     }
 }
@@ -52,6 +52,7 @@ export default {
 <style scoped>
 .doc-ref {
     text-align: right;
+    font-size: 0.9rem;
 }
 
 .doc-ref a {
