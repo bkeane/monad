@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bkeane/monad/pkg/param"
 
@@ -74,13 +73,9 @@ func match(function types.FunctionConfiguration) (bool, *param.StateMetadata) {
 		return false, nil
 	}
 
-	fmt.Println("requireds checked")
-
 	// Optional
 	svc.Api = env["MONAD_API"]
 	svc.Bus = env["MONAD_BUS"]
-
-	fmt.Println("optional checked")
 
 	return true, svc
 }
