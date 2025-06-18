@@ -14,30 +14,4 @@ target "build" {
   output = [
     "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:${BRANCH},push=true"
   ]
-
-  cache-to = [{
-    type = "s3"
-    region = "us-west-2"
-    bucket = "kaixo-buildx-cache"
-    prefix = "bkeane/monad/echo/${BRANCH}/"
-    name = "echo"
-    mode = "max"
-  }]
-
-  cache-from = [
-    {
-      type = "s3"
-      region = "us-west-2"
-      bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/echo/${BRANCH}/"
-      name = "echo"
-    },
-    {
-      type = "s3"
-      region = "us-west-2"
-      bucket = "kaixo-buildx-cache"
-      prefix = "bkeane/monad/echo/main/"
-      name = "echo"
-    }
-  ]
 }

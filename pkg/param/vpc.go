@@ -14,8 +14,8 @@ import (
 
 type Vpc struct {
 	Client           *ec2.Client `arg:"-" json:"-"`
-	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS" placeholder:"id|name" help:"vpc-default sg-456... (space separated) [default: []]"`
-	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS" placeholder:"id|name" help:"private subnet-456... (space separated) [default: []]"`
+	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS" placeholder:"id|name" help:"vpc-default,sg-456... (comma separated) [default: []]"`
+	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS" placeholder:"id|name" help:"private,subnet-456... (comma separated) [default: []]"`
 	SecurityGroupIds []string    `arg:"-"`
 	SubnetIds        []string    `arg:"-"`
 }
