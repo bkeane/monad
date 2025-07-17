@@ -7,6 +7,10 @@ import (
 )
 
 type TemplateData struct {
+	Monad struct {
+		Service string
+	}
+
 	Git struct {
 		Branch string
 		Sha    string

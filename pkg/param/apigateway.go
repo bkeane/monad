@@ -15,6 +15,7 @@ type ApiGateway struct {
 	Client       *apigatewayv2.Client `arg:"-" json:"-"`
 	Id           string               `arg:"-" json:"-"`
 	Api          string               `arg:"--api,env:MONAD_API" placeholder:"id|name" help:"api gateway" default:"no-gateway"`
+	Route        string               `arg:"--route,env:MONAD_ROUTE" placeholder:"pattern" help:"api gateway route pattern" default:"ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}"`
 	Auth         string               `arg:"--auth,env:MONAD_AUTH" placeholder:"id|name" help:"none | aws_iam | name | id" default:"aws_iam"`
 	Region       string               `arg:"--api-region,env:MONAD_API_REGION" placeholder:"name" help:"api gateway region" default:"caller-region"`
 	AuthType     string               `arg:"-" json:"-"` // `arg:"--api-auth-type" placeholder:"name" default:"AWS_IAM" help:"NONE | AWS_IAM | CUSTOM | JWT"`
@@ -32,9 +33,14 @@ func (a *ApiGateway) Validate(ctx context.Context, awsconfig aws.Config) error {
 		a.Auth = "aws_iam"
 	}
 
+	if a.Route == "" {
+		a.Route = "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}"
+	}
+
 	// pre-compute validations
 	err := v.ValidateStruct(a,
 		v.Field(&a.Api, v.When(a.Auth != "", v.Required)),
+		v.Field(&a.Route, v.Required),
 		v.Field(&a.Region, v.Required),
 		v.Field(&a.Client, v.Required),
 	)

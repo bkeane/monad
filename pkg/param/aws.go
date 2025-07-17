@@ -74,6 +74,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, servi
 	}
 
 	// Map data into templating struct
+	c.TemplateData.Monad.Service = c.Service.Name
 	c.TemplateData.Git.Sha = c.Git.Sha
 	c.TemplateData.Git.Branch = c.Git.Branch
 	c.TemplateData.Git.Owner = c.Git.Owner
@@ -221,26 +222,37 @@ func (c *Aws) EniRolePolicyArn() string {
 	return "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-func (c *Aws) RouteKey() string {
-	return fmt.Sprintf("ANY /%s/{proxy+}", c.ResourcePath())
+func (c *Aws) RouteKey() (string, error) {
+	// return fmt.Sprintf("ANY /%s/{proxy+}", c.ResourcePath())
+	return tmpl.Template("route", c.ApiGateway.Route, c.TemplateData)
 }
 
-func (c *Aws) ForwardedForPrefix() string {
-	forwardedForPrefix := strings.Split(c.RouteKey(), " ")[1]
+func (c *Aws) ForwardedForPrefix() (string, error) {
+	routeKey, err := c.RouteKey()
+	if err != nil {
+		return "", err
+	}
+
+	forwardedForPrefix := strings.Split(routeKey, " ")[1]
 	forwardedForPrefix = strings.Replace(forwardedForPrefix, "/{proxy+}", "", 1)
-	return forwardedForPrefix
+	return forwardedForPrefix, nil
 }
 
 func (c *Aws) ApiGwPermissionStatementId(apiId string) string {
 	return strings.Join([]string{"apigatewayv2", c.ResourceName(), apiId}, "-")
 }
 
-func (c *Aws) ApiGwPermissionSourceArn() string {
-	routeWithoutVerb := strings.Split(c.RouteKey(), " ")[1]
+func (c *Aws) ApiGwPermissionSourceArn() (string, error) {
+	routeKey, err := c.RouteKey()
+	if err != nil {
+		return "", err
+	}
+
+	routeWithoutVerb := strings.Split(routeKey, " ")[1]
 	permissionSourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*%s",
 		c.ApiGateway.Region, c.Caller.AccountId, c.ApiGateway.Id, routeWithoutVerb)
 
-	return permissionSourceArn
+	return permissionSourceArn, nil
 }
 
 func (c *Aws) RuleDocument() (string, error) {

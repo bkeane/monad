@@ -18,6 +18,7 @@ type Lambda struct {
 	EphemeralStorage int32          `arg:"--disk,env:MONAD_DISK" placeholder:"mb" help:"ephemeral storage size" default:"512"`
 	MemorySize       int32          `arg:"--memory,env:MONAD_MEMORY" placeholder:"mb" help:"memory size" default:"128"`
 	Timeout          int32          `arg:"--timeout,env:MONAD_TIMEOUT" placeholder:"seconds" help:"function timeout" default:"3"`
+	Retries          int32          `arg:"--retry,env:MONAD_RETRIES" placeholder:"count" help:"async function invoke retries" default:"0"`
 }
 
 func (l *Lambda) Validate(ctx context.Context, awsconfig aws.Config) error {
@@ -55,11 +56,16 @@ func (l *Lambda) Validate(ctx context.Context, awsconfig aws.Config) error {
 		l.Timeout = int32(3)
 	}
 
+	if l.Retries == 0 {
+		l.Retries = int32(0)
+	}
+
 	return v.ValidateStruct(l,
 		v.Field(&l.EnvTemplate, v.NilOrNotEmpty),
 		v.Field(&l.Region, v.Required),
 		v.Field(&l.EphemeralStorage, v.Required),
 		v.Field(&l.MemorySize, v.Required),
 		v.Field(&l.Timeout, v.Required),
+		v.Field(&l.Retries, v.Min(int32(0))),
 	)
 }
