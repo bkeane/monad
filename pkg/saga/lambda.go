@@ -135,6 +135,11 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		},
 	}
 
+	updateRetryBehavior := &lambda.PutFunctionEventInvokeConfigInput{
+		FunctionName:         create.FunctionName,
+		MaximumRetryAttempts: aws.Int32(s.config.Lambda.Retries),
+	}
+
 	if len(create.VpcConfig.SecurityGroupIds) == 0 && len(create.VpcConfig.SubnetIds) == 0 {
 		// Due to peculiarities in the lambda api, we need to pass empty slices instead of nil slices to the update config.
 		// Unfortunately, the create function struct has different type behavior than the update function struct.
@@ -171,6 +176,11 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 	}
 
 	_, err = s.config.Lambda.Client.UpdateFunctionConfiguration(ctx, update.Role, RetryUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.config.Lambda.Client.PutFunctionEventInvokeConfig(ctx, updateRetryBehavior)
 	if err != nil {
 		return nil, err
 	}
