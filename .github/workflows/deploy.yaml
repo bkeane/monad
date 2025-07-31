@@ -39,7 +39,7 @@ jobs:
       - name: build
         run: |
           BRANCH=${{ env.RELEVANT_BRANCH }} \
-          docker buildx bake --push
+          docker buildx bake echo --push
 
   deployment:
     needs: integration
@@ -72,16 +72,20 @@ jobs:
           ecr_registry_region: us-west-2
 
       - name: deploy
-        working-directory: e2e/echo
         run: |
-          monad deploy \
+          go run cmd/monad/main.go deploy \
+            --chdir e2e/echo \
             --env file://.env.tmpl \
             --policy file://policy.json.tmpl \
             --rule file://rule.json.tmpl \
             --memory 256 \
             --disk 1024 \
             --timeout 10 \
-            --api kaixo
+            --api kaixo \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}" \
+            --auth aws_iam \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/public/{proxy+}" \
+            --auth none
 
   e2e:
     runs-on: ubuntu-24.04-arm
@@ -116,6 +120,10 @@ jobs:
       - name: health
         working-directory: e2e
         run: shellspec --color spec/health/sigv4_spec.sh
+      
+      - name: public health
+        working-directory: e2e
+        run: shellspec --color spec/health/none_spec.sh
 
       - name: lambda
         working-directory: e2e

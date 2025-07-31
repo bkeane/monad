@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
-type Lambda struct {
+type LambdaConfig struct {
 	Client           *lambda.Client `arg:"-" json:"-"`
 	Region           string         `arg:"--lambda-region,env:MONAD_LAMBDA_REGION" placeholder:"name" help:"lambda region" default:"caller-region"`
 	EnvTemplate      string         `arg:"--env,env:MONAD_ENV" placeholder:"template" help:"string | file://env.tmpl" default:"minimal-env"`
@@ -21,7 +21,7 @@ type Lambda struct {
 	Retries          int32          `arg:"--retry,env:MONAD_RETRIES" placeholder:"count" help:"async function invoke retries" default:"0"`
 }
 
-func (l *Lambda) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (l *LambdaConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	l.Client = lambda.NewFromConfig(awsconfig)

@@ -8,7 +8,7 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type Caller struct {
+type CallerConfig struct {
 	Client    *sts.Client `arg:"-" json:"-"`
 	AccountId string      `arg:"-" json:"-"`
 	Region    string      `arg:"-" json:"-"`
@@ -16,7 +16,7 @@ type Caller struct {
 	UserId    string      `arg:"-" json:"-"`
 }
 
-func (c *Caller) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (c *CallerConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	c.Client = sts.NewFromConfig(awsconfig)
 
 	caller, err := c.Client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})

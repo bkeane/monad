@@ -10,7 +10,7 @@ import (
 type SubCommand struct{}
 
 type Ecr struct {
-	param.Registry
+	param.RegistryConfig
 	Init   *SubCommand `arg:"subcommand:init" help:"initialize a repository"`
 	Delete *SubCommand `arg:"subcommand:delete" help:"delete a repository"`
 	Tag    *SubCommand `arg:"subcommand:tag" help:"tag an image"`
@@ -19,27 +19,27 @@ type Ecr struct {
 }
 
 func (e *Ecr) Route(ctx context.Context, r Root) error {
-	if err := e.Registry.Validate(ctx, r.AwsConfig); err != nil {
+	if err := e.RegistryConfig.Validate(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 
 	switch {
 	case r.Ecr.Login != nil:
-		if err := e.Registry.Login(ctx); err != nil {
+		if err := e.RegistryConfig.Login(ctx); err != nil {
 			return err
 		}
 	case r.Ecr.Untag != nil:
-		if err := e.Registry.Untag(ctx, r.Service.ImagePath, r.Service.ImageTag); err != nil {
+		if err := e.RegistryConfig.Untag(ctx, r.Service.ImagePath, r.Service.ImageTag); err != nil {
 			return err
 		}
 	case r.Ecr.Tag != nil:
-		fmt.Printf("%s/%s", e.Registry.Client.Url, r.Service.Image)
+		fmt.Printf("%s/%s", e.RegistryConfig.Client.Url, r.Service.Image)
 	case r.Ecr.Init != nil:
-		if err := e.Registry.CreateRepository(ctx, r.Service.ImagePath); err != nil {
+		if err := e.RegistryConfig.CreateRepository(ctx, r.Service.ImagePath); err != nil {
 			return err
 		}
 	case r.Ecr.Delete != nil:
-		if err := e.Registry.DeleteRepository(ctx, r.Service.ImagePath); err != nil {
+		if err := e.RegistryConfig.DeleteRepository(ctx, r.Service.ImagePath); err != nil {
 			return err
 		}
 	}

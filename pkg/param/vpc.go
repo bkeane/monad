@@ -12,15 +12,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Vpc struct {
+type VpcConfig struct {
 	Client           *ec2.Client `arg:"-" json:"-"`
-	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS" placeholder:"id|name" help:"vpc-default,sg-456... (comma separated) [default: []]"`
-	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS" placeholder:"id|name" help:"private,subnet-456... (comma separated) [default: []]"`
+	SecurityGroups   []string    `arg:"--vpc-sg,env:MONAD_SECURITY_GROUPS,separate" placeholder:"id|name" help:"vpc-default | sg-12345 (multiple flags supported) [default: []]"`
+	Subnets          []string    `arg:"--vpc-sn,env:MONAD_SUBNETS,separate" placeholder:"id|name" help:"private | subnet-12345 (multiple flags supported) [default: []]"`
 	SecurityGroupIds []string    `arg:"-"`
 	SubnetIds        []string    `arg:"-"`
 }
 
-func (c *Vpc) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (c *VpcConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	c.Client = ec2.NewFromConfig(awsconfig)
 
 	if err := c.ResolveSecurityGroups(ctx); err != nil {
@@ -43,7 +43,7 @@ func (c *Vpc) Validate(ctx context.Context, awsconfig aws.Config) error {
 	)
 }
 
-func (c *Vpc) ResolveSecurityGroups(ctx context.Context) error {
+func (c *VpcConfig) ResolveSecurityGroups(ctx context.Context) error {
 	for _, nameOrId := range c.SecurityGroups {
 		if strings.HasPrefix(nameOrId, "sg-") {
 			c.SecurityGroupIds = append(c.SecurityGroupIds, nameOrId)
@@ -74,7 +74,7 @@ func (c *Vpc) ResolveSecurityGroups(ctx context.Context) error {
 	return nil
 }
 
-func (c *Vpc) ResolveSubnets(ctx context.Context) error {
+func (c *VpcConfig) ResolveSubnets(ctx context.Context) error {
 	for _, nameOrId := range c.Subnets {
 		if strings.HasPrefix(nameOrId, "subnet-") {
 			c.SubnetIds = append(c.SubnetIds, nameOrId)

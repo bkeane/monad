@@ -18,14 +18,14 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type Registry struct {
+type RegistryConfig struct {
 	ecrc   *ecr.Client      `arg:"-" json:"-"`
 	Client *registry.Client `arg:"-" json:"-"`
 	Id     string           `arg:"--ecr-id,env:MONAD_REGISTRY_ID" placeholder:"id" help:"ecr registry id" default:"caller-account-id"`
 	Region string           `arg:"--ecr-region,env:MONAD_REGISTRY_REGION" placeholder:"name" help:"ecr registry region" default:"caller-region"`
 }
 
-func (r *Registry) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (r *RegistryConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	r.ecrc = ecr.NewFromConfig(awsconfig)
@@ -55,7 +55,7 @@ func (r *Registry) Validate(ctx context.Context, awsconfig aws.Config) error {
 	)
 }
 
-func (r *Registry) Login(ctx context.Context) error {
+func (r *RegistryConfig) Login(ctx context.Context) error {
 	input := &ecr.GetAuthorizationTokenInput{
 		RegistryIds: []string{r.Id},
 	}
@@ -96,7 +96,7 @@ func (r *Registry) Login(ctx context.Context) error {
 	return nil
 }
 
-func (r *Registry) Untag(ctx context.Context, repo, tag string) error {
+func (r *RegistryConfig) Untag(ctx context.Context, repo, tag string) error {
 	log.Info().
 		Str("action", "untag").
 		Str("registry", r.Id).
@@ -108,7 +108,7 @@ func (r *Registry) Untag(ctx context.Context, repo, tag string) error {
 	return r.Client.Untag(ctx, repo, tag)
 }
 
-func (r *Registry) GetImage(ctx context.Context, repo, tag string) (registry.ImagePointer, error) {
+func (r *RegistryConfig) GetImage(ctx context.Context, repo, tag string) (registry.ImagePointer, error) {
 	log.Info().
 		Str("action", "get").
 		Str("registry", r.Id).
@@ -120,7 +120,7 @@ func (r *Registry) GetImage(ctx context.Context, repo, tag string) (registry.Ima
 	return r.Client.FromPath(ctx, repo, tag)
 }
 
-func (r *Registry) CreateRepository(ctx context.Context, repo string) error {
+func (r *RegistryConfig) CreateRepository(ctx context.Context, repo string) error {
 	var apiErr smithy.APIError
 
 	log.Info().
@@ -150,7 +150,7 @@ func (r *Registry) CreateRepository(ctx context.Context, repo string) error {
 	return nil
 }
 
-func (r *Registry) DeleteRepository(ctx context.Context, repo string) error {
+func (r *RegistryConfig) DeleteRepository(ctx context.Context, repo string) error {
 	var apiErr smithy.APIError
 
 	log.Info().

@@ -35,9 +35,9 @@ func (s EventBridge) Init(ctx context.Context, c param.Aws) *EventBridge {
 func (s *EventBridge) Do(ctx context.Context) error {
 	var action string
 	var busName string
-	if s.config.EventBridge.RuleTemplate != "" {
+	if s.config.EventBridge().RuleTemplate() != "" {
 		action = "put"
-		busName = s.config.EventBridge.BusName
+		busName = s.config.EventBridge().BusName()
 	} else {
 		action = "delete"
 		busName = "*"
@@ -45,7 +45,7 @@ func (s *EventBridge) Do(ctx context.Context) error {
 
 	log.Info().
 		Str("bus", busName).
-		Str("rule", s.config.ResourceName()).
+		Str("rule", s.config.Schema().Name()).
 		Str("action", action).
 		Msg("eventbridge")
 
@@ -63,7 +63,7 @@ func (s *EventBridge) Do(ctx context.Context) error {
 func (s *EventBridge) Undo(ctx context.Context) error {
 	log.Info().
 		Str("bus", "*").
-		Str("rule", s.config.ResourceName()).
+		Str("rule", s.config.Schema().Name()).
 		Str("action", "delete").
 		Msg("eventbridge")
 
@@ -76,7 +76,7 @@ func (s *EventBridge) Undo(ctx context.Context) error {
 
 // Declarative Operations
 func (s *EventBridge) Ensure(ctx context.Context) error {
-	if s.config.EventBridge.RuleTemplate == "" {
+	if s.config.EventBridge().RuleTemplate() == "" {
 		return s.Destroy(ctx)
 	}
 
@@ -160,35 +160,35 @@ func (s *EventBridge) PutRule(ctx context.Context, rule EventBridgeRule) error {
 	}
 
 	putTargetsInput := eventbridge.PutTargetsInput{
-		EventBusName: aws.String(s.config.EventBridge.BusName),
-		Rule:         aws.String(s.config.ResourceName()),
+		EventBusName: aws.String(s.config.EventBridge().BusName()),
+		Rule:         aws.String(s.config.Schema().Name()),
 		Targets: []types.Target{
 			{
-				Id:  aws.String(s.config.ResourceName()),
-				Arn: aws.String(s.config.FunctionArn()),
+				Id:  aws.String(s.config.Schema().Name()),
+				Arn: aws.String(s.config.Lambda().FunctionArn()),
 			},
 		},
 	}
 
-	putRuleOutput, err := s.config.EventBridge.Client.PutRule(ctx, &putRuleInput)
+	putRuleOutput, err := s.config.EventBridge().Client().PutRule(ctx, &putRuleInput)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.config.EventBridge.Client.PutTargets(ctx, &putTargetsInput)
+	_, err = s.config.EventBridge().Client().PutTargets(ctx, &putTargetsInput)
 	if err != nil {
 		return err
 	}
 
 	addPermissionsInput := lambda.AddPermissionInput{
-		FunctionName: aws.String(s.config.ResourceName()),
-		StatementId:  aws.String(s.config.EventBridgeStatementId()),
+		FunctionName: aws.String(s.config.Schema().Name()),
+		StatementId:  aws.String(s.config.EventBridge().PermissionStatementId()),
 		Action:       aws.String("lambda:InvokeFunction"),
 		Principal:    aws.String("events.amazonaws.com"),
 		SourceArn:    aws.String(*putRuleOutput.RuleArn),
 	}
 
-	if _, err := s.config.Lambda.Client.AddPermission(ctx, &addPermissionsInput); err != nil {
+	if _, err := s.config.Lambda().Client().AddPermission(ctx, &addPermissionsInput); err != nil {
 		if errors.As(err, &apiErr) {
 			switch apiErr.ErrorCode() {
 			case "ResourceConflictException":
@@ -200,7 +200,7 @@ func (s *EventBridge) PutRule(ctx context.Context, rule EventBridgeRule) error {
 	}
 
 	var tags []types.Tag
-	for key, value := range s.config.Tags() {
+	for key, value := range s.config.Schema().Tags() {
 		tags = append(tags, types.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
@@ -212,7 +212,7 @@ func (s *EventBridge) PutRule(ctx context.Context, rule EventBridgeRule) error {
 		Tags:        tags,
 	}
 
-	if _, err := s.config.EventBridge.Client.TagResource(ctx, &putTagsInput); err != nil {
+	if _, err := s.config.EventBridge().Client().TagResource(ctx, &putTagsInput); err != nil {
 		return err
 	}
 
@@ -224,14 +224,14 @@ func (s *EventBridge) DeleteRule(ctx context.Context, rule EventBridgeRule) erro
 	var apiErr smithy.APIError
 
 	deletePermissionInput := lambda.RemovePermissionInput{
-		FunctionName: aws.String(s.config.ResourceName()),
-		StatementId:  aws.String(s.config.EventBridgeStatementId()),
+		FunctionName: aws.String(s.config.Schema().Name()),
+		StatementId:  aws.String(s.config.EventBridge().PermissionStatementId()),
 	}
 
 	deleteTargetsInput := eventbridge.RemoveTargetsInput{
 		EventBusName: aws.String(rule.BusName),
 		Rule:         aws.String(rule.RuleName),
-		Ids:          []string{s.config.ResourceName()},
+		Ids:          []string{s.config.Schema().Name()},
 	}
 
 	deleteRuleInput := eventbridge.DeleteRuleInput{
@@ -239,7 +239,7 @@ func (s *EventBridge) DeleteRule(ctx context.Context, rule EventBridgeRule) erro
 		Name:         aws.String(rule.RuleName),
 	}
 
-	if _, err := s.config.Lambda.Client.RemovePermission(ctx, &deletePermissionInput); err != nil {
+	if _, err := s.config.Lambda().Client().RemovePermission(ctx, &deletePermissionInput); err != nil {
 		if errors.As(err, &apiErr) {
 			switch apiErr.ErrorCode() {
 			case "ResourceNotFoundException":
@@ -250,7 +250,7 @@ func (s *EventBridge) DeleteRule(ctx context.Context, rule EventBridgeRule) erro
 		}
 	}
 
-	if _, err := s.config.EventBridge.Client.RemoveTargets(ctx, &deleteTargetsInput); err != nil {
+	if _, err := s.config.EventBridge().Client().RemoveTargets(ctx, &deleteTargetsInput); err != nil {
 		if errors.As(err, &apiErr) {
 			switch apiErr.ErrorCode() {
 			case "ResourceNotFoundException":
@@ -261,7 +261,7 @@ func (s *EventBridge) DeleteRule(ctx context.Context, rule EventBridgeRule) erro
 		}
 	}
 
-	if _, err := s.config.EventBridge.Client.DeleteRule(ctx, &deleteRuleInput); err != nil {
+	if _, err := s.config.EventBridge().Client().DeleteRule(ctx, &deleteRuleInput); err != nil {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (s *EventBridge) DeleteRule(ctx context.Context, rule EventBridgeRule) erro
 // GET Operations
 func (s *EventBridge) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	// This code _can_ handle many defined rules, but monad currently will only support one until more are necessary.
-	document, err := s.config.RuleDocument()
+	document, err := s.config.EventBridge().RuleDocument()
 	if err != nil {
 		return nil, err
 	}
@@ -282,12 +282,12 @@ func (s *EventBridge) GetDefinedRules(ctx context.Context) (map[string]map[strin
 
 	ruleMap := map[string]map[string]EventBridgeRule{}
 	// Initialize the inner map if it doesn't exist
-	if _, exists := ruleMap[s.config.EventBridge.BusName]; !exists {
-		ruleMap[s.config.EventBridge.BusName] = make(map[string]EventBridgeRule)
+	if _, exists := ruleMap[s.config.EventBridge().BusName()]; !exists {
+		ruleMap[s.config.EventBridge().BusName()] = make(map[string]EventBridgeRule)
 	}
-	ruleMap[s.config.EventBridge.BusName][s.config.ResourceName()] = EventBridgeRule{
-		BusName:  s.config.EventBridge.BusName,
-		RuleName: s.config.ResourceName(),
+	ruleMap[s.config.EventBridge().BusName()][s.config.Schema().Name()] = EventBridgeRule{
+		BusName:  s.config.EventBridge().BusName(),
+		RuleName: s.config.Schema().Name(),
 		Document: document,
 	}
 
@@ -324,7 +324,7 @@ func (s *EventBridge) GetUndefinedRules(ctx context.Context) (map[string]map[str
 func (s *EventBridge) GetAssociatedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	listBuses := &eventbridge.ListEventBusesInput{}
 
-	buses, err := s.config.EventBridge.Client.ListEventBuses(ctx, listBuses)
+	buses, err := s.config.EventBridge().Client().ListEventBuses(ctx, listBuses)
 	if err != nil {
 		return nil, err
 	}
@@ -334,11 +334,11 @@ func (s *EventBridge) GetAssociatedRules(ctx context.Context) (map[string]map[st
 		associatedRules[*bus.Name] = make(map[string]EventBridgeRule)
 
 		listRuleNames := &eventbridge.ListRuleNamesByTargetInput{
-			TargetArn:    aws.String(s.config.FunctionArn()),
+			TargetArn:    aws.String(s.config.Lambda().FunctionArn()),
 			EventBusName: bus.Name,
 		}
 
-		target, err := s.config.EventBridge.Client.ListRuleNamesByTarget(ctx, listRuleNames)
+		target, err := s.config.EventBridge().Client().ListRuleNamesByTarget(ctx, listRuleNames)
 		if err != nil {
 			return nil, err
 		}
@@ -349,7 +349,7 @@ func (s *EventBridge) GetAssociatedRules(ctx context.Context) (map[string]map[st
 				NamePrefix:   &associated,
 			}
 
-			output, err := s.config.EventBridge.Client.ListRules(ctx, listRules)
+			output, err := s.config.EventBridge().Client().ListRules(ctx, listRules)
 			if err != nil {
 				return nil, err
 			}

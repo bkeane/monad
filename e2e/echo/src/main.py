@@ -15,7 +15,8 @@ app = FastAPI(
     title="Echo",
     description="Echo is an introspection service for assisting e2e tests.",
     version="0.0.1",
-    docs_url="/",
+    docs_url="/public/docs",
+    openapi_url="/public/openapi.json",
     debug=True
 )
 
@@ -45,6 +46,10 @@ async def configure_boto3(request: Request, call_next):
 
 @app.get("/health")
 async def health():
+    return {"status": "ok"}
+
+@app.get("/public/health")
+async def public_health():
     return {"status": "ok"}
 
 @app.post("/events")

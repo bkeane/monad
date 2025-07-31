@@ -209,6 +209,11 @@ func (r *Client) FromPath(ctx context.Context, path string, reference string) (I
 	return pointer, nil
 }
 
+// GetImage is an alias for FromPath to maintain consistent interface with param.Registry
+func (r *Client) GetImage(ctx context.Context, repo, tag string) (ImagePointer, error) {
+	return r.FromPath(ctx, repo, tag)
+}
+
 func (r *Client) DigImage(ctx context.Context, repository string, reference string) (string, error) {
 	resp, err := r.GetManifest(ctx, repository, reference)
 	if err != nil {

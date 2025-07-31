@@ -11,14 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
-type Iam struct {
+type IamConfig struct {
 	Client         *iam.Client `arg:"-" json:"-"`
 	PolicyTemplate string      `arg:"--policy,env:MONAD_POLICY" placeholder:"template" help:"string | file://policy.tmpl" default:"minimal-policy"`
 	RoleTemplate   string      `arg:"--role,env:MONAD_ROLE" placeholder:"template" help:"string | file://role.tmpl" default:"minimal-role"`
 	BoundaryPolicy string      `arg:"--boundary,env:MONAD_BOUNDARY_POLICY" placeholder:"arn|name" help:"boundary policy" default:"no-boundary"`
 }
 
-func (l *Iam) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (l *IamConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	l.Client = iam.NewFromConfig(awsconfig)

@@ -11,7 +11,7 @@ import (
 )
 
 type Compose struct {
-	param.Registry
+	param.RegistryConfig
 	Dockerfile   string `arg:"-f,--file" help:"path to dockerfile"`
 	BuildContext string `arg:"--build-context" help:"path to build context"`
 }
@@ -19,7 +19,7 @@ type Compose struct {
 func (c *Compose) Route(ctx context.Context, r Root) error {
 	var err error
 
-	if err := c.Registry.Validate(ctx, r.AwsConfig); err != nil {
+	if err := c.RegistryConfig.Validate(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 
@@ -38,7 +38,7 @@ func (c *Compose) Route(ctx context.Context, r Root) error {
 	}
 
 	name := r.Service.Name
-	tag := fmt.Sprintf("%s/%s:%s", c.Registry.Client.Url, r.Service.Image, r.Git.Branch)
+	tag := fmt.Sprintf("%s/%s:%s", c.RegistryConfig.Client.Url, r.Service.Image, r.Git.Branch)
 
 	compose := &ctypes.Config{}
 
