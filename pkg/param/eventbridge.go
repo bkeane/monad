@@ -14,14 +14,14 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type EventBridge struct {
+type EventBridgeConfig struct {
 	Client       *eventbridge.Client `arg:"-" json:"-"`
 	BusName      string              `arg:"--bus,env:MONAD_BUS" placeholder:"name" help:"eventbridge bus name" default:"default"`
 	RuleTemplate string              `arg:"--rule,env:MONAD_RULE" placeholder:"template" help:"string | file://rule.json" default:"no-rule"`
 	Region       string              `arg:"--bus-region,env:MONAD_BUS_REGION" placeholder:"name" help:"eventbridge region" default:"caller-region"`
 }
 
-func (e *EventBridge) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (e *EventBridgeConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	e.Client = eventbridge.NewFromConfig(awsconfig)
 
 	if e.BusName == "" {

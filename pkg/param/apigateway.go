@@ -12,18 +12,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ApiGateway struct {
+type ApiGatewayConfig struct {
 	Client       *apigatewayv2.Client `arg:"-" json:"-"`
 	Api          string               `arg:"--api,env:MONAD_API" placeholder:"id|name" help:"api gateway" default:"no-gateway"`
 	Region       string               `arg:"--api-region,env:MONAD_API_REGION" placeholder:"name" help:"api gateway region" default:"caller-region"`
-	Route        []string             `arg:"--route,env:MONAD_ROUTE" placeholder:"pattern" help:"api gateway route pattern" default:"ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}"`
-	Auth         []string             `arg:"--auth,env:MONAD_AUTH" placeholder:"id|name" help:"none | aws_iam | name | id" default:"aws_iam"`
+	Route        []string             `arg:"--route,env:MONAD_ROUTE,separate" placeholder:"pattern" help:"ANY /echo/{proxy+} | GET /api/{proxy+} (multiple flags supported) [default: [ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}]"`
+	Auth         []string             `arg:"--auth,env:MONAD_AUTH,separate" placeholder:"id|name" help:"none | aws_iam | jwt-auth (multiple flags supported) [default: [aws_iam]]"`
 	ApiId        string               `arg:"-" json:"-"` // computed value
 	AuthType     []string             `arg:"-" json:"-"` // computed value
 	AuthorizerId []string             `arg:"-" json:"-"` // computed value
 }
 
-func (a *ApiGateway) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (a *ApiGatewayConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	a.Client = apigatewayv2.NewFromConfig(awsconfig)
 
 	// Set default values if not provided
@@ -39,6 +39,11 @@ func (a *ApiGateway) Validate(ctx context.Context, awsconfig aws.Config) error {
 	if len(a.Auth) == 0 {
 		standard := "aws_iam"
 		a.Auth = append(a.Auth, standard)
+	}
+
+	// Check route/auth count match with clear error message
+	if len(a.Route) != len(a.Auth) {
+		return fmt.Errorf("--route & --auth count must be provided as pairs: %d --route =!= %d --auth", len(a.Route), len(a.Auth))
 	}
 
 	// Simple validations ensuring presence of required fields and defaults
@@ -61,13 +66,14 @@ func (a *ApiGateway) Validate(ctx context.Context, awsconfig aws.Config) error {
 	}
 
 	return v.ValidateStruct(a,
+		v.Field(&a.Route, v.Each(v.By(onlyGreedyProxies))),
 		v.Field(&a.AuthType, v.Each(v.In("NONE", "AWS_IAM", "CUSTOM", "JWT"))),
 		v.Field(&a.AuthType, v.Length(len(a.AuthorizerId), len(a.AuthorizerId))),
 		v.Field(&a.AuthorizerId, v.Length(len(a.AuthType), len(a.AuthType))),
 	)
 }
 
-func resolve(ctx context.Context, param *ApiGateway) error {
+func resolve(ctx context.Context, param *ApiGatewayConfig) error {
 	if param == nil || param.Client == nil {
 		return fmt.Errorf("api gateway client is not initialized in param struct")
 	}
@@ -83,7 +89,7 @@ func resolve(ctx context.Context, param *ApiGateway) error {
 	return nil
 }
 
-func resolveApi(ctx context.Context, param *ApiGateway) error {
+func resolveApi(ctx context.Context, param *ApiGatewayConfig) error {
 	var apiIds []string
 	var apiNames []string
 
@@ -111,7 +117,7 @@ func resolveApi(ctx context.Context, param *ApiGateway) error {
 	return fmt.Errorf("api %s not found", param.Api)
 }
 
-func resolveAuth(ctx context.Context, param *ApiGateway) error {
+func resolveAuth(ctx context.Context, param *ApiGatewayConfig) error {
 	foundNames := []string{"none", "aws_iam"}
 	foundIds := []string{"", ""}
 	foundTypes := []string{"NONE", "AWS_IAM"}
@@ -164,6 +170,26 @@ func resolveAuth(ctx context.Context, param *ApiGateway) error {
 			Msg("resolve auth")
 
 		return fmt.Errorf("authorizer %s not found for api %s", given, param.ApiId)
+	}
+
+	return nil
+}
+
+// onlyGreedyProxies validates that a route contains and ends with {proxy+} pattern
+func onlyGreedyProxies(value interface{}) error {
+	route, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("route must be a string")
+	}
+
+	// Check if route contains {proxy+} pattern
+	if !strings.Contains(route, "{proxy+}") {
+		return fmt.Errorf("route must contain {proxy+} pattern: %s", route)
+	}
+
+	// Ensure it ends with {proxy+} (not in the middle)
+	if !strings.HasSuffix(route, "{proxy+}") {
+		return fmt.Errorf("route must end with {proxy+} pattern: %s", route)
 	}
 
 	return nil

@@ -8,13 +8,13 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type CloudWatch struct {
+type CloudWatchConfig struct {
 	Client    *cloudwatchlogs.Client `arg:"-" json:"-"`
 	Region    string                 `arg:"--log-region,env:MONAD_LOG_REGION" placeholder:"name" help:"cloudwatch log region"  default:"caller-region"`
 	Retention int32                  `arg:"--log-retention,env:MONAD_LOG_RETENTION" placeholder:"days" help:"1, 3, 5, 7, 14, 30..." default:"3"`
 }
 
-func (c *CloudWatch) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (c *CloudWatchConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 	c.Client = cloudwatchlogs.NewFromConfig(awsconfig)
 
 	if c.Region == "" {

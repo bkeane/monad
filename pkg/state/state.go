@@ -21,7 +21,7 @@ func Init(ctx context.Context, c param.Aws) *State {
 
 func (s *State) List(ctx context.Context) ([]*param.StateMetadata, error) {
 	list := &lambda.ListFunctionsInput{}
-	functions, err := s.config.Lambda.Client.ListFunctions(ctx, list)
+	functions, err := s.config.Lambda().Client().ListFunctions(ctx, list)
 	if err != nil {
 		return nil, err
 	}

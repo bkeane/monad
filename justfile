@@ -1,3 +1,6 @@
+set unstable
+
+# List help
 [private]
 default:
     @just --list --unsorted
@@ -6,49 +9,24 @@ default:
 install:
     go build -o ~/.local/bin/monad cmd/monad/main.go
 
-# setup docker buildx builder
-builder-up:
-    docker buildx create --driver=docker-container --name=monad-builder --use
+# build docker images
+[script]
+build target='':
+    if [ -z "{{ target }}" ]; then
+        docker buildx bake --list targets
+        exit 1
+    fi
 
-builder-down:
-    docker buildx rm monad-builder
+    BRANCH=$(git rev-parse --abbrev-ref HEAD) \
+    docker buildx bake {{ target }} --progress=plain
 
-[private]
-build-echo:
-    TAG=$(monad ecr tag --service echo) \
-    EPOCH=$(git log -1 --pretty=%ct) \
-    docker buildx bake --progress=plain --load
-
-[private]
-build-monad:
-    #! /usr/bin/env bash
-    docker buildx build -t ghcr.io/bkeane/monad:latest \
-    --cache-to type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad,mode=max \
-    --cache-from type=s3,region=us-west-2,bucket=kaixo-buildx-cache,name=monad \
-    --platform linux/amd64,linux/arm64 .
-
-# Build docker images locally
-build: build-monad build-echo
-
-# apply e2e/terraform
-terraform: 
-    AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod init
-    AWS_PROFILE=prod.kaixo.io tofu -chdir=e2e/terraform/prod apply
-    AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev init
-    AWS_PROFILE=dev.kaixo.io tofu -chdir=e2e/terraform/dev apply
-
-# open docs in browser for development
-docs: 
+# develop docs
+docs:
     cd .docs/vue && npm run dev
 
-# build docs
+# package docs
+[script]
 build-docs:
-    cd .docs/vue && npm run build
-
-# build diagrams
-diagrams:
-    #! /usr/bin/env bash
-    
     # We are using the main branch of mermaid-cli for icon support.
     # In the future, when this is in a release, we should lock to a specific version.
 
@@ -80,3 +58,5 @@ diagrams:
 
     # trim all empty space from the diagrams
     mogrify -trim +repage .docs/vue/assets/diagrams/*.png
+
+    cd .docs/vue && npm run build
