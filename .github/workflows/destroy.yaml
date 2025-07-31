@@ -40,7 +40,7 @@ jobs:
 
       - name: destroy
         working-directory: e2e/echo
-        run: monad destroy --branch ${{ env.RELEVANT_BRANCH }}
+        run: go run cmd/monad/main.go destroy --branch ${{ env.RELEVANT_BRANCH }}
 
   untag:
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
 
       - name: untag
         working-directory: e2e/echo
-        run: monad ecr untag --branch ${{ env.RELEVANT_BRANCH }}
+        run: go run cmd/monad/main.go ecr untag --branch ${{ env.RELEVANT_BRANCH }}
 
 
 
