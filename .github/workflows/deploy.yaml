@@ -72,9 +72,9 @@ jobs:
           ecr_registry_region: us-west-2
 
       - name: deploy
-        working-directory: e2e/echo
         run: |
           go run cmd/monad/main.go deploy \
+            --chdir e2e/echo \
             --env file://.env.tmpl \
             --policy file://policy.json.tmpl \
             --rule file://rule.json.tmpl \
