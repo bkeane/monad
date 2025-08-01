@@ -17,7 +17,7 @@ type List struct {
 }
 
 func (l *List) Route(ctx context.Context, r Root) error {
-	if err := l.Aws.Validate(ctx, r.AwsConfig, r.Git, r.Service); err != nil {
+	if err := l.Aws.Validate(ctx, r.AwsConfig, r.GitConfig, r.ServiceConfig); err != nil {
 		return err
 	}
 
@@ -32,9 +32,9 @@ func (l *List) Route(ctx context.Context, r Root) error {
 		filtered = services
 	} else {
 		for _, service := range services {
-			if service.Owner == l.Git.Owner {
-				if service.Repo == l.Git.Repository {
-					if service.Branch == l.Git.Branch {
+			if service.Owner == l.GitConfig.Owner {
+				if service.Repo == l.GitConfig.Repository {
+					if service.Branch == l.GitConfig.Branch {
 						filtered = append(filtered, service)
 					} else if l.AllBranches {
 						filtered = append(filtered, service)
@@ -60,27 +60,27 @@ func (l *List) Route(ctx context.Context, r Root) error {
 	// highlight contextual matches
 	ink := lipgloss.NewStyle().Foreground(lipgloss.Color("69")).Render
 	for _, service := range filtered {
-		if service.Service == l.Service.Name {
+		if service.Service == l.Service().Name() {
 			service.Service = ink(service.Service)
 		}
 
-		if service.Owner == l.Git.Owner {
+		if service.Owner == l.GitConfig.Owner {
 			service.Owner = ink(service.Owner)
 		}
 
-		if service.Repo == l.Git.Repository {
+		if service.Repo == l.GitConfig.Repository {
 			service.Repo = ink(service.Repo)
 		}
 
-		if shorten(service.Sha) == shorten(l.Git.Sha) {
+		if shorten(service.Sha) == shorten(l.GitConfig.Sha) {
 			service.Sha = ink(service.Sha)
 		}
 
-		if service.Branch == l.Git.Branch {
+		if service.Branch == l.GitConfig.Branch {
 			service.Branch = ink(service.Branch)
 		}
 
-		if service.Image == l.Service.Image {
+		if service.Image == l.Service().Image() {
 			service.Image = ink(service.Image)
 		}
 	}

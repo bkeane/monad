@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	v5 "github.com/go-git/go-git/v5"
@@ -65,18 +64,6 @@ func Parse(path string) (Git, error) {
 	g.Repo = repoFromOrigin(g.Origin)
 
 	return g, nil
-}
-
-func (g *Git) AsMap() map[string]string {
-	return map[string]string{
-		"BasePath": g.BasePath,
-		"Sha":      g.Sha,
-		"Branch":   g.Branch,
-		"Origin":   g.Origin,
-		"Owner":    g.Owner,
-		"Repo":     g.Repo,
-		"Dirty":    strconv.FormatBool(g.Dirty),
-	}
 }
 
 func find(path string) (root string, repo *v5.Repository, err error) {

@@ -23,7 +23,7 @@ type ApiGatewayConfig struct {
 	AuthorizerId []string             `arg:"-" json:"-"` // computed value
 }
 
-func (a *ApiGatewayConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (a *ApiGatewayConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	a.Client = apigatewayv2.NewFromConfig(awsconfig)
 
 	// Set default values if not provided
@@ -41,32 +41,22 @@ func (a *ApiGatewayConfig) Validate(ctx context.Context, awsconfig aws.Config) e
 		a.Auth = append(a.Auth, standard)
 	}
 
-	// Check route/auth count match with clear error message
-	if len(a.Route) != len(a.Auth) {
-		return fmt.Errorf("--route & --auth count must be provided as pairs: %d --route =!= %d --auth", len(a.Route), len(a.Auth))
-	}
-
-	// Simple validations ensuring presence of required fields and defaults
-	err := v.ValidateStruct(a,
-		v.Field(&a.Client, v.Required),
-		v.Field(&a.Route, v.Required),
-		v.Field(&a.Region, v.Required),
-		v.Field(&a.Auth, v.Required),
-	)
-
-	if err != nil {
-		return err
-	}
-
 	// Resolve api and authorizer names/ids given an api name or id
 	if a.Api != "" {
-		if err = resolve(ctx, a); err != nil {
+		if err := resolve(ctx, a); err != nil {
 			return err
 		}
 	}
 
+	return a.Validate()
+}
+
+func (a *ApiGatewayConfig) Validate() error {
 	return v.ValidateStruct(a,
-		v.Field(&a.Route, v.Each(v.By(onlyGreedyProxies))),
+		v.Field(&a.Client, v.Required),
+		v.Field(&a.Route, v.Required, v.Each(v.By(onlyGreedyProxies)), v.Length(len(a.Auth), len(a.Auth))),
+		v.Field(&a.Region, v.Required),
+		v.Field(&a.Auth, v.Required),
 		v.Field(&a.AuthType, v.Each(v.In("NONE", "AWS_IAM", "CUSTOM", "JWT"))),
 		v.Field(&a.AuthType, v.Length(len(a.AuthorizerId), len(a.AuthorizerId))),
 		v.Field(&a.AuthorizerId, v.Length(len(a.AuthType), len(a.AuthType))),

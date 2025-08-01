@@ -18,7 +18,7 @@ type IamConfig struct {
 	BoundaryPolicy string      `arg:"--boundary,env:MONAD_BOUNDARY_POLICY" placeholder:"arn|name" help:"boundary policy" default:"no-boundary"`
 }
 
-func (l *IamConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (l *IamConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	l.Client = iam.NewFromConfig(awsconfig)
@@ -51,7 +51,12 @@ func (l *IamConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 
 	}
 
+	return l.Validate()
+}
+
+func (l *IamConfig) Validate() error {
 	return v.ValidateStruct(l,
+		v.Field(&l.Client, v.Required),
 		v.Field(&l.PolicyTemplate, v.Required),
 		v.Field(&l.RoleTemplate, v.Required),
 	)

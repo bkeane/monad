@@ -16,7 +16,7 @@ type CallerConfig struct {
 	UserId    string      `arg:"-" json:"-"`
 }
 
-func (c *CallerConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (c *CallerConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	c.Client = sts.NewFromConfig(awsconfig)
 
 	caller, err := c.Client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
@@ -29,7 +29,12 @@ func (c *CallerConfig) Validate(ctx context.Context, awsconfig aws.Config) error
 	c.UserId = *caller.UserId
 	c.Region = awsconfig.Region
 
+	return c.Validate()
+}
+
+func (c *CallerConfig) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.Client, v.Required),
 		v.Field(&c.AccountId, v.Required),
 		v.Field(&c.Arn, v.Required),
 		v.Field(&c.UserId, v.Required),
