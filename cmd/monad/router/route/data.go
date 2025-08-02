@@ -24,7 +24,7 @@ type Data struct {
 }
 
 func (d *Data) Route(ctx context.Context, r Root) error {
-	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git, r.Service); err != nil {
+	if err := d.Aws.Validate(ctx, r.AwsConfig, r.GitConfig, r.ServiceConfig); err != nil {
 		return err
 	}
 

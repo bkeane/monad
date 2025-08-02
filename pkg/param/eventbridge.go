@@ -21,7 +21,7 @@ type EventBridgeConfig struct {
 	Region       string              `arg:"--bus-region,env:MONAD_BUS_REGION" placeholder:"name" help:"eventbridge region" default:"caller-region"`
 }
 
-func (e *EventBridgeConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (e *EventBridgeConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	e.Client = eventbridge.NewFromConfig(awsconfig)
 
 	if e.BusName == "" {
@@ -73,7 +73,12 @@ func (e *EventBridgeConfig) Validate(ctx context.Context, awsconfig aws.Config) 
 		e.RuleTemplate = content
 	}
 
+	return e.Validate()
+}
+
+func (e *EventBridgeConfig) Validate() error {
 	return v.ValidateStruct(e,
+		v.Field(&e.Client, v.Required),
 		v.Field(&e.BusName, v.Required),
 		v.Field(&e.Region, v.Required),
 	)

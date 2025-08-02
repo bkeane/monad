@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Git struct {
+type GitConfig struct {
 	cwd        string `arg:"-" json:"-"`
 	Chdir      string `arg:"--chdir,env:MONAD_CHDIR" placeholder:"path" help:"change working directory" default:"."`
 	Owner      string `arg:"--owner,env:MONAD_OWNER" placeholder:"name" help:"git repository owner" default:"github.com/<owner>/repo.git"`
@@ -18,7 +18,7 @@ type Git struct {
 	Sha        string `arg:"--sha,env:MONAD_SHA" placeholder:"sha" help:"git repository sha" default:"current git sha"`
 }
 
-func (g *Git) Validate() error {
+func (g *GitConfig) Process() error {
 	var err error
 
 	if g.Chdir == "" {
@@ -76,6 +76,10 @@ func (g *Git) Validate() error {
 		Str("sha", truncate(g.Sha)).
 		Msg("git")
 
+	return g.Validate()
+}
+
+func (g *GitConfig) Validate() error {
 	return v.ValidateStruct(g,
 		v.Field(&g.Chdir, v.Required),
 		v.Field(&g.Owner, v.Required),

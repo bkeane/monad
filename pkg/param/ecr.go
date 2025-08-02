@@ -25,7 +25,7 @@ type RegistryConfig struct {
 	Region string           `arg:"--ecr-region,env:MONAD_REGISTRY_REGION" placeholder:"name" help:"ecr registry region" default:"caller-region"`
 }
 
-func (r *RegistryConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (r *RegistryConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	r.ecrc = ecr.NewFromConfig(awsconfig)
@@ -49,7 +49,13 @@ func (r *RegistryConfig) Validate(ctx context.Context, awsconfig aws.Config) err
 		return err
 	}
 
+	return r.Validate()
+}
+
+func (r *RegistryConfig) Validate() error {
 	return v.ValidateStruct(r,
+		v.Field(&r.ecrc, v.Required),
+		v.Field(&r.Client, v.Required),
 		v.Field(&r.Id, v.Required),
 		v.Field(&r.Region, v.Required),
 	)

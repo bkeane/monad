@@ -9,14 +9,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Service struct {
+type ServiceConfig struct {
 	Name      string `arg:"--service,env:MONAD_SERVICE" placeholder:"name" help:"service name" default:"basename $PWD"`
 	Image     string `arg:"--image,env:MONAD_IMAGE" placeholder:"path" help:"service ecr image path" default:"${owner}/${repo}/${service}:${branch}"`
 	ImagePath string `arg:"-"`
 	ImageTag  string `arg:"-"`
 }
 
-func (s *Service) Validate(git Git) error {
+func (s *ServiceConfig) Process(git GitConfig) error {
 	if s.Name == "" {
 		s.Name = filepath.Base(git.cwd)
 	}
@@ -39,6 +39,10 @@ func (s *Service) Validate(git Git) error {
 		Str("name", s.Name).
 		Msg("service")
 
+	return s.Validate()
+}
+
+func (s *ServiceConfig) Validate() error {
 	return v.ValidateStruct(s,
 		v.Field(&s.Name, v.Required),
 		v.Field(&s.Image, v.Required),

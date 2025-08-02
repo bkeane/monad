@@ -21,7 +21,7 @@ type LambdaConfig struct {
 	Retries          int32          `arg:"--retry,env:MONAD_RETRIES" placeholder:"count" help:"async function invoke retries" default:"0"`
 }
 
-func (l *LambdaConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (l *LambdaConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	var err error
 
 	l.Client = lambda.NewFromConfig(awsconfig)
@@ -60,7 +60,12 @@ func (l *LambdaConfig) Validate(ctx context.Context, awsconfig aws.Config) error
 		l.Retries = int32(0)
 	}
 
+	return l.Validate()
+}
+
+func (l *LambdaConfig) Validate() error {
 	return v.ValidateStruct(l,
+		v.Field(&l.Client, v.Required),
 		v.Field(&l.EnvTemplate, v.NilOrNotEmpty),
 		v.Field(&l.Region, v.Required),
 		v.Field(&l.EphemeralStorage, v.Required),

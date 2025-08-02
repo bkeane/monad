@@ -32,9 +32,9 @@ type StateMetadata struct {
 }
 
 type Aws struct {
-	Git          Git               `arg:"-" json:"-"`
-	Service      Service           `arg:"-" json:"-"`
-	TemplateData tmpl.TemplateData `arg:"-" json:"-"`
+	GitConfig         `arg:"-" json:"-"`
+	ServiceConfig     `arg:"-" json:"-"`
+	tmpl.TemplateData `arg:"-" json:"-"`
 	CallerConfig
 	RegistryConfig
 	LambdaConfig
@@ -45,48 +45,56 @@ type Aws struct {
 	EventBridgeConfig
 }
 
-func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, service Service) error {
-	c.Git = git
-	c.Service = service
+func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git GitConfig, service ServiceConfig) error {
+	// Ensure that provided Git and Service configurations have already been processed.
+	if err := git.Validate(); err != nil {
+		return fmt.Errorf("git config not properly processed: %w", err)
+	}
+	if err := service.Validate(); err != nil {
+		return fmt.Errorf("service config not properly processed: %w", err)
+	}
 
-	if err := c.CallerConfig.Validate(ctx, awsconfig); err != nil {
+	c.GitConfig = git
+	c.ServiceConfig = service
+
+	if err := c.CallerConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.RegistryConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.RegistryConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.LambdaConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.LambdaConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.IamConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.IamConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.VpcConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.VpcConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.CloudWatchConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.CloudWatchConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.ApiGatewayConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.ApiGatewayConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
-	if err := c.EventBridgeConfig.Validate(ctx, awsconfig); err != nil {
+	if err := c.EventBridgeConfig.Process(ctx, awsconfig); err != nil {
 		return err
 	}
 
 	// Map data into templating struct
-	c.TemplateData.Monad.Service = c.Service.Name
-	c.TemplateData.Git.Sha = c.Git.Sha
-	c.TemplateData.Git.Branch = c.Git.Branch
-	c.TemplateData.Git.Owner = c.Git.Owner
-	c.TemplateData.Git.Repo = c.Git.Repository
+	c.TemplateData.Monad.Service = c.Service().Name()
+	c.TemplateData.Git.Sha = c.Git().Sha()
+	c.TemplateData.Git.Branch = c.Git().Branch()
+	c.TemplateData.Git.Owner = c.Git().Owner()
+	c.TemplateData.Git.Repo = c.Git().Repository()
 	c.TemplateData.Caller.AccountId = c.Caller().AccountId()
 	c.TemplateData.Caller.Region = c.Caller().Region()
 	c.TemplateData.Registry.Id = c.Registry().Id()
@@ -115,17 +123,10 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git Git, servi
 	return nil
 }
 
-// Computed Properties
-
-// Cross-cutting methods moved to Schema namespace:
-// c.ResourceName() -> c.Schema().Name()
-// c.ResourcePath() -> c.Schema().Path() 
-// c.Env() -> c.Schema().Environment()
-// c.Tags() -> c.Schema().Tags()
-// c.ServiceStateMetadata() -> c.Schema().StateMetadata()
-
 // Receiver Pattern Namespaces
 
+type GitResources struct{ *Aws }
+type ServiceResources struct{ *Aws }
 type IAMResources struct{ *Aws }
 type LambdaResources struct{ *Aws }
 type ApiGatewayResources struct{ *Aws }
@@ -138,32 +139,88 @@ type RegistryResources struct{ *Aws }
 
 // Resource namespace factory methods
 
+// Git returns the Git resource methods and configuration accessors
+func (c *Aws) Git() GitResources {
+	if err := c.GitConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("Git configuration validation failed")
+	}
+	return GitResources{c}
+}
+
+// Service returns the Service resource methods and configuration accessors
+func (c *Aws) Service() ServiceResources {
+	if err := c.ServiceConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("Service configuration validation failed")
+	}
+	return ServiceResources{c}
+}
+
 // IAM returns the IAM resource methods and configuration accessors
-func (c *Aws) IAM() IAMResources { return IAMResources{c} }
+func (c *Aws) IAM() IAMResources {
+	if err := c.IamConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("IAM configuration validation failed")
+	}
+	return IAMResources{c}
+}
 
 // Lambda returns the Lambda resource methods and configuration accessors
-func (c *Aws) Lambda() LambdaResources { return LambdaResources{c} }
+func (c *Aws) Lambda() LambdaResources {
+	if err := c.LambdaConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("Lambda configuration validation failed")
+	}
+	return LambdaResources{c}
+}
 
 // ApiGateway returns the API Gateway resource methods and configuration accessors
-func (c *Aws) ApiGateway() ApiGatewayResources { return ApiGatewayResources{c} }
+func (c *Aws) ApiGateway() ApiGatewayResources {
+	if err := c.ApiGatewayConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("API Gateway configuration validation failed")
+	}
+	return ApiGatewayResources{c}
+}
 
 // EventBridge returns the EventBridge resource methods and configuration accessors
-func (c *Aws) EventBridge() EventBridgeResources { return EventBridgeResources{c} }
+func (c *Aws) EventBridge() EventBridgeResources {
+	if err := c.EventBridgeConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("EventBridge configuration validation failed")
+	}
+	return EventBridgeResources{c}
+}
 
 // CloudWatch returns the CloudWatch resource methods and configuration accessors
-func (c *Aws) CloudWatch() CloudWatchResources { return CloudWatchResources{c} }
+func (c *Aws) CloudWatch() CloudWatchResources {
+	if err := c.CloudWatchConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("CloudWatch configuration validation failed")
+	}
+	return CloudWatchResources{c}
+}
 
 // Vpc returns the VPC resource methods and configuration accessors
-func (c *Aws) Vpc() VpcResources { return VpcResources{c} }
+func (c *Aws) Vpc() VpcResources {
+	if err := c.VpcConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("VPC configuration validation failed")
+	}
+	return VpcResources{c}
+}
 
 // Schema returns the cross-service resource organization and naming methods
 func (c *Aws) Schema() Schema { return Schema{c} }
 
 // Caller returns the AWS caller identity information
-func (c *Aws) Caller() CallerResources { return CallerResources{c} }
+func (c *Aws) Caller() CallerResources {
+	if err := c.CallerConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("Caller configuration validation failed")
+	}
+	return CallerResources{c}
+}
 
 // Registry returns the ECR registry configuration
-func (c *Aws) Registry() RegistryResources { return RegistryResources{c} }
+func (c *Aws) Registry() RegistryResources {
+	if err := c.RegistryConfig.Validate(); err != nil {
+		log.Warn().Err(err).Msg("Registry configuration validation failed")
+	}
+	return RegistryResources{c}
+}
 
 // IAMResources methods
 
@@ -287,7 +344,7 @@ func (a ApiGatewayResources) ForwardedPrefixes() ([]string, error) {
 
 	var prefixes []string
 	for _, routeKey := range routeKeys {
-		path := strings.Split(routeKey, " ")[1]  // Extract path from "METHOD /path"
+		path := strings.Split(routeKey, " ")[1] // Extract path from "METHOD /path"
 		prefix := strings.TrimSuffix(path, "/{proxy+}")
 		prefixes = append(prefixes, prefix)
 	}
@@ -453,7 +510,7 @@ func (v VpcResources) Client() *ec2.Client { return v.VpcConfig.Client }
 // SecurityGroupIds returns the resolved security group IDs
 func (v VpcResources) SecurityGroupIds() []string { return v.VpcConfig.SecurityGroupIds }
 
-// SubnetIds returns the resolved subnet IDs  
+// SubnetIds returns the resolved subnet IDs
 func (v VpcResources) SubnetIds() []string { return v.VpcConfig.SubnetIds }
 
 // SecurityGroups returns the security group names/IDs from configuration
@@ -466,22 +523,22 @@ func (v VpcResources) Subnets() []string { return v.VpcConfig.Subnets }
 
 // NamePrefix returns the resource name prefix: {repo}-{branch}
 func (s Schema) NamePrefix() string {
-	return fmt.Sprintf("%s-%s", s.Git.Repository, s.Git.Branch)
+	return fmt.Sprintf("%s-%s", s.GitConfig.Repository, s.GitConfig.Branch)
 }
 
 // Name returns the full resource name: {repo}-{branch}-{service}
 func (s Schema) Name() string {
-	return fmt.Sprintf("%s-%s", s.NamePrefix(), s.Service.Name)
+	return fmt.Sprintf("%s-%s", s.NamePrefix(), s.ServiceConfig.Name)
 }
 
 // PathPrefix returns the resource path prefix: {repo}/{branch}
 func (s Schema) PathPrefix() string {
-	return fmt.Sprintf("%s/%s", s.Git.Repository, s.Git.Branch)
+	return fmt.Sprintf("%s/%s", s.GitConfig.Repository, s.GitConfig.Branch)
 }
 
 // Path returns the full resource path: {repo}/{branch}/{service}
 func (s Schema) Path() string {
-	return fmt.Sprintf("%s/%s", s.PathPrefix(), s.Service.Name)
+	return fmt.Sprintf("%s/%s", s.PathPrefix(), s.ServiceConfig.Name)
 }
 
 // Environment returns processed environment variables with cross-service metadata
@@ -534,12 +591,12 @@ func (s Schema) Tags() map[string]string {
 // StateMetadata returns service metadata for state management
 func (s Schema) StateMetadata() *StateMetadata {
 	return &StateMetadata{
-		Service: s.Service.Name,
-		Owner:   s.Git.Owner,
-		Repo:    s.Git.Repository,
-		Branch:  s.Git.Branch,
-		Sha:     s.Git.Sha,
-		Image:   s.Service.Image,
+		Service: s.ServiceConfig.Name,
+		Owner:   s.GitConfig.Owner,
+		Repo:    s.GitConfig.Repository,
+		Branch:  s.GitConfig.Branch,
+		Sha:     s.GitConfig.Sha,
+		Image:   s.ServiceConfig.Image,
 	}
 }
 
@@ -570,3 +627,28 @@ func (r RegistryResources) Region() string { return r.RegistryConfig.Region }
 
 // Client returns the registry client
 func (r RegistryResources) Client() *registry.Client { return r.RegistryConfig.Client }
+
+// GitResources methods - Git configuration accessors
+
+// Owner returns the git repository owner
+func (g GitResources) Owner() string { return g.GitConfig.Owner }
+
+// Repository returns the git repository name
+func (g GitResources) Repository() string { return g.GitConfig.Repository }
+
+// Branch returns the git repository branch
+func (g GitResources) Branch() string { return g.GitConfig.Branch }
+
+// Sha returns the git repository sha
+func (g GitResources) Sha() string { return g.GitConfig.Sha }
+
+// Chdir returns the git working directory
+func (g GitResources) Chdir() string { return g.GitConfig.Chdir }
+
+// ServiceResources methods - Service configuration accessors
+
+// Name returns the service name
+func (s ServiceResources) Name() string { return s.ServiceConfig.Name }
+
+// Image returns the service container image
+func (s ServiceResources) Image() string { return s.ServiceConfig.Image }

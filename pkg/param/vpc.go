@@ -20,7 +20,7 @@ type VpcConfig struct {
 	SubnetIds        []string    `arg:"-"`
 }
 
-func (c *VpcConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
+func (c *VpcConfig) Process(ctx context.Context, awsconfig aws.Config) error {
 	c.Client = ec2.NewFromConfig(awsconfig)
 
 	if err := c.ResolveSecurityGroups(ctx); err != nil {
@@ -31,7 +31,12 @@ func (c *VpcConfig) Validate(ctx context.Context, awsconfig aws.Config) error {
 		return err
 	}
 
+	return c.Validate()
+}
+
+func (c *VpcConfig) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.Client, v.Required),
 		// When security groups are provided, subnets must be provided
 		v.Field(&c.SecurityGroupIds, v.When(len(c.SubnetIds) != 0, v.Required)),
 		// When subnets are provided, security groups must be provided

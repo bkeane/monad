@@ -11,8 +11,8 @@ import (
 )
 
 type Root struct {
-	param.Git
-	param.Service
+	param.GitConfig
+	param.ServiceConfig
 	AwsConfig aws.Config `arg:"-" json:"-"`
 	Deploy    *Deploy    `arg:"subcommand:deploy" help:"deploy a service"`
 	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a service"`
@@ -25,11 +25,11 @@ type Root struct {
 func (r *Root) Validate(ctx context.Context) error {
 	var err error
 
-	if err = r.Git.Validate(); err != nil {
+	if err = r.GitConfig.Process(); err != nil {
 		return err
 	}
 
-	if err = r.Service.Validate(r.Git); err != nil {
+	if err = r.ServiceConfig.Process(r.GitConfig); err != nil {
 		return err
 	}
 

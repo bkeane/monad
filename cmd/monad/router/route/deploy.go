@@ -13,11 +13,11 @@ type Deploy struct {
 }
 
 func (d *Deploy) Route(ctx context.Context, r Root) error {
-	if err := d.Aws.Validate(ctx, r.AwsConfig, r.Git, r.Service); err != nil {
+	if err := d.Aws.Validate(ctx, r.AwsConfig, r.GitConfig, r.ServiceConfig); err != nil {
 		return err
 	}
 
-	img := strings.Split(r.Service.Image, ":")
+	img := strings.Split(r.ServiceConfig.Image, ":")
 
 	image, err := d.Registry().Client().GetImage(ctx, img[0], img[1])
 	if err != nil {

@@ -19,7 +19,7 @@ type Ecr struct {
 }
 
 func (e *Ecr) Route(ctx context.Context, r Root) error {
-	if err := e.RegistryConfig.Validate(ctx, r.AwsConfig); err != nil {
+	if err := e.RegistryConfig.Process(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 
@@ -29,17 +29,17 @@ func (e *Ecr) Route(ctx context.Context, r Root) error {
 			return err
 		}
 	case r.Ecr.Untag != nil:
-		if err := e.RegistryConfig.Untag(ctx, r.Service.ImagePath, r.Service.ImageTag); err != nil {
+		if err := e.RegistryConfig.Untag(ctx, r.ServiceConfig.ImagePath, r.ServiceConfig.ImageTag); err != nil {
 			return err
 		}
 	case r.Ecr.Tag != nil:
-		fmt.Printf("%s/%s", e.RegistryConfig.Client.Url, r.Service.Image)
+		fmt.Printf("%s/%s", e.RegistryConfig.Client.Url, r.ServiceConfig.Image)
 	case r.Ecr.Init != nil:
-		if err := e.RegistryConfig.CreateRepository(ctx, r.Service.ImagePath); err != nil {
+		if err := e.RegistryConfig.CreateRepository(ctx, r.ServiceConfig.ImagePath); err != nil {
 			return err
 		}
 	case r.Ecr.Delete != nil:
-		if err := e.RegistryConfig.DeleteRepository(ctx, r.Service.ImagePath); err != nil {
+		if err := e.RegistryConfig.DeleteRepository(ctx, r.ServiceConfig.ImagePath); err != nil {
 			return err
 		}
 	}

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -75,29 +74,6 @@ type ImagePointer struct {
 	Repository string `json:"repository"`
 	Digest     string `json:"digest"`
 	Uri        string `json:"uri"`
-}
-
-func GetImageFromUri(ctx context.Context, awsconfig aws.Config, imageUri string) (ImagePointer, error) {
-	if !strings.Contains(imageUri, "@") {
-		return ImagePointer{}, fmt.Errorf("invalid image uri: %s", imageUri)
-	}
-
-	if !strings.HasPrefix(imageUri, "http") {
-		imageUri = fmt.Sprintf("https://%s", imageUri)
-	}
-
-	uri, digest := strings.Split(imageUri, "@")[0], strings.Split(imageUri, "@")[1]
-	url, err := url.Parse(uri)
-	if err != nil {
-		return ImagePointer{}, err
-	}
-
-	reg, err := Init(ctx, awsconfig, url.Host)
-	if err != nil {
-		return ImagePointer{}, err
-	}
-
-	return reg.FromPath(ctx, strings.TrimPrefix(url.Path, "/"), digest)
 }
 
 func InitEcr(ctx context.Context, awsconfig aws.Config, id string, region string) (*Client, error) {
