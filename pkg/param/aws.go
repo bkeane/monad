@@ -541,6 +541,11 @@ func (s Schema) Path() string {
 	return fmt.Sprintf("%s/%s", s.PathPrefix(), s.ServiceConfig.Name)
 }
 
+// ImagePath returns the full image path: {repo}/{branch}/{service}
+func (s Schema) ImagePath() string {
+	return fmt.Sprintf("%s/%s/%s", s.GitConfig.Repository, s.GitConfig.Branch, s.ServiceConfig.Name)
+}
+
 // Environment returns processed environment variables with cross-service metadata
 func (s Schema) Environment() (map[string]string, error) {
 	env, err := tmpl.Template("env", s.Lambda().EnvTemplate(), s.TemplateData)
@@ -651,4 +656,10 @@ func (g GitResources) Chdir() string { return g.GitConfig.Chdir }
 func (s ServiceResources) Name() string { return s.ServiceConfig.Name }
 
 // Image returns the service container image
+func (s ServiceResources) ImagePath() string { return s.ServiceConfig.ImagePath }
+
+// ImageTag returns the service container image tag
+func (s ServiceResources) ImageTag() string { return s.ServiceConfig.ImageTag }
+
+// Image returns the full service image path
 func (s ServiceResources) Image() string { return s.ServiceConfig.Image }

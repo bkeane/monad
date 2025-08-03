@@ -3,7 +3,6 @@ package lambda
 import (
 	"context"
 
-	"github.com/bkeane/monad/internal/registry"
 	lmb "github.com/bkeane/monad/pkg/client/lambda"
 )
 
@@ -17,8 +16,8 @@ func Init(client *lmb.Client) *Step {
 	}
 }
 
-func (s *Step) Do(ctx context.Context, image registry.ImagePointer) error {
-	return s.Mount(ctx, image)
+func (s *Step) Do(ctx context.Context) error {
+	return s.Mount(ctx)
 }
 
 func (s *Step) Undo(ctx context.Context) error {

@@ -39,6 +39,15 @@ type CloudWatchResources interface {
 	LogGroup() string
 }
 
+type ServiceResources interface {
+	ImagePath() string
+	ImageTag() string
+}
+
+type EcrResources interface {
+	Client() *registry.Client
+}
+
 type SchemaResources interface {
 	Name() string
 	Tags() map[string]string
@@ -46,15 +55,19 @@ type SchemaResources interface {
 
 type Client struct {
 	lambda     LambdaResources
+	service    ServiceResources
+	ecr        EcrResources
 	iam        IAMResources
 	vpc        VpcResources
 	cloudwatch CloudWatchResources
 	schema     SchemaResources
 }
 
-func Init(lambda LambdaResources, iam IAMResources, vpc VpcResources, cloudwatch CloudWatchResources, schema SchemaResources) *Client {
+func Init(lambda LambdaResources, service ServiceResources, ecr EcrResources, iam IAMResources, vpc VpcResources, cloudwatch CloudWatchResources, schema SchemaResources) *Client {
 	return &Client{
 		lambda:     lambda,
+		service:    service,
+		ecr:        ecr,
 		iam:        iam,
 		vpc:        vpc,
 		cloudwatch: cloudwatch,
@@ -62,8 +75,8 @@ func Init(lambda LambdaResources, iam IAMResources, vpc VpcResources, cloudwatch
 	}
 }
 
-func (s *Client) Mount(ctx context.Context, image registry.ImagePointer) error {
-	if _, err := s.PutFunction(ctx, image); err != nil {
+func (s *Client) Mount(ctx context.Context) error {
+	if _, err := s.PutFunction(ctx); err != nil {
 		return err
 	}
 
@@ -78,8 +91,13 @@ func (s *Client) Unmount(ctx context.Context) error {
 	return nil
 }
 
+// GET Operations
+func (s *Client) GetImage(ctx context.Context) (registry.ImagePointer, error) {
+	return s.ecr.Client().GetImage(ctx, s.service.ImagePath(), s.service.ImageTag())
+}
+
 // PUT Operations
-func (s *Client) PutFunction(ctx context.Context, image registry.ImagePointer) (*lambda.GetFunctionOutput, error) {
+func (s *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, error) {
 	var apiErr smithy.APIError
 	var architecture []types.Architecture
 
@@ -87,6 +105,11 @@ func (s *Client) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		Str("action", "put").
 		Str("name", s.schema.Name()).
 		Msg("lambda")
+
+	image, err := s.GetImage(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	switch image.Architecture {
 	case "amd64":
@@ -224,6 +247,7 @@ func (s *Client) PutFunction(ctx context.Context, image registry.ImagePointer) (
 	return s.lambda.Client().GetFunction(ctx, read)
 }
 
+// DELETE Operations
 func (s *Client) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
 	var apiErr smithy.APIError
 

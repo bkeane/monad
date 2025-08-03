@@ -3,7 +3,6 @@ package saga
 import (
 	"context"
 
-	"github.com/bkeane/monad/internal/registry"
 	"github.com/rs/zerolog/log"
 
 	// Resources
@@ -34,10 +33,10 @@ type Axiom struct {
 
 func Init(ctx context.Context, c *param.Aws) *Axiom {
 	iamc := iamc.Init(c.IAM(), c.Schema())
-	lmbc := lmbc.Init(c.Lambda(), c.IAM(), c.Vpc(), c.CloudWatch(), c.Schema())
 	gwc := gwc.Init(c.ApiGateway(), c.Lambda())
 	cwc := cwc.Init(c.CloudWatch(), c.Schema())
 	ebc := ebc.Init(c.EventBridge(), c.Lambda(), c.Schema())
+	lmbc := lmbc.Init(c.Lambda(), c.Service(), c.Registry(), c.IAM(), c.Vpc(), c.CloudWatch(), c.Schema())
 
 	return &Axiom{
 		iam:         iams.Init(iamc),
@@ -48,7 +47,7 @@ func Init(ctx context.Context, c *param.Aws) *Axiom {
 	}
 }
 
-func (a *Axiom) Do(ctx context.Context, image registry.ImagePointer) error {
+func (a *Axiom) Do(ctx context.Context) error {
 	if err := a.iam.Do(ctx); err != nil {
 		log.Error().Err(err).Msg("iam step failed")
 		return err
@@ -59,7 +58,7 @@ func (a *Axiom) Do(ctx context.Context, image registry.ImagePointer) error {
 		return err
 	}
 
-	if err := a.lambda.Do(ctx, image); err != nil {
+	if err := a.lambda.Do(ctx); err != nil {
 		log.Error().Err(err).Msg("lambda step failed")
 		return err
 	}
