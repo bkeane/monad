@@ -1,12 +1,11 @@
-package saga
+package lambda
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/bkeane/monad/pkg/param"
-	"github.com/bkeane/monad/pkg/registry"
+	"github.com/bkeane/monad/internal/registry"
 	"github.com/rs/zerolog/log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,22 +15,54 @@ import (
 	"github.com/aws/smithy-go"
 )
 
-type Lambda struct {
-	config param.Aws
+type LambdaResources interface {
+	Environment() (map[string]string, error)
+	Timeout() int32
+	MemorySize() int32
+	EphemeralStorage() int32
+	FunctionArn() string
+	Retries() int32
+	Client() *lambda.Client
 }
 
-func (s Lambda) Init(ctx context.Context, c param.Aws) *Lambda {
-	return &Lambda{
-		config: c,
+type IAMResources interface {
+	EniRoleArn() string
+	RoleArn() string
+}
+
+type VpcResources interface {
+	SecurityGroupIds() []string
+	SubnetIds() []string
+}
+
+type CloudWatchResources interface {
+	LogGroup() string
+}
+
+type SchemaResources interface {
+	Name() string
+	Tags() map[string]string
+}
+
+type Client struct {
+	lambda     LambdaResources
+	iam        IAMResources
+	vpc        VpcResources
+	cloudwatch CloudWatchResources
+	schema     SchemaResources
+}
+
+func Init(lambda LambdaResources, iam IAMResources, vpc VpcResources, cloudwatch CloudWatchResources, schema SchemaResources) *Client {
+	return &Client{
+		lambda:     lambda,
+		iam:        iam,
+		vpc:        vpc,
+		cloudwatch: cloudwatch,
+		schema:     schema,
 	}
 }
 
-func (s *Lambda) Do(ctx context.Context, image registry.ImagePointer) error {
-	log.Info().
-		Str("action", "put").
-		Str("name", s.config.Schema().Name()).
-		Msg("lambda")
-
+func (s *Client) Mount(ctx context.Context, image registry.ImagePointer) error {
 	if _, err := s.PutFunction(ctx, image); err != nil {
 		return err
 	}
@@ -39,12 +70,7 @@ func (s *Lambda) Do(ctx context.Context, image registry.ImagePointer) error {
 	return nil
 }
 
-func (s *Lambda) Undo(ctx context.Context) error {
-	log.Info().
-		Str("action", "delete").
-		Str("name", s.config.Schema().Name()).
-		Msg("lambda")
-
+func (s *Client) Unmount(ctx context.Context) error {
 	if _, err := s.DeleteFunction(ctx); err != nil {
 		return err
 	}
@@ -53,9 +79,14 @@ func (s *Lambda) Undo(ctx context.Context) error {
 }
 
 // PUT Operations
-func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (*lambda.GetFunctionOutput, error) {
+func (s *Client) PutFunction(ctx context.Context, image registry.ImagePointer) (*lambda.GetFunctionOutput, error) {
 	var apiErr smithy.APIError
 	var architecture []types.Architecture
+
+	log.Info().
+		Str("action", "put").
+		Str("name", s.schema.Name()).
+		Msg("lambda")
 
 	switch image.Architecture {
 	case "amd64":
@@ -66,32 +97,32 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		return nil, fmt.Errorf("unsupported architecture: %s", image.Architecture)
 	}
 
-	env, err := s.config.Lambda().Environment()
+	env, err := s.lambda.Environment()
 	if err != nil {
 		return nil, err
 	}
 
 	read := &lambda.GetFunctionInput{
-		FunctionName: aws.String(s.config.Schema().Name()),
+		FunctionName: aws.String(s.schema.Name()),
 	}
 
 	create := &lambda.CreateFunctionInput{
-		FunctionName:  aws.String(s.config.Schema().Name()),
-		Role:          aws.String(s.config.IAM().EniRoleArn()),
-		Tags:          s.config.Schema().Tags(),
+		FunctionName:  aws.String(s.schema.Name()),
+		Role:          aws.String(s.iam.EniRoleArn()),
+		Tags:          s.schema.Tags(),
 		Architectures: architecture,
 		PackageType:   types.PackageTypeImage,
-		Timeout:       aws.Int32(s.config.Lambda().Timeout()),
-		MemorySize:    aws.Int32(s.config.Lambda().MemorySize()),
+		Timeout:       aws.Int32(s.lambda.Timeout()),
+		MemorySize:    aws.Int32(s.lambda.MemorySize()),
 		EphemeralStorage: &types.EphemeralStorage{
-			Size: aws.Int32(s.config.Lambda().EphemeralStorage()),
+			Size: aws.Int32(s.lambda.EphemeralStorage()),
 		},
 		Code: &types.FunctionCode{
 			ImageUri: aws.String(image.Uri),
 		},
 		VpcConfig: &types.VpcConfig{
-			SecurityGroupIds: s.config.Vpc().SecurityGroupIds(),
-			SubnetIds:        s.config.Vpc().SubnetIds(),
+			SecurityGroupIds: s.vpc.SecurityGroupIds(),
+			SubnetIds:        s.vpc.SubnetIds(),
 		},
 		Environment: &types.Environment{
 			Variables: env,
@@ -100,7 +131,7 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 			Mode: types.TracingModePassThrough,
 		},
 		LoggingConfig: &types.LoggingConfig{
-			LogGroup: aws.String(s.config.CloudWatch().LogGroup()),
+			LogGroup: aws.String(s.cloudwatch.LogGroup()),
 		},
 	}
 
@@ -131,13 +162,13 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		},
 		Role: &lambda.UpdateFunctionConfigurationInput{
 			FunctionName: create.FunctionName,
-			Role:         aws.String(s.config.IAM().RoleArn()),
+			Role:         aws.String(s.iam.RoleArn()),
 		},
 	}
 
 	updateRetryBehavior := &lambda.PutFunctionEventInvokeConfigInput{
 		FunctionName:         create.FunctionName,
-		MaximumRetryAttempts: aws.Int32(s.config.Lambda().Retries()),
+		MaximumRetryAttempts: aws.Int32(s.lambda.Retries()),
 	}
 
 	if len(create.VpcConfig.SecurityGroupIds) == 0 && len(create.VpcConfig.SubnetIds) == 0 {
@@ -151,11 +182,11 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 	}
 
 	tags := &lambda.TagResourceInput{
-		Resource: aws.String(s.config.Lambda().FunctionArn()),
-		Tags:     s.config.Schema().Tags(),
+		Resource: aws.String(s.lambda.FunctionArn()),
+		Tags:     s.schema.Tags(),
 	}
 
-	_, err = s.config.Lambda().Client().CreateFunction(ctx, create, RetryCreate)
+	_, err = s.lambda.Client().CreateFunction(ctx, create, RetryCreate)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "ResourceConflictException":
@@ -165,42 +196,47 @@ func (s *Lambda) PutFunction(ctx context.Context, image registry.ImagePointer) (
 		}
 	}
 
-	_, err = s.config.Lambda().Client().UpdateFunctionConfiguration(ctx, update.Config, RetryUpdate)
+	_, err = s.lambda.Client().UpdateFunctionConfiguration(ctx, update.Config, RetryUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.config.Lambda().Client().UpdateFunctionCode(ctx, update.Code, RetryUpdate)
+	_, err = s.lambda.Client().UpdateFunctionCode(ctx, update.Code, RetryUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.config.Lambda().Client().UpdateFunctionConfiguration(ctx, update.Role, RetryUpdate)
+	_, err = s.lambda.Client().UpdateFunctionConfiguration(ctx, update.Role, RetryUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.config.Lambda().Client().PutFunctionEventInvokeConfig(ctx, updateRetryBehavior)
+	_, err = s.lambda.Client().PutFunctionEventInvokeConfig(ctx, updateRetryBehavior)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.config.Lambda().Client().TagResource(ctx, tags)
+	_, err = s.lambda.Client().TagResource(ctx, tags)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.config.Lambda().Client().GetFunction(ctx, read)
+	return s.lambda.Client().GetFunction(ctx, read)
 }
 
-func (s *Lambda) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
+func (s *Client) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
 	var apiErr smithy.APIError
 
+	log.Info().
+		Str("action", "delete").
+		Str("name", s.schema.Name()).
+		Msg("lambda")
+
 	delete := &lambda.DeleteFunctionInput{
-		FunctionName: aws.String(s.config.Schema().Name()),
+		FunctionName: aws.String(s.schema.Name()),
 	}
 
-	_, err := s.config.Lambda().Client().DeleteFunction(ctx, delete)
+	_, err := s.lambda.Client().DeleteFunction(ctx, delete)
 	if errors.As(err, &apiErr) {
 		switch apiErr.ErrorCode() {
 		case "ResourceNotFoundException":

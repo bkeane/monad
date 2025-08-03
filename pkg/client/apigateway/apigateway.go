@@ -1,4 +1,4 @@
-package saga
+package apigateway
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/bkeane/monad/pkg/param"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
@@ -18,8 +16,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ApiGatewayV2 struct {
-	config param.Aws
+type ApiGatewayResources interface {
+	ID() string
+	RouteKeys() ([]string, error)
+	Auth() []string
+	AuthType() []string
+	AuthorizerId() []string
+	ForwardedPrefixes() ([]string, error)
+	PermissionSourceArns() ([]string, error)
+	PermissionStatementId(apiId string) string
+	Client() *apigatewayv2.Client
+}
+
+type LambdaResources interface {
+	FunctionArn() string
+	Client() *lambda.Client
 }
 
 type Api struct {
@@ -44,76 +55,40 @@ type Permission struct {
 	StatementId string
 }
 
-func (s ApiGatewayV2) Init(ctx context.Context, c param.Aws) *ApiGatewayV2 {
-	return &ApiGatewayV2{
-		config: c,
+type Client struct {
+	apigateway ApiGatewayResources
+	lambda     LambdaResources
+}
+
+func Init(apigateway ApiGatewayResources, lambda LambdaResources) *Client {
+	return &Client{
+		apigateway: apigateway,
+		lambda:     lambda,
 	}
 }
 
-func (s *ApiGatewayV2) Do(ctx context.Context) error {
-	var action string
-	var apiId string
-
-	if s.config.ApiGateway().ID() != "" {
-		apiId = s.config.ApiGateway().ID()
-		action = "put"
-	} else {
-		apiId = "*"
-		action = "delete"
-	}
-
-	routeKeys, err := s.config.ApiGateway().RouteKeys()
-	if err != nil {
+func (s *Client) Mount(ctx context.Context) error {
+	if err := s.Unmount(ctx); err != nil {
 		return err
 	}
 
-	// Log each route/auth pair individually to show 1:1 relationship
-	auth := s.config.ApiGateway().Auth()
-	for i, route := range routeKeys {
-		log.Info().
-			Str("id", apiId).
-			Str("route", route).
-			Str("auth", auth[i]).
-			Str("action", action).
-			Msg("apigatewayv2")
-	}
-
-	return s.Ensure(ctx)
-}
-
-func (s *ApiGatewayV2) Undo(ctx context.Context) error {
-	return s.Destroy(ctx)
-}
-
-func (s *ApiGatewayV2) Ensure(ctx context.Context) error {
-	if s.config.ApiGateway().ID() != "" {
-		if err := s.Destroy(ctx); err != nil {
-			return err
-		}
-		return s.Deploy(ctx)
-	}
-
-	return s.Destroy(ctx)
-}
-
-func (s *ApiGatewayV2) Deploy(ctx context.Context) error {
-	api, err := s.GetApi(ctx, s.config.ApiGateway().ID())
+	api, err := s.GetApi(ctx, s.apigateway.ID())
 	if err != nil {
 		return err
 	}
 
 	// Get all routes and auth configurations
-	routeKeys, err := s.config.ApiGateway().RouteKeys()
+	routeKeys, err := s.apigateway.RouteKeys()
 	if err != nil {
 		return err
 	}
 
-	authTypes := s.config.ApiGateway().AuthType()
-	authorizerIds := s.config.ApiGateway().AuthorizerId()
+	authTypes := s.apigateway.AuthType()
+	authorizerIds := s.apigateway.AuthorizerId()
 
 	// Validate 1:1 pairing (this should already be validated in param validation, but double-check)
 	if len(routeKeys) != len(authTypes) || len(routeKeys) != len(authorizerIds) {
-		return fmt.Errorf("route/auth configuration mismatch: %d routes, %d auth types, %d authorizer ids", 
+		return fmt.Errorf("route/auth configuration mismatch: %d routes, %d auth types, %d authorizer ids",
 			len(routeKeys), len(authTypes), len(authorizerIds))
 	}
 
@@ -138,7 +113,7 @@ func (s *ApiGatewayV2) Deploy(ctx context.Context) error {
 	return nil
 }
 
-func (s *ApiGatewayV2) Destroy(ctx context.Context) error {
+func (s *Client) Unmount(ctx context.Context) error {
 	apis, err := s.GetApis(ctx)
 	if err != nil {
 		return err
@@ -181,8 +156,8 @@ func (s *ApiGatewayV2) Destroy(ctx context.Context) error {
 }
 
 // Create functions
-func (s *ApiGatewayV2) CreateIntegration(ctx context.Context, api Api, routeIndex int) (Integration, error) {
-	forwardedPrefixes, err := s.config.ApiGateway().ForwardedPrefixes()
+func (s *Client) CreateIntegration(ctx context.Context, api Api, routeIndex int) (Integration, error) {
+	forwardedPrefixes, err := s.apigateway.ForwardedPrefixes()
 	if err != nil {
 		return Integration{}, err
 	}
@@ -195,7 +170,7 @@ func (s *ApiGatewayV2) CreateIntegration(ctx context.Context, api Api, routeInde
 		ApiId:                aws.String(api.ApiId),
 		ConnectionType:       types.ConnectionTypeInternet,
 		IntegrationType:      types.IntegrationTypeAwsProxy,
-		IntegrationUri:       aws.String(s.config.Lambda().FunctionArn()),
+		IntegrationUri:       aws.String(s.lambda.FunctionArn()),
 		PayloadFormatVersion: aws.String("2.0"),
 		RequestParameters: map[string]string{
 			"overwrite:path":                      "/$request.path.proxy",
@@ -203,7 +178,7 @@ func (s *ApiGatewayV2) CreateIntegration(ctx context.Context, api Api, routeInde
 		},
 	}
 
-	client := s.config.ApiGateway().Client()
+	client := s.apigateway.Client()
 	integration, err := client.CreateIntegration(ctx, create)
 	if err != nil {
 		return Integration{}, err
@@ -215,8 +190,8 @@ func (s *ApiGatewayV2) CreateIntegration(ctx context.Context, api Api, routeInde
 	}, nil
 }
 
-func (s *ApiGatewayV2) CreateRoute(ctx context.Context, api Api, integration Integration, routeIndex int) (Route, error) {
-	client := s.config.ApiGateway().Client()
+func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integration, routeIndex int) (Route, error) {
+	client := s.apigateway.Client()
 	authTypeMap := map[string]types.AuthorizationType{
 		"NONE":    types.AuthorizationTypeNone,
 		"AWS_IAM": types.AuthorizationTypeAwsIam,
@@ -224,13 +199,13 @@ func (s *ApiGatewayV2) CreateRoute(ctx context.Context, api Api, integration Int
 		"JWT":     types.AuthorizationTypeJwt,
 	}
 
-	routeKeys, err := s.config.ApiGateway().RouteKeys()
+	routeKeys, err := s.apigateway.RouteKeys()
 	if err != nil {
 		return Route{}, err
 	}
 
-	authTypes := s.config.ApiGateway().AuthType()
-	authorizerIds := s.config.ApiGateway().AuthorizerId()
+	authTypes := s.apigateway.AuthType()
+	authorizerIds := s.apigateway.AuthorizerId()
 
 	if routeIndex >= len(routeKeys) || routeIndex >= len(authTypes) || routeIndex >= len(authorizerIds) {
 		return Route{}, fmt.Errorf("route index %d out of bounds", routeIndex)
@@ -265,7 +240,7 @@ func (s *ApiGatewayV2) CreateRoute(ctx context.Context, api Api, integration Int
 	if route.AuthorizerId != nil {
 		authorizerId = *route.AuthorizerId
 	}
-	
+
 	return Route{
 		ApiId:             api.ApiId,
 		RouteId:           *route.RouteId,
@@ -275,8 +250,8 @@ func (s *ApiGatewayV2) CreateRoute(ctx context.Context, api Api, integration Int
 	}, nil
 }
 
-func (s *ApiGatewayV2) CreatePermission(ctx context.Context, api Api, routeIndex int) (Permission, error) {
-	sourceArns, err := s.config.ApiGateway().PermissionSourceArns()
+func (s *Client) CreatePermission(ctx context.Context, api Api, routeIndex int) (Permission, error) {
+	sourceArns, err := s.apigateway.PermissionSourceArns()
 	if err != nil {
 		return Permission{}, err
 	}
@@ -286,17 +261,17 @@ func (s *ApiGatewayV2) CreatePermission(ctx context.Context, api Api, routeIndex
 	}
 
 	// Create unique statement ID for each route
-	statementId := fmt.Sprintf("%s-%d", s.config.ApiGateway().PermissionStatementId(api.ApiId), routeIndex)
+	statementId := fmt.Sprintf("%s-%d", s.apigateway.PermissionStatementId(api.ApiId), routeIndex)
 
 	create := &lambda.AddPermissionInput{
-		FunctionName: aws.String(s.config.Lambda().FunctionArn()),
+		FunctionName: aws.String(s.lambda.FunctionArn()),
 		Action:       aws.String("lambda:InvokeFunction"),
 		Principal:    aws.String("apigateway.amazonaws.com"),
 		SourceArn:    aws.String(sourceArns[routeIndex]),
 		StatementId:  aws.String(statementId),
 	}
 
-	_, err = s.config.Lambda().Client().AddPermission(ctx, create)
+	_, err = s.lambda.Client().AddPermission(ctx, create)
 	if err != nil {
 		return Permission{}, err
 	}
@@ -308,7 +283,7 @@ func (s *ApiGatewayV2) CreatePermission(ctx context.Context, api Api, routeIndex
 }
 
 // Delete functions
-func (s *ApiGatewayV2) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.DeleteRouteOutput, error) {
+func (s *Client) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.DeleteRouteOutput, error) {
 	input := &apigatewayv2.DeleteRouteInput{
 		ApiId:   aws.String(route.ApiId),
 		RouteId: aws.String(route.RouteId),
@@ -316,7 +291,7 @@ func (s *ApiGatewayV2) DeleteRoute(ctx context.Context, route Route) (*apigatewa
 
 	// Convert AWS auth type to lowercase to match deploy format
 	authType := strings.ToLower(route.AuthorizationType)
-	
+
 	log.Info().
 		Str("id", route.ApiId).
 		Str("route", route.RouteKey).
@@ -324,19 +299,19 @@ func (s *ApiGatewayV2) DeleteRoute(ctx context.Context, route Route) (*apigatewa
 		Str("action", "delete").
 		Msg("apigatewayv2")
 
-	return s.config.ApiGateway().Client().DeleteRoute(ctx, input)
+	return s.apigateway.Client().DeleteRoute(ctx, input)
 }
 
-func (s *ApiGatewayV2) DeleteIntegration(ctx context.Context, integration Integration) (*apigatewayv2.DeleteIntegrationOutput, error) {
+func (s *Client) DeleteIntegration(ctx context.Context, integration Integration) (*apigatewayv2.DeleteIntegrationOutput, error) {
 	input := &apigatewayv2.DeleteIntegrationInput{
 		ApiId:         aws.String(integration.ApiId),
 		IntegrationId: aws.String(integration.IntegrationId),
 	}
 
-	return s.config.ApiGateway().Client().DeleteIntegration(ctx, input)
+	return s.apigateway.Client().DeleteIntegration(ctx, input)
 }
 
-func (s *ApiGatewayV2) DeletePermissions(ctx context.Context, permission Permission) error {
+func (s *Client) DeletePermissions(ctx context.Context, permission Permission) error {
 	var apiErr smithy.APIError
 
 	input := &lambda.RemovePermissionInput{
@@ -344,7 +319,7 @@ func (s *ApiGatewayV2) DeletePermissions(ctx context.Context, permission Permiss
 		StatementId:  aws.String(permission.StatementId),
 	}
 
-	_, err := s.config.Lambda().Client().RemovePermission(ctx, input)
+	_, err := s.lambda.Client().RemovePermission(ctx, input)
 	if err != nil {
 		switch errors.As(err, &apiErr) {
 		case apiErr.ErrorCode() == "ResourceNotFoundException":
@@ -358,7 +333,7 @@ func (s *ApiGatewayV2) DeletePermissions(ctx context.Context, permission Permiss
 }
 
 // GET functions
-func (s *ApiGatewayV2) GetApis(ctx context.Context) ([]Api, error) {
+func (s *Client) GetApis(ctx context.Context) ([]Api, error) {
 	var apis []Api
 	var nextToken *string
 
@@ -367,7 +342,7 @@ func (s *ApiGatewayV2) GetApis(ctx context.Context) ([]Api, error) {
 			NextToken: nextToken,
 		}
 
-		result, err := s.config.ApiGateway().Client().GetApis(ctx, input)
+		result, err := s.apigateway.Client().GetApis(ctx, input)
 		if err != nil {
 			return nil, err
 		}
@@ -387,7 +362,7 @@ func (s *ApiGatewayV2) GetApis(ctx context.Context) ([]Api, error) {
 	return apis, nil
 }
 
-func (s *ApiGatewayV2) GetRoutes(ctx context.Context, apis []Api) ([]Route, error) {
+func (s *Client) GetRoutes(ctx context.Context, apis []Api) ([]Route, error) {
 	var routes []Route
 	var integrations []Integration
 	var nextToken *string
@@ -404,7 +379,7 @@ func (s *ApiGatewayV2) GetRoutes(ctx context.Context, apis []Api) ([]Route, erro
 				NextToken: nextToken,
 			}
 
-			result, err := s.config.ApiGateway().Client().GetRoutes(ctx, input)
+			result, err := s.apigateway.Client().GetRoutes(ctx, input)
 			if err != nil {
 				return nil, err
 			}
@@ -438,7 +413,7 @@ func (s *ApiGatewayV2) GetRoutes(ctx context.Context, apis []Api) ([]Route, erro
 	return routes, nil
 }
 
-func (s *ApiGatewayV2) GetApi(ctx context.Context, apiId string) (Api, error) {
+func (s *Client) GetApi(ctx context.Context, apiId string) (Api, error) {
 	apis, err := s.GetApis(ctx)
 	if err != nil {
 		return Api{}, err
@@ -453,7 +428,7 @@ func (s *ApiGatewayV2) GetApi(ctx context.Context, apiId string) (Api, error) {
 	return Api{}, fmt.Errorf("api not found")
 }
 
-func (s *ApiGatewayV2) GetIntegrations(ctx context.Context, apis []Api) ([]Integration, error) {
+func (s *Client) GetIntegrations(ctx context.Context, apis []Api) ([]Integration, error) {
 	var integrations []Integration
 	var nextToken *string
 
@@ -464,13 +439,13 @@ func (s *ApiGatewayV2) GetIntegrations(ctx context.Context, apis []Api) ([]Integ
 				NextToken: nextToken,
 			}
 
-			result, err := s.config.ApiGateway().Client().GetIntegrations(ctx, input)
+			result, err := s.apigateway.Client().GetIntegrations(ctx, input)
 			if err != nil {
 				return nil, err
 			}
 
 			for _, integration := range result.Items {
-				if s.config.Lambda().FunctionArn() == *integration.IntegrationUri {
+				if s.lambda.FunctionArn() == *integration.IntegrationUri {
 					integrations = append(integrations, Integration{
 						ApiId:         api.ApiId,
 						IntegrationId: *integration.IntegrationId,
@@ -488,12 +463,12 @@ func (s *ApiGatewayV2) GetIntegrations(ctx context.Context, apis []Api) ([]Integ
 	return integrations, nil
 }
 
-func (s *ApiGatewayV2) GetPermissions(ctx context.Context, apis []Api) ([]Permission, error) {
+func (s *Client) GetPermissions(ctx context.Context, apis []Api) ([]Permission, error) {
 	var permissions []Permission
-	
+
 	// Get Lambda's resource-based policy
-	policy, err := s.config.Lambda().Client().GetPolicy(ctx, &lambda.GetPolicyInput{
-		FunctionName: aws.String(s.config.Lambda().FunctionArn()),
+	policy, err := s.lambda.Client().GetPolicy(ctx, &lambda.GetPolicyInput{
+		FunctionName: aws.String(s.lambda.FunctionArn()),
 	})
 	if err != nil {
 		var resourceNotFound *lambdatypes.ResourceNotFoundException
@@ -502,7 +477,7 @@ func (s *ApiGatewayV2) GetPermissions(ctx context.Context, apis []Api) ([]Permis
 		}
 		return nil, fmt.Errorf("failed to get Lambda policy: %w", err)
 	}
-	
+
 	// Parse policy JSON to extract ALL API Gateway statement IDs
 	var policyDoc struct {
 		Statement []struct {
@@ -512,20 +487,20 @@ func (s *ApiGatewayV2) GetPermissions(ctx context.Context, apis []Api) ([]Permis
 			} `json:"Principal"`
 		} `json:"Statement"`
 	}
-	
+
 	if err := json.Unmarshal([]byte(*policy.Policy), &policyDoc); err != nil {
 		return nil, fmt.Errorf("failed to parse Lambda policy: %w", err)
 	}
-	
+
 	// Find ALL statements where Principal.Service is "apigateway.amazonaws.com"
 	for _, stmt := range policyDoc.Statement {
 		if stmt.Principal.Service == "apigateway.amazonaws.com" {
 			permissions = append(permissions, Permission{
-				FunctionArn: s.config.Lambda().FunctionArn(),
+				FunctionArn: s.lambda.FunctionArn(),
 				StatementId: stmt.Sid,
 			})
 		}
 	}
-	
+
 	return permissions, nil
 }

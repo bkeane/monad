@@ -3,27 +3,48 @@ package saga
 import (
 	"context"
 
-	"github.com/bkeane/monad/pkg/param"
-	"github.com/bkeane/monad/pkg/registry"
-
+	"github.com/bkeane/monad/internal/registry"
 	"github.com/rs/zerolog/log"
+
+	// Resources
+	"github.com/bkeane/monad/pkg/param"
+
+	// Clients
+	gwc "github.com/bkeane/monad/pkg/client/apigateway"
+	cwc "github.com/bkeane/monad/pkg/client/cloudwatch"
+	ebc "github.com/bkeane/monad/pkg/client/eventbridge"
+	iamc "github.com/bkeane/monad/pkg/client/iam"
+	lmbc "github.com/bkeane/monad/pkg/client/lambda"
+
+	// Steps
+	gws "github.com/bkeane/monad/pkg/saga/steps/apigateway"
+	cws "github.com/bkeane/monad/pkg/saga/steps/cloudwatch"
+	ebs "github.com/bkeane/monad/pkg/saga/steps/eventbridge"
+	iams "github.com/bkeane/monad/pkg/saga/steps/iam"
+	lmbs "github.com/bkeane/monad/pkg/saga/steps/lambda"
 )
 
 type Axiom struct {
-	iam         *IAM
-	lambda      *Lambda
-	apigateway  *ApiGatewayV2
-	eventbridge *EventBridge
-	cloudwatch  *Cloudwatch
+	iam         *iams.Step
+	eventbridge *ebs.Step
+	apigateway  *gws.Step
+	cloudwatch  *cws.Step
+	lambda      *lmbs.Step
 }
 
-func Init(ctx context.Context, c param.Aws) *Axiom {
+func Init(ctx context.Context, c *param.Aws) *Axiom {
+	iamc := iamc.Init(c.IAM(), c.Schema())
+	lmbc := lmbc.Init(c.Lambda(), c.IAM(), c.Vpc(), c.CloudWatch(), c.Schema())
+	gwc := gwc.Init(c.ApiGateway(), c.Lambda())
+	cwc := cwc.Init(c.CloudWatch(), c.Schema())
+	ebc := ebc.Init(c.EventBridge(), c.Lambda(), c.Schema())
+
 	return &Axiom{
-		iam:         IAM{}.Init(ctx, c),
-		lambda:      Lambda{}.Init(ctx, c),
-		apigateway:  ApiGatewayV2{}.Init(ctx, c),
-		eventbridge: EventBridge{}.Init(ctx, c),
-		cloudwatch:  Cloudwatch{}.Init(ctx, c),
+		iam:         iams.Init(iamc),
+		lambda:      lmbs.Init(lmbc),
+		apigateway:  gws.Init(gwc),
+		eventbridge: ebs.Init(ebc),
+		cloudwatch:  cws.Init(cwc),
 	}
 }
 

@@ -24,7 +24,7 @@ func (d *Deploy) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	if err := saga.Init(ctx, d.Aws).Do(ctx, image); err != nil {
+	if err := saga.Init(ctx, &d.Aws).Do(ctx, image); err != nil {
 		return err
 	}
 
