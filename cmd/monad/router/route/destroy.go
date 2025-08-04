@@ -16,7 +16,7 @@ func (d *Destroy) Route(ctx context.Context, r Root) error {
 		return err
 	}
 
-	if err := saga.Init(ctx, d.Aws).Undo(ctx); err != nil {
+	if err := saga.Init(ctx, &d.Aws).Undo(ctx); err != nil {
 		return err
 	}
 
