@@ -11,25 +11,20 @@ import (
 )
 
 type CloudWatchResources interface {
-	LogGroup() string
+	LogGroupName() string
 	LogGroupArn() string
-	LogRetention() int32
+	LogGroupTags() map[string]string
+	LogGroupRetention() int32
 	Client() *cloudwatchlogs.Client
-}
-
-type SchemaResources interface {
-	Tags() map[string]string
 }
 
 type Client struct {
 	cloudwatch CloudWatchResources
-	schema     SchemaResources
 }
 
-func Init(cloudwatch CloudWatchResources, schema SchemaResources) *Client {
+func Init(cloudwatch CloudWatchResources) *Client {
 	return &Client{
 		cloudwatch: cloudwatch,
-		schema:     schema,
 	}
 }
 
@@ -54,13 +49,13 @@ func (s *Client) PutLogGroup(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "put").
-		Str("group", s.cloudwatch.LogGroup()).
-		Int32("retention", s.cloudwatch.LogRetention()).
+		Str("group", s.cloudwatch.LogGroupName()).
+		Int32("retention", s.cloudwatch.LogGroupRetention()).
 		Msg("cloudwatch")
 
 	_, err := s.cloudwatch.Client().CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
-		LogGroupName: aws.String(s.cloudwatch.LogGroup()),
-		Tags:         s.schema.Tags(),
+		LogGroupName: aws.String(s.cloudwatch.LogGroupName()),
+		Tags:         s.cloudwatch.LogGroupTags(),
 	})
 
 	if errors.As(err, &apiErr) {
@@ -68,7 +63,7 @@ func (s *Client) PutLogGroup(ctx context.Context) error {
 		case "ResourceAlreadyExistsException":
 			_, err := s.cloudwatch.Client().TagResource(ctx, &cloudwatchlogs.TagResourceInput{
 				ResourceArn: aws.String(s.cloudwatch.LogGroupArn()),
-				Tags:        s.schema.Tags(),
+				Tags:        s.cloudwatch.LogGroupTags(),
 			})
 			return err
 		default:
@@ -81,8 +76,8 @@ func (s *Client) PutLogGroup(ctx context.Context) error {
 
 func (c *Client) PutRetentionPolicy(ctx context.Context) error {
 	_, err := c.cloudwatch.Client().PutRetentionPolicy(ctx, &cloudwatchlogs.PutRetentionPolicyInput{
-		LogGroupName:    aws.String(c.cloudwatch.LogGroup()),
-		RetentionInDays: aws.Int32(c.cloudwatch.LogRetention()),
+		LogGroupName:    aws.String(c.cloudwatch.LogGroupName()),
+		RetentionInDays: aws.Int32(c.cloudwatch.LogGroupRetention()),
 	})
 
 	return err
@@ -93,11 +88,11 @@ func (c *Client) DeleteLogGroup(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "delete").
-		Str("group", c.cloudwatch.LogGroup()).
+		Str("group", c.cloudwatch.LogGroupName()).
 		Msg("cloudwatch")
 
 	_, err := c.cloudwatch.Client().DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{
-		LogGroupName: aws.String(c.cloudwatch.LogGroup()),
+		LogGroupName: aws.String(c.cloudwatch.LogGroupName()),
 	})
 
 	if errors.As(err, &apiErr) {

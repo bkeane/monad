@@ -14,7 +14,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	eventbridgetypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	dotenvlib "github.com/joho/godotenv"
@@ -99,10 +101,10 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git GitConfig,
 	c.TemplateData.Caller.Region = c.Caller().Region()
 	c.TemplateData.Registry.Id = c.Registry().Id()
 	c.TemplateData.Registry.Region = c.Registry().Region()
-	c.TemplateData.Resource.Name.Prefix = c.Schema().NamePrefix()
-	c.TemplateData.Resource.Name.Full = c.Schema().Name()
-	c.TemplateData.Resource.Path.Prefix = c.Schema().PathPrefix()
-	c.TemplateData.Resource.Path.Full = c.Schema().Path()
+	c.TemplateData.Resource.Name.Prefix = c.schema().NamePrefix()
+	c.TemplateData.Resource.Name.Full = c.schema().Name()
+	c.TemplateData.Resource.Path.Prefix = c.schema().PathPrefix()
+	c.TemplateData.Resource.Path.Full = c.schema().Path()
 	c.TemplateData.Lambda.Region = c.Lambda().Region()
 	c.TemplateData.Lambda.FunctionArn = c.Lambda().FunctionArn()
 	c.TemplateData.Lambda.PolicyArn = c.IAM().PolicyArn()
@@ -112,7 +114,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git GitConfig,
 	c.TemplateData.ApiGateway.Region = c.ApiGateway().Region()
 	c.TemplateData.ApiGateway.Id = c.ApiGateway().ID()
 	c.TemplateData.EventBridge.Region = c.EventBridge().Region()
-	c.TemplateData.EventBridge.RuleName = c.Schema().Name()
+	c.TemplateData.EventBridge.RuleName = c.schema().Name()
 	c.TemplateData.EventBridge.BusName = c.EventBridge().BusName()
 
 	log.Info().
@@ -125,6 +127,7 @@ func (c *Aws) Validate(ctx context.Context, awsconfig aws.Config, git GitConfig,
 
 // Receiver Pattern Namespaces
 
+type schema struct{ *Aws }
 type GitResources struct{ *Aws }
 type ServiceResources struct{ *Aws }
 type IAMResources struct{ *Aws }
@@ -133,11 +136,13 @@ type ApiGatewayResources struct{ *Aws }
 type EventBridgeResources struct{ *Aws }
 type CloudWatchResources struct{ *Aws }
 type VpcResources struct{ *Aws }
-type Schema struct{ *Aws }
 type CallerResources struct{ *Aws }
 type RegistryResources struct{ *Aws }
 
 // Resource namespace factory methods
+
+// Schema returns the cross-service resource organization and naming methods
+func (c *Aws) schema() schema { return schema{c} }
 
 // Git returns the Git resource methods and configuration accessors
 func (c *Aws) Git() GitResources {
@@ -203,9 +208,6 @@ func (c *Aws) Vpc() VpcResources {
 	return VpcResources{c}
 }
 
-// Schema returns the cross-service resource organization and naming methods
-func (c *Aws) Schema() Schema { return Schema{c} }
-
 // Caller returns the AWS caller identity information
 func (c *Aws) Caller() CallerResources {
 	if err := c.CallerConfig.Validate(); err != nil {
@@ -222,7 +224,103 @@ func (c *Aws) Registry() RegistryResources {
 	return RegistryResources{c}
 }
 
+// Schema methods - cross-service resource organization and naming
+
+// NamePrefix returns the resource name prefix: {repo}-{branch}
+func (s schema) NamePrefix() string {
+	return fmt.Sprintf("%s-%s", s.GitConfig.Repository, s.GitConfig.Branch)
+}
+
+// Name returns the full resource name: {repo}-{branch}-{service}
+func (s schema) Name() string {
+	return fmt.Sprintf("%s-%s", s.NamePrefix(), s.ServiceConfig.Name)
+}
+
+// PathPrefix returns the resource path prefix: {repo}/{branch}
+func (s schema) PathPrefix() string {
+	return fmt.Sprintf("%s/%s", s.GitConfig.Repository, s.GitConfig.Branch)
+}
+
+// Path returns the full resource path: {repo}/{branch}/{service}
+func (s schema) Path() string {
+	return fmt.Sprintf("%s/%s", s.PathPrefix(), s.ServiceConfig.Name)
+}
+
+// ImagePath returns the ECR image path: {owner}/{repo}/{service}
+func (s schema) ImagePath() string {
+	return s.ImagePath()
+}
+
+// ImageTag returns the ECR image tag: {branch}
+func (s schema) ImageTag() string {
+	return s.GitConfig.Branch
+}
+
+// Environment returns processed environment variables with cross-service metadata
+func (s schema) Environment() (map[string]string, error) {
+	env, err := tmpl.Template("env", s.Lambda().EnvTemplate(), s.TemplateData)
+	if err != nil {
+		return nil, err
+	}
+
+	envMap, err := dotenvlib.Parse(strings.NewReader(env))
+	if err != nil {
+		return nil, err
+	}
+
+	// Inject default environment variables
+	// Generally useful and used for efficient state lookup
+	metadata := s.StateMetadata()
+	envMap["MONAD_SERVICE"] = metadata.Service
+	envMap["MONAD_OWNER"] = metadata.Owner
+	envMap["MONAD_REPO"] = metadata.Repo
+	envMap["MONAD_SHA"] = metadata.Sha
+	envMap["MONAD_BRANCH"] = metadata.Branch
+	envMap["MONAD_IMAGE"] = metadata.Image
+
+	if s.ApiGateway().ID() != "" {
+		envMap["MONAD_API"] = s.ApiGateway().Api()
+	}
+
+	if s.EventBridge().RuleTemplate() != "" {
+		envMap["MONAD_BUS"] = s.EventBridge().BusName()
+	}
+
+	return envMap, nil
+}
+
+// Tags returns standardized AWS resource tags for cross-service consistency
+func (s schema) Tags() map[string]string {
+	metadata := s.StateMetadata()
+
+	return map[string]string{
+		"Monad":   "true",
+		"Service": metadata.Service,
+		"Owner":   metadata.Owner,
+		"Repo":    metadata.Repo,
+		"Branch":  metadata.Branch,
+		"Sha":     metadata.Sha,
+	}
+}
+
+// StateMetadata returns service metadata for state management
+func (s schema) StateMetadata() *StateMetadata {
+	return &StateMetadata{
+		Service: s.ServiceConfig.Name,
+		Owner:   s.GitConfig.Owner,
+		Repo:    s.GitConfig.Repository,
+		Branch:  s.GitConfig.Branch,
+		Sha:     s.GitConfig.Sha,
+		Image:   s.ServiceConfig.Image,
+	}
+}
+
 // IAMResources methods
+
+// RoleName returns the IAM role name for the service
+func (i IAMResources) RoleName() string {
+	return i.schema().Name()
+}
 
 // RoleDocument returns the processed IAM role trust policy document from template
 func (i IAMResources) RoleDocument() (string, error) {
@@ -231,7 +329,12 @@ func (i IAMResources) RoleDocument() (string, error) {
 
 // RoleArn returns the complete ARN for the IAM role
 func (i IAMResources) RoleArn() string {
-	return fmt.Sprintf("arn:aws:iam::%s:role/%s", i.Caller().AccountId(), i.Schema().Name())
+	return fmt.Sprintf("arn:aws:iam::%s:role/%s", i.Caller().AccountId(), i.schema().Name())
+}
+
+// PolicyName returns the IAM policy name for the service
+func (i IAMResources) PolicyName() string {
+	return i.schema().Name()
 }
 
 // PolicyDocument returns the processed IAM policy document from template
@@ -241,11 +344,11 @@ func (i IAMResources) PolicyDocument() (string, error) {
 
 // PolicyArn returns the complete ARN for the IAM policy
 func (i IAMResources) PolicyArn() string {
-	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", i.Caller().AccountId(), i.Schema().Name())
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", i.Caller().AccountId(), i.schema().Name())
 }
 
 // BoundaryPolicy returns the boundary policy name (extracted from ARN if provided)
-func (i IAMResources) BoundaryPolicy() string {
+func (i IAMResources) BoundaryPolicyName() string {
 	if strings.HasPrefix(i.IamConfig.BoundaryPolicy, "arn:aws:iam::") {
 		return strings.Split(i.IamConfig.BoundaryPolicy, ":policy/")[1]
 	}
@@ -278,6 +381,18 @@ func (i IAMResources) EniRolePolicyArn() string {
 	return "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+// Tags returns standardized IAM resource tags for cross-service consistency
+func (i IAMResources) Tags() []iamtypes.Tag {
+	var tags []iamtypes.Tag
+	for key, value := range i.schema().Tags() {
+		tags = append(tags, iamtypes.Tag{
+			Key:   aws.String(key),
+			Value: aws.String(value),
+		})
+	}
+	return tags
+}
+
 // IAM configuration accessors
 
 // Client returns the AWS IAM service client
@@ -285,15 +400,25 @@ func (i IAMResources) Client() *iam.Client { return i.IamConfig.Client }
 
 // LambdaResources methods
 
+// FunctionName returns the Lambda function name
+func (l LambdaResources) FunctionName() string {
+	return l.schema().Name()
+}
+
 // FunctionArn returns the complete ARN for the Lambda function
 func (l LambdaResources) FunctionArn() string {
 	return fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s",
-		l.Lambda().Region(), l.Caller().AccountId(), l.Schema().Name())
+		l.Lambda().Region(), l.Caller().AccountId(), l.schema().Name())
 }
 
 // Environment returns processed environment variables for the Lambda function
 func (l LambdaResources) Environment() (map[string]string, error) {
-	return l.Schema().Environment()
+	return l.schema().Environment()
+}
+
+// Tags returns standardized Lambda resource tags for cross-service consistency
+func (l LambdaResources) Tags() map[string]string {
+	return l.schema().Tags()
 }
 
 // Lambda configuration accessors
@@ -353,7 +478,7 @@ func (a ApiGatewayResources) ForwardedPrefixes() ([]string, error) {
 
 // PermissionStatementId returns the Lambda permission statement ID for API Gateway
 func (a ApiGatewayResources) PermissionStatementId(apiId string) string {
-	return strings.Join([]string{"apigatewayv2", a.Schema().Name(), apiId}, "-")
+	return strings.Join([]string{"apigatewayv2", a.schema().Name(), apiId}, "-")
 }
 
 // PermissionSourceArns returns the API Gateway execution ARNs for Lambda permissions for all routes
@@ -439,6 +564,10 @@ func (a ApiGatewayResources) AuthorizerId() []string { return a.ApiGatewayConfig
 
 // EventBridgeResources methods
 
+func (e EventBridgeResources) RuleName() string {
+	return e.schema().Name()
+}
+
 // RuleDocument returns the processed EventBridge rule document from template
 func (e EventBridgeResources) RuleDocument() (string, error) {
 	if e.EventBridgeConfig.RuleTemplate == "" {
@@ -455,7 +584,7 @@ func (e EventBridgeResources) RuleDocument() (string, error) {
 
 // PermissionStatementId returns the Lambda permission statement ID for EventBridge
 func (e EventBridgeResources) PermissionStatementId() string {
-	return strings.Join([]string{"eventbridge", e.EventBridgeConfig.BusName, e.Schema().Name()}, "-")
+	return strings.Join([]string{"eventbridge", e.EventBridgeConfig.BusName, e.schema().Name()}, "-")
 }
 
 // EventBridge configuration accessors
@@ -472,21 +601,39 @@ func (e EventBridgeResources) BusName() string { return e.EventBridgeConfig.BusN
 // RuleTemplate returns the EventBridge rule template string or file path
 func (e EventBridgeResources) RuleTemplate() string { return e.EventBridgeConfig.RuleTemplate }
 
+// Tags returns standardized EventBridge resource tags for cross-service consistency
+func (e EventBridgeResources) Tags() []eventbridgetypes.Tag {
+	var tags []eventbridgetypes.Tag
+	for key, value := range e.schema().Tags() {
+		tags = append(tags, eventbridgetypes.Tag{
+			Key:   aws.String(key),
+			Value: aws.String(value),
+		})
+	}
+
+	return tags
+}
+
 // CloudWatchResources methods
 
 // LogGroup returns the CloudWatch log group name for the Lambda function
-func (c CloudWatchResources) LogGroup() string {
-	return fmt.Sprintf("/aws/lambda/%s", c.Schema().Path())
+func (c CloudWatchResources) LogGroupName() string {
+	return fmt.Sprintf("/aws/lambda/%s", c.schema().Path())
 }
 
 // LogGroupArn returns the complete ARN for the CloudWatch log group
 func (c CloudWatchResources) LogGroupArn() string {
-	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.CloudWatch().Region(), c.Caller().AccountId(), c.LogGroup())
+	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.CloudWatch().Region(), c.Caller().AccountId(), c.LogGroupName())
 }
 
 // LogRetention returns the log retention period in days
-func (c CloudWatchResources) LogRetention() int32 {
+func (c CloudWatchResources) LogGroupRetention() int32 {
 	return c.CloudWatchConfig.Retention
+}
+
+// LogGroupTags returns the CloudWatch log group tags
+func (c CloudWatchResources) LogGroupTags() map[string]string {
+	return c.schema().Tags()
 }
 
 // CloudWatch configuration accessors
@@ -519,92 +666,6 @@ func (v VpcResources) SecurityGroups() []string { return v.VpcConfig.SecurityGro
 // Subnets returns the subnet names/IDs from configuration
 func (v VpcResources) Subnets() []string { return v.VpcConfig.Subnets }
 
-// Schema methods - cross-service resource organization and naming
-
-// NamePrefix returns the resource name prefix: {repo}-{branch}
-func (s Schema) NamePrefix() string {
-	return fmt.Sprintf("%s-%s", s.GitConfig.Repository, s.GitConfig.Branch)
-}
-
-// Name returns the full resource name: {repo}-{branch}-{service}
-func (s Schema) Name() string {
-	return fmt.Sprintf("%s-%s", s.NamePrefix(), s.ServiceConfig.Name)
-}
-
-// PathPrefix returns the resource path prefix: {repo}/{branch}
-func (s Schema) PathPrefix() string {
-	return fmt.Sprintf("%s/%s", s.GitConfig.Repository, s.GitConfig.Branch)
-}
-
-// Path returns the full resource path: {repo}/{branch}/{service}
-func (s Schema) Path() string {
-	return fmt.Sprintf("%s/%s", s.PathPrefix(), s.ServiceConfig.Name)
-}
-
-// ImagePath returns the full image path: {repo}/{branch}/{service}
-func (s Schema) ImagePath() string {
-	return fmt.Sprintf("%s/%s/%s", s.GitConfig.Repository, s.GitConfig.Branch, s.ServiceConfig.Name)
-}
-
-// Environment returns processed environment variables with cross-service metadata
-func (s Schema) Environment() (map[string]string, error) {
-	env, err := tmpl.Template("env", s.Lambda().EnvTemplate(), s.TemplateData)
-	if err != nil {
-		return nil, err
-	}
-
-	envMap, err := dotenvlib.Parse(strings.NewReader(env))
-	if err != nil {
-		return nil, err
-	}
-
-	// Inject default environment variables
-	// Generally useful and used for efficient state lookup
-	metadata := s.StateMetadata()
-	envMap["MONAD_SERVICE"] = metadata.Service
-	envMap["MONAD_OWNER"] = metadata.Owner
-	envMap["MONAD_REPO"] = metadata.Repo
-	envMap["MONAD_SHA"] = metadata.Sha
-	envMap["MONAD_BRANCH"] = metadata.Branch
-	envMap["MONAD_IMAGE"] = metadata.Image
-
-	if s.ApiGateway().ID() != "" {
-		envMap["MONAD_API"] = s.ApiGateway().Api()
-	}
-
-	if s.EventBridge().RuleTemplate() != "" {
-		envMap["MONAD_BUS"] = s.EventBridge().BusName()
-	}
-
-	return envMap, nil
-}
-
-// Tags returns standardized AWS resource tags for cross-service consistency
-func (s Schema) Tags() map[string]string {
-	metadata := s.StateMetadata()
-
-	return map[string]string{
-		"Monad":   "true",
-		"Service": metadata.Service,
-		"Owner":   metadata.Owner,
-		"Repo":    metadata.Repo,
-		"Branch":  metadata.Branch,
-		"Sha":     metadata.Sha,
-	}
-}
-
-// StateMetadata returns service metadata for state management
-func (s Schema) StateMetadata() *StateMetadata {
-	return &StateMetadata{
-		Service: s.ServiceConfig.Name,
-		Owner:   s.GitConfig.Owner,
-		Repo:    s.GitConfig.Repository,
-		Branch:  s.GitConfig.Branch,
-		Sha:     s.GitConfig.Sha,
-		Image:   s.ServiceConfig.Image,
-	}
-}
-
 // CallerResources methods - AWS caller identity accessors
 
 // AccountId returns the AWS account ID
@@ -632,6 +693,16 @@ func (r RegistryResources) Region() string { return r.RegistryConfig.Region }
 
 // Client returns the registry client
 func (r RegistryResources) Client() *registry.Client { return r.RegistryConfig.Client }
+
+// ImagePath returns ecr image path
+func (r RegistryResources) ImagePath() string {
+	return r.schema().ImagePath()
+}
+
+// ImageTag returns ecr image tag
+func (r RegistryResources) ImageTag() string {
+	return r.schema().ImageTag()
+}
 
 // GitResources methods - Git configuration accessors
 

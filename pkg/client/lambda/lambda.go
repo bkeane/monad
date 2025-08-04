@@ -16,6 +16,7 @@ import (
 )
 
 type LambdaResources interface {
+	FunctionName() string
 	Environment() (map[string]string, error)
 	Timeout() int32
 	MemorySize() int32
@@ -23,6 +24,7 @@ type LambdaResources interface {
 	FunctionArn() string
 	Retries() int32
 	Client() *lambda.Client
+	Tags() map[string]string
 }
 
 type IAMResources interface {
@@ -36,42 +38,30 @@ type VpcResources interface {
 }
 
 type CloudWatchResources interface {
-	LogGroup() string
-}
-
-type ServiceResources interface {
-	ImagePath() string
-	ImageTag() string
+	LogGroupName() string
 }
 
 type EcrResources interface {
 	Client() *registry.Client
-}
-
-type SchemaResources interface {
-	Name() string
-	Tags() map[string]string
+	ImagePath() string
+	ImageTag() string
 }
 
 type Client struct {
 	lambda     LambdaResources
-	service    ServiceResources
 	ecr        EcrResources
 	iam        IAMResources
 	vpc        VpcResources
 	cloudwatch CloudWatchResources
-	schema     SchemaResources
 }
 
-func Init(lambda LambdaResources, service ServiceResources, ecr EcrResources, iam IAMResources, vpc VpcResources, cloudwatch CloudWatchResources, schema SchemaResources) *Client {
+func Init(lambda LambdaResources, ecr EcrResources, iam IAMResources, vpc VpcResources, cloudwatch CloudWatchResources) *Client {
 	return &Client{
 		lambda:     lambda,
-		service:    service,
 		ecr:        ecr,
 		iam:        iam,
 		vpc:        vpc,
 		cloudwatch: cloudwatch,
-		schema:     schema,
 	}
 }
 
@@ -93,7 +83,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 
 // GET Operations
 func (s *Client) GetImage(ctx context.Context) (registry.ImagePointer, error) {
-	return s.ecr.Client().GetImage(ctx, s.service.ImagePath(), s.service.ImageTag())
+	return s.ecr.Client().GetImage(ctx, s.ecr.ImagePath(), s.ecr.ImageTag())
 }
 
 // PUT Operations
@@ -103,7 +93,7 @@ func (s *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, er
 
 	log.Info().
 		Str("action", "put").
-		Str("name", s.schema.Name()).
+		Str("name", s.lambda.FunctionName()).
 		Msg("lambda")
 
 	image, err := s.GetImage(ctx)
@@ -126,13 +116,13 @@ func (s *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, er
 	}
 
 	read := &lambda.GetFunctionInput{
-		FunctionName: aws.String(s.schema.Name()),
+		FunctionName: aws.String(s.lambda.FunctionName()),
 	}
 
 	create := &lambda.CreateFunctionInput{
-		FunctionName:  aws.String(s.schema.Name()),
+		FunctionName:  aws.String(s.lambda.FunctionName()),
 		Role:          aws.String(s.iam.EniRoleArn()),
-		Tags:          s.schema.Tags(),
+		Tags:          s.lambda.Tags(),
 		Architectures: architecture,
 		PackageType:   types.PackageTypeImage,
 		Timeout:       aws.Int32(s.lambda.Timeout()),
@@ -154,7 +144,7 @@ func (s *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, er
 			Mode: types.TracingModePassThrough,
 		},
 		LoggingConfig: &types.LoggingConfig{
-			LogGroup: aws.String(s.cloudwatch.LogGroup()),
+			LogGroup: aws.String(s.cloudwatch.LogGroupName()),
 		},
 	}
 
@@ -206,7 +196,7 @@ func (s *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, er
 
 	tags := &lambda.TagResourceInput{
 		Resource: aws.String(s.lambda.FunctionArn()),
-		Tags:     s.schema.Tags(),
+		Tags:     s.lambda.Tags(),
 	}
 
 	_, err = s.lambda.Client().CreateFunction(ctx, create, RetryCreate)
@@ -253,11 +243,11 @@ func (s *Client) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutp
 
 	log.Info().
 		Str("action", "delete").
-		Str("name", s.schema.Name()).
+		Str("name", s.lambda.FunctionName()).
 		Msg("lambda")
 
 	delete := &lambda.DeleteFunctionInput{
-		FunctionName: aws.String(s.schema.Name()),
+		FunctionName: aws.String(s.lambda.FunctionName()),
 	}
 
 	_, err := s.lambda.Client().DeleteFunction(ctx, delete)

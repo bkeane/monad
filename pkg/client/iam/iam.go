@@ -12,30 +12,29 @@ import (
 )
 
 type IAMResources interface {
-	EniRoleName() string
-	PolicyDocument() (string, error)
+	PolicyName() string
 	PolicyArn() string
+	PolicyDocument() (string, error)
+	RoleName() string
+	RoleArn() string
 	RoleDocument() (string, error)
+	EniRoleName() string
 	EniRolePolicyArn() string
-	BoundaryPolicy() string
+	// EniRoleDocument string // why does the pattern diverge here?
+	BoundaryPolicyName() string
 	BoundaryPolicyArn() string
+	// BoundaryPolicyDocument() string // why does the pattern diverge here?
 	Client() *iam.Client
-}
-
-type SchemaResources interface {
-	Name() string
-	Tags() map[string]string
+	Tags() []types.Tag
 }
 
 type Client struct {
-	iam    IAMResources
-	schema SchemaResources
+	iam IAMResources
 }
 
-func Init(iam IAMResources, schema SchemaResources) *Client {
+func Init(iam IAMResources) *Client {
 	return &Client{
-		iam:    iam,
-		schema: schema,
+		iam: iam,
 	}
 }
 
@@ -51,7 +50,7 @@ func (s *Client) Mount(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "put").
-		Str("policy", s.schema.Name()).
+		Str("policy", s.iam.PolicyName()).
 		Msg("iam")
 
 	if err := s.PutPolicy(ctx); err != nil {
@@ -60,7 +59,7 @@ func (s *Client) Mount(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "put").
-		Str("role", s.schema.Name()).
+		Str("role", s.iam.PolicyName()).
 		Msg("iam")
 
 	if err := s.PutRole(ctx); err != nil {
@@ -69,9 +68,9 @@ func (s *Client) Mount(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "attach").
-		Str("role", s.schema.Name()).
-		Str("policy", s.schema.Name()).
-		Str("boundary", s.iam.BoundaryPolicy()).
+		Str("role", s.iam.RoleName()).
+		Str("policy", s.iam.PolicyName()).
+		Str("boundary", s.iam.BoundaryPolicyName()).
 		Msg("iam")
 
 	if err := s.AttachRolePolicy(ctx); err != nil {
@@ -84,9 +83,9 @@ func (s *Client) Mount(ctx context.Context) error {
 func (s *Client) Unmount(ctx context.Context) error {
 	log.Info().
 		Str("action", "detach").
-		Str("role", s.schema.Name()).
-		Str("policy", s.schema.Name()).
-		Str("boundary", s.iam.BoundaryPolicy()).
+		Str("role", s.iam.RoleName()).
+		Str("policy", s.iam.PolicyName()).
+		Str("boundary", s.iam.BoundaryPolicyName()).
 		Msg("iam")
 
 	if err := s.DetachRolePolicy(ctx); err != nil {
@@ -95,7 +94,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "delete").
-		Str("role", s.schema.Name()).
+		Str("role", s.iam.RoleName()).
 		Msg("iam")
 
 	if err := s.DeleteRole(ctx); err != nil {
@@ -104,7 +103,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 
 	log.Info().
 		Str("action", "delete").
-		Str("policy", s.schema.Name()).
+		Str("policy", s.iam.PolicyName()).
 		Msg("iam")
 
 	if err := s.DeletePolicy(ctx); err != nil {
@@ -124,16 +123,8 @@ func (s *Client) PutPolicy(ctx context.Context) error {
 		return err
 	}
 
-	var tagSlice []types.Tag
-	for key, value := range s.schema.Tags() {
-		tagSlice = append(tagSlice, types.Tag{
-			Key:   aws.String(key),
-			Value: aws.String(value),
-		})
-	}
-
 	create := &iam.CreatePolicyInput{
-		PolicyName:     aws.String(s.schema.Name()),
+		PolicyName:     aws.String(s.iam.PolicyName()),
 		PolicyDocument: aws.String(policyDocument),
 	}
 
@@ -145,7 +136,7 @@ func (s *Client) PutPolicy(ctx context.Context) error {
 
 	tag := &iam.TagPolicyInput{
 		PolicyArn: aws.String(s.iam.PolicyArn()),
-		Tags:      tagSlice,
+		Tags:      s.iam.Tags(),
 	}
 
 	_, err = s.iam.Client().CreatePolicy(ctx, create)
@@ -227,16 +218,8 @@ func (s *Client) PutRole(ctx context.Context) error {
 		return err
 	}
 
-	var tagSlice []types.Tag
-	for key, value := range s.schema.Tags() {
-		tagSlice = append(tagSlice, types.Tag{
-			Key:   aws.String(key),
-			Value: aws.String(value),
-		})
-	}
-
 	create := &iam.CreateRoleInput{
-		RoleName:                 aws.String(s.schema.Name()),
+		RoleName:                 aws.String(s.iam.RoleName()),
 		AssumeRolePolicyDocument: aws.String(roleDocument),
 	}
 
@@ -250,8 +233,8 @@ func (s *Client) PutRole(ctx context.Context) error {
 	}
 
 	tag := &iam.TagRoleInput{
-		RoleName: aws.String(s.schema.Name()),
-		Tags:     tagSlice,
+		RoleName: aws.String(s.iam.RoleName()),
+		Tags:     s.iam.Tags(),
 	}
 
 	_, err = s.iam.Client().CreateRole(ctx, create)
@@ -281,7 +264,7 @@ func (s *Client) AttachRolePolicy(ctx context.Context) error {
 
 	attach := &iam.AttachRolePolicyInput{
 		PolicyArn: aws.String(s.iam.PolicyArn()),
-		RoleName:  aws.String(s.schema.Name()),
+		RoleName:  aws.String(s.iam.RoleName()),
 	}
 
 	_, err := s.iam.Client().AttachRolePolicy(ctx, attach)
@@ -291,7 +274,7 @@ func (s *Client) AttachRolePolicy(ctx context.Context) error {
 
 	if s.iam.BoundaryPolicyArn() != "" {
 		boundary := &iam.PutRolePermissionsBoundaryInput{
-			RoleName:            aws.String(s.schema.Name()),
+			RoleName:            aws.String(s.iam.RoleName()),
 			PermissionsBoundary: aws.String(s.iam.BoundaryPolicyArn()),
 		}
 
@@ -301,7 +284,7 @@ func (s *Client) AttachRolePolicy(ctx context.Context) error {
 		}
 	} else {
 		boundary := &iam.DeleteRolePermissionsBoundaryInput{
-			RoleName: aws.String(s.schema.Name()),
+			RoleName: aws.String(s.iam.RoleName()),
 		}
 
 		_, err := s.iam.Client().DeleteRolePermissionsBoundary(ctx, boundary)
@@ -325,7 +308,7 @@ func (s *Client) DetachRolePolicy(ctx context.Context) error {
 
 	detach := &iam.DetachRolePolicyInput{
 		PolicyArn: aws.String(s.iam.PolicyArn()),
-		RoleName:  aws.String(s.schema.Name()),
+		RoleName:  aws.String(s.iam.RoleName()),
 	}
 
 	boundary := &iam.DeleteRolePermissionsBoundaryInput{
@@ -361,7 +344,7 @@ func (s *Client) DeleteRole(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	delete := &iam.DeleteRoleInput{
-		RoleName: aws.String(s.schema.Name()),
+		RoleName: aws.String(s.iam.RoleName()),
 	}
 
 	_, err := s.iam.Client().DeleteRole(ctx, delete)

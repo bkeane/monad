@@ -9,67 +9,59 @@ import (
 	"github.com/bkeane/monad/pkg/param"
 
 	// Clients
-	gwc "github.com/bkeane/monad/pkg/client/apigateway"
-	cwc "github.com/bkeane/monad/pkg/client/cloudwatch"
-	ebc "github.com/bkeane/monad/pkg/client/eventbridge"
-	iamc "github.com/bkeane/monad/pkg/client/iam"
-	lmbc "github.com/bkeane/monad/pkg/client/lambda"
-
-	// Steps
-	gws "github.com/bkeane/monad/pkg/saga/steps/apigateway"
-	cws "github.com/bkeane/monad/pkg/saga/steps/cloudwatch"
-	ebs "github.com/bkeane/monad/pkg/saga/steps/eventbridge"
-	iams "github.com/bkeane/monad/pkg/saga/steps/iam"
-	lmbs "github.com/bkeane/monad/pkg/saga/steps/lambda"
+	gw "github.com/bkeane/monad/pkg/client/apigateway"
+	cw "github.com/bkeane/monad/pkg/client/cloudwatch"
+	eb "github.com/bkeane/monad/pkg/client/eventbridge"
+	iam "github.com/bkeane/monad/pkg/client/iam"
+	lmb "github.com/bkeane/monad/pkg/client/lambda"
 )
 
+type Step interface {
+	Mount(ctx context.Context) error
+	Unmount(ctx context.Context) error
+}
+
 type Axiom struct {
-	iam         *iams.Step
-	eventbridge *ebs.Step
-	apigateway  *gws.Step
-	cloudwatch  *cws.Step
-	lambda      *lmbs.Step
+	iam         Step
+	eventbridge Step
+	apigateway  Step
+	cloudwatch  Step
+	lambda      Step
 }
 
 func Init(ctx context.Context, c *param.Aws) *Axiom {
-	iamc := iamc.Init(c.IAM(), c.Schema())
-	gwc := gwc.Init(c.ApiGateway(), c.Lambda())
-	cwc := cwc.Init(c.CloudWatch(), c.Schema())
-	ebc := ebc.Init(c.EventBridge(), c.Lambda(), c.Schema())
-	lmbc := lmbc.Init(c.Lambda(), c.Service(), c.Registry(), c.IAM(), c.Vpc(), c.CloudWatch(), c.Schema())
-
 	return &Axiom{
-		iam:         iams.Init(iamc),
-		lambda:      lmbs.Init(lmbc),
-		apigateway:  gws.Init(gwc),
-		eventbridge: ebs.Init(ebc),
-		cloudwatch:  cws.Init(cwc),
+		lambda:      lmb.Init(c.Lambda(), c.Registry(), c.IAM(), c.Vpc(), c.CloudWatch()),
+		apigateway:  gw.Init(c.ApiGateway(), c.Lambda()),
+		eventbridge: eb.Init(c.EventBridge(), c.Lambda()),
+		cloudwatch:  cw.Init(c.CloudWatch()),
+		iam:         iam.Init(c.IAM()),
 	}
 }
 
 func (a *Axiom) Do(ctx context.Context) error {
-	if err := a.iam.Do(ctx); err != nil {
-		log.Error().Err(err).Msg("iam step failed")
+	if err := a.iam.Mount(ctx); err != nil {
+		log.Error().Err(err).Msg("iam mount failed")
 		return err
 	}
 
-	if err := a.cloudwatch.Do(ctx); err != nil {
-		log.Error().Err(err).Msg("cloudwatch step failed")
+	if err := a.cloudwatch.Mount(ctx); err != nil {
+		log.Error().Err(err).Msg("cloudwatch mount failed")
 		return err
 	}
 
-	if err := a.lambda.Do(ctx); err != nil {
-		log.Error().Err(err).Msg("lambda step failed")
+	if err := a.lambda.Mount(ctx); err != nil {
+		log.Error().Err(err).Msg("lambda mount failed")
 		return err
 	}
 
-	if err := a.apigateway.Do(ctx); err != nil {
-		log.Error().Err(err).Msg("apigateway step failed")
+	if err := a.apigateway.Mount(ctx); err != nil {
+		log.Error().Err(err).Msg("apigateway mount failed")
 		return err
 	}
 
-	if err := a.eventbridge.Do(ctx); err != nil {
-		log.Error().Err(err).Msg("eventbridge step failed")
+	if err := a.eventbridge.Mount(ctx); err != nil {
+		log.Error().Err(err).Msg("eventbridge mount failed")
 		return err
 	}
 
@@ -77,28 +69,28 @@ func (a *Axiom) Do(ctx context.Context) error {
 }
 
 func (a *Axiom) Undo(ctx context.Context) error {
-	if err := a.eventbridge.Undo(ctx); err != nil {
-		log.Error().Err(err).Msg("eventbridge step failed")
+	if err := a.eventbridge.Unmount(ctx); err != nil {
+		log.Error().Err(err).Msg("eventbridge unmount failed")
 		return err
 	}
 
-	if err := a.apigateway.Undo(ctx); err != nil {
-		log.Error().Err(err).Msg("apigateway step failed")
+	if err := a.apigateway.Unmount(ctx); err != nil {
+		log.Error().Err(err).Msg("apigateway unmount failed")
 		return err
 	}
 
-	if err := a.cloudwatch.Undo(ctx); err != nil {
-		log.Error().Err(err).Msg("cloudwatch step failed")
+	if err := a.cloudwatch.Unmount(ctx); err != nil {
+		log.Error().Err(err).Msg("cloudwatch unmount failed")
 		return err
 	}
 
-	if err := a.lambda.Undo(ctx); err != nil {
-		log.Error().Err(err).Msg("lambda step failed")
+	if err := a.lambda.Unmount(ctx); err != nil {
+		log.Error().Err(err).Msg("lambda unmount failed")
 		return err
 	}
 
-	if err := a.iam.Undo(ctx); err != nil {
-		log.Error().Err(err).Msg("iam step failed")
+	if err := a.iam.Unmount(ctx); err != nil {
+		log.Error().Err(err).Msg("iam unmount failed")
 		return err
 	}
 
