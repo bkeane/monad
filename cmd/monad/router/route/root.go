@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/bkeane/monad/internal/logging"
-	"github.com/bkeane/monad/pkg/param"
+	"github.com/bkeane/monad/pkg/model/axiom"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
 type Root struct {
-	param.GitConfig
-	param.ServiceConfig
+	axiom.Axiom
 	AwsConfig aws.Config `arg:"-" json:"-"`
 	Deploy    *Deploy    `arg:"subcommand:deploy" help:"deploy a service"`
 	Destroy   *Destroy   `arg:"subcommand:destroy" help:"destroy a service"`
@@ -25,19 +24,16 @@ type Root struct {
 func (r *Root) Validate(ctx context.Context) error {
 	var err error
 
-	if err = r.GitConfig.Process(); err != nil {
-		return err
-	}
-
-	if err = r.ServiceConfig.Process(r.GitConfig); err != nil {
-		return err
-	}
-
+	// Load AWS config first
 	r.AwsConfig, err = config.LoadDefaultConfig(ctx,
 		config.WithLogger(logging.AwsConfig(ctx)),
 		config.WithClientLogMode(aws.LogRetries))
-
 	if err != nil {
+		return err
+	}
+
+	// Process axiom (handles git, service, caller initialization)
+	if err = r.Axiom.Process(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 

@@ -3,17 +3,11 @@ package saga
 import (
 	"context"
 
+	"github.com/bkeane/monad/pkg/basis"
+	"github.com/bkeane/monad/pkg/client"
+	"github.com/bkeane/monad/pkg/config"
+
 	"github.com/rs/zerolog/log"
-
-	// Resources
-	"github.com/bkeane/monad/pkg/param"
-
-	// Clients
-	gw "github.com/bkeane/monad/pkg/client/apigateway"
-	cw "github.com/bkeane/monad/pkg/client/cloudwatch"
-	eb "github.com/bkeane/monad/pkg/client/eventbridge"
-	iam "github.com/bkeane/monad/pkg/client/iam"
-	lmb "github.com/bkeane/monad/pkg/client/lambda"
 )
 
 type Step interface {
@@ -29,14 +23,26 @@ type Axiom struct {
 	lambda      Step
 }
 
-func Init(ctx context.Context, c *param.Aws) *Axiom {
-	return &Axiom{
-		lambda:      lmb.Init(c.Lambda(), c.Registry(), c.IAM(), c.Vpc(), c.CloudWatch()),
-		apigateway:  gw.Init(c.ApiGateway(), c.Lambda()),
-		eventbridge: eb.Init(c.EventBridge(), c.Lambda()),
-		cloudwatch:  cw.Init(c.CloudWatch()),
-		iam:         iam.Init(c.IAM()),
+func Init(ctx context.Context, basis *basis.Basis) (*Axiom, error) {
+	// Derive Configuration
+	config, err := config.Derive(ctx, basis)
+	if err != nil {
+		return nil, err
 	}
+
+	// Initialize unified client
+	client, err := client.Init(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Axiom{
+		iam:         client.IAM(),
+		cloudwatch:  client.CloudWatch(),
+		lambda:      client.Lambda(),
+		apigateway:  client.ApiGateway(),
+		eventbridge: client.EventBridge(),
+	}, nil
 }
 
 func (a *Axiom) Do(ctx context.Context) error {

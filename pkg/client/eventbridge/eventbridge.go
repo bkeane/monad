@@ -14,17 +14,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type EventBridgeResources interface {
+type EventBridgeConvention interface {
 	BusName() string
 	RuleName() string
-	RuleTemplate() string
-	RuleDocument() (string, error)
+	RuleDocument() string
 	PermissionStatementId() string
 	Client() *eventbridge.Client
 	Tags() []eventbridgetypes.Tag
 }
 
-type LambdaResources interface {
+type LambdaConvention interface {
 	FunctionName() string
 	FunctionArn() string
 	Client() *lambda.Client
@@ -38,11 +37,11 @@ type EventBridgeRule struct {
 }
 
 type Client struct {
-	eventbridge EventBridgeResources
-	lambda      LambdaResources
+	eventbridge EventBridgeConvention
+	lambda      LambdaConvention
 }
 
-func Init(eventbridge EventBridgeResources, lambda LambdaResources) *Client {
+func Init(eventbridge EventBridgeConvention, lambda LambdaConvention) *Client {
 	return &Client{
 		eventbridge: eventbridge,
 		lambda:      lambda,
@@ -245,10 +244,7 @@ func (s *Client) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 // GET Operations
 func (s *Client) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	// This code _can_ handle many defined rules, but monad currently will only support one until more are necessary.
-	document, err := s.eventbridge.RuleDocument()
-	if err != nil {
-		return nil, err
-	}
+	document := s.eventbridge.RuleDocument()
 
 	if document == "" {
 		return map[string]map[string]EventBridgeRule{}, nil

@@ -16,19 +16,19 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ApiGatewayResources interface {
-	ID() string
-	RouteKeys() ([]string, error)
+type ApiGatewayConvention interface {
+	Client() *apigatewayv2.Client
+	Api() string
+	Route() []string
 	Auth() []string
 	AuthType() []string
 	AuthorizerId() []string
 	ForwardedPrefixes() ([]string, error)
 	PermissionSourceArns() ([]string, error)
 	PermissionStatementId(apiId string) string
-	Client() *apigatewayv2.Client
 }
 
-type LambdaResources interface {
+type LambdaConvention interface {
 	FunctionArn() string
 	Client() *lambda.Client
 }
@@ -56,11 +56,11 @@ type Permission struct {
 }
 
 type Client struct {
-	apigateway ApiGatewayResources
-	lambda     LambdaResources
+	apigateway ApiGatewayConvention
+	lambda     LambdaConvention
 }
 
-func Init(apigateway ApiGatewayResources, lambda LambdaResources) *Client {
+func Init(apigateway ApiGatewayConvention, lambda LambdaConvention) *Client {
 	return &Client{
 		apigateway: apigateway,
 		lambda:     lambda,
@@ -72,17 +72,12 @@ func (s *Client) Mount(ctx context.Context) error {
 		return err
 	}
 
-	api, err := s.GetApi(ctx, s.apigateway.ID())
+	api, err := s.GetApi(ctx, s.apigateway.Api())
 	if err != nil {
 		return err
 	}
 
-	// Get all routes and auth configurations
-	routeKeys, err := s.apigateway.RouteKeys()
-	if err != nil {
-		return err
-	}
-
+	routeKeys := s.apigateway.Route()
 	authTypes := s.apigateway.AuthType()
 	authorizerIds := s.apigateway.AuthorizerId()
 
@@ -199,11 +194,7 @@ func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integrati
 		"JWT":     types.AuthorizationTypeJwt,
 	}
 
-	routeKeys, err := s.apigateway.RouteKeys()
-	if err != nil {
-		return Route{}, err
-	}
-
+	routeKeys := s.apigateway.Route()
 	authTypes := s.apigateway.AuthType()
 	authorizerIds := s.apigateway.AuthorizerId()
 

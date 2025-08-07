@@ -1,4 +1,4 @@
-package registry
+package registryv2
 
 import (
 	"bytes"
@@ -171,7 +171,7 @@ func (r *Client) Untag(ctx context.Context, repository string, reference string)
 	return nil
 }
 
-func (r *Client) FromPath(ctx context.Context, path string, reference string) (ImagePointer, error) {
+func (r *Client) GetImage(ctx context.Context, path string, reference string) (ImagePointer, error) {
 	jsonString, err := r.DigImage(ctx, path, reference)
 	if err != nil {
 		return ImagePointer{}, err
@@ -183,11 +183,6 @@ func (r *Client) FromPath(ctx context.Context, path string, reference string) (I
 	}
 
 	return pointer, nil
-}
-
-// GetImage is an alias for FromPath to maintain consistent interface with param.Registry
-func (r *Client) GetImage(ctx context.Context, repo, tag string) (ImagePointer, error) {
-	return r.FromPath(ctx, repo, tag)
 }
 
 func (r *Client) DigImage(ctx context.Context, repository string, reference string) (string, error) {

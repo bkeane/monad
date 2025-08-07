@@ -3,22 +3,24 @@ package route
 import (
 	"context"
 
-	"github.com/bkeane/monad/pkg/param"
+	"github.com/bkeane/monad/pkg/model"
 	"github.com/bkeane/monad/pkg/saga"
 )
 
 type Destroy struct {
-	param.Aws `arg:"-"`
+	model.Model `arg:"-"`
 }
 
 func (d *Destroy) Route(ctx context.Context, r Root) error {
-	if err := d.Aws.Validate(ctx, r.AwsConfig, r.GitConfig, r.ServiceConfig); err != nil {
+	// Process the embedded model with CLI args
+	if err := d.Model.Process(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 
-	if err := saga.Init(ctx, &d.Aws).Undo(ctx); err != nil {
+	saga, err := saga.Init(ctx, r.AwsConfig)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	return saga.Undo(ctx)
 }

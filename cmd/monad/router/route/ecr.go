@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bkeane/monad/pkg/param"
+	"github.com/bkeane/monad/pkg/model"
 )
 
 type SubCommand struct{}
 
 type Ecr struct {
-	param.RegistryConfig
 	Init   *SubCommand `arg:"subcommand:init" help:"initialize a repository"`
 	Delete *SubCommand `arg:"subcommand:delete" help:"delete a repository"`
 	Tag    *SubCommand `arg:"subcommand:tag" help:"tag an image"`
@@ -19,27 +18,29 @@ type Ecr struct {
 }
 
 func (e *Ecr) Route(ctx context.Context, r Root) error {
-	if err := e.RegistryConfig.Process(ctx, r.AwsConfig); err != nil {
+	// Initialize unified model
+	model := &model.Model{}
+	if err := model.Process(ctx, r.AwsConfig); err != nil {
 		return err
 	}
 
 	switch {
 	case r.Ecr.Login != nil:
-		if err := e.RegistryConfig.Login(ctx); err != nil {
+		if err := model.ECR().Login(ctx); err != nil {
 			return err
 		}
 	case r.Ecr.Untag != nil:
-		if err := e.RegistryConfig.Untag(ctx, r.ServiceConfig.ImagePath, r.ServiceConfig.ImageTag); err != nil {
+		if err := model.ECR().Untag(ctx, model.ECR().ImagePath(), model.ECR().ImageTag()); err != nil {
 			return err
 		}
 	case r.Ecr.Tag != nil:
-		fmt.Printf("%s/%s", e.RegistryConfig.Client.Url, r.ServiceConfig.Image)
+		fmt.Printf("%s/%s", model.ECR().Client().Url, model.Axiom().Service().Image())
 	case r.Ecr.Init != nil:
-		if err := e.RegistryConfig.CreateRepository(ctx, r.ServiceConfig.ImagePath); err != nil {
+		if err := model.ECR().CreateRepository(ctx, model.ECR().ImagePath()); err != nil {
 			return err
 		}
 	case r.Ecr.Delete != nil:
-		if err := e.RegistryConfig.DeleteRepository(ctx, r.ServiceConfig.ImagePath); err != nil {
+		if err := model.ECR().DeleteRepository(ctx, model.ECR().ImagePath()); err != nil {
 			return err
 		}
 	}

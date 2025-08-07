@@ -3,79 +3,99 @@ package state
 import (
 	"context"
 
-	"github.com/bkeane/monad/pkg/param"
+	"github.com/bkeane/monad/pkg/basis"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
-	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
 
-type State struct {
-	config param.Aws
+//
+// StateMetadata
+//
+
+type StateMetadata struct {
+	Service string
+	Owner   string
+	Repo    string
+	Branch  string
+	Sha     string
 }
 
-func Init(ctx context.Context, c param.Aws) *State {
+//
+// State
+//
+
+type State struct {
+	basis  *basis.Basis
+	client *lambda.Client
+}
+
+func Init(basis *basis.Basis) *State {
 	return &State{
-		config: c,
+		basis:  basis,
+		client: lambda.NewFromConfig(basis.AwsConfig()),
 	}
 }
 
-func (s *State) List(ctx context.Context) ([]*param.StateMetadata, error) {
+func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
 	list := &lambda.ListFunctionsInput{}
-	functions, err := s.config.Lambda().Client().ListFunctions(ctx, list)
+	functions, err := s.client.ListFunctions(ctx, list)
 	if err != nil {
 		return nil, err
 	}
 
-	var services []*param.StateMetadata
+	var services []*StateMetadata
 	for _, function := range functions.Functions {
-		ok, service := match(function)
-		if ok {
-			services = append(services, service)
+		if metadata := s.extractFromTags(ctx, *function.FunctionArn); metadata != nil {
+			services = append(services, metadata)
 		}
 	}
 
 	return services, nil
 }
 
-func match(function types.FunctionConfiguration) (bool, *param.StateMetadata) {
+//
+// Helpers
+//
+
+func (s *State) extractFromTags(ctx context.Context, functionArn string) *StateMetadata {
+	listTags := &lambda.ListTagsInput{
+		Resource: &functionArn,
+	}
+	
+	tagsOutput, err := s.client.ListTags(ctx, listTags)
+	if err != nil {
+		return nil
+	}
+
+	tags := tagsOutput.Tags
+	if tags == nil {
+		return nil
+	}
+
+	// Check for Monad tag to identify our functions
+	if monad, ok := tags["Monad"]; !ok || monad != "true" {
+		return nil
+	}
+
+	metadata := &StateMetadata{}
+
+	// Extract required tags
 	var ok bool
-	svc := &param.StateMetadata{}
-
-	// Check if Environment is nil
-	if function.Environment == nil {
-		return false, nil
+	if metadata.Service, ok = tags["Service"]; !ok {
+		return nil
+	}
+	if metadata.Owner, ok = tags["Owner"]; !ok {
+		return nil
+	}
+	if metadata.Repo, ok = tags["Repo"]; !ok {
+		return nil
+	}
+	if metadata.Branch, ok = tags["Branch"]; !ok {
+		return nil
+	}
+	if metadata.Sha, ok = tags["Sha"]; !ok {
+		return nil
 	}
 
-	env := function.Environment.Variables
-
-	// Required
-	if svc.Service, ok = env["MONAD_SERVICE"]; !ok {
-		return false, nil
-	}
-
-	if svc.Repo, ok = env["MONAD_REPO"]; !ok {
-		return false, nil
-	}
-
-	if svc.Sha, ok = env["MONAD_SHA"]; !ok {
-		return false, nil
-	}
-
-	if svc.Branch, ok = env["MONAD_BRANCH"]; !ok {
-		return false, nil
-	}
-
-	if svc.Owner, ok = env["MONAD_OWNER"]; !ok {
-		return false, nil
-	}
-
-	if svc.Image, ok = env["MONAD_IMAGE"]; !ok {
-		return false, nil
-	}
-
-	// Optional
-	svc.Api = env["MONAD_API"]
-	svc.Bus = env["MONAD_BUS"]
-
-	return true, svc
+	return metadata
 }
