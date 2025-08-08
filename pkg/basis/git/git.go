@@ -15,10 +15,10 @@ import (
 
 type Data struct {
 	cwd        string
-	owner      string
-	repository string
-	branch     string
-	sha        string
+	owner      string `bind:"--owner,MONAD_OWNER" hint:"name" desc:"git owner"`
+	repository string `bind:"--repo,MONAD_REPO" hint:"name" desc:"git repo"`
+	branch     string `bind:"--branch,MONAD_BRANCH" hint:"name" desc:"git branch"`
+	sha        string `bind:"--sha,MONAD_SHA" hint:"hash" desc:"git sha"`
 }
 
 //

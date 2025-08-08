@@ -3,6 +3,7 @@ package lambda
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,7 +16,7 @@ type Basis interface {
 	AwsConfig() aws.Config
 	AccountId() string
 	Name() string
-	EnvDocument() (string, error)
+	EnvTemplate() (string, error)
 	Tags() map[string]string
 }
 
@@ -24,14 +25,16 @@ type Basis interface {
 //
 
 type Config struct {
-	basis   Basis
-	client  *lambda.Client
-	region  string
-	storage int32
-	memory  int32
-	timeout int32
-	retries int32
-	env     map[string]string
+	basis       Basis
+	client      *lambda.Client
+	region      string
+	storage     int32
+	memory      int32
+	timeout     int32
+	retries     int32
+	envPath     string
+	envTemplate string
+	envMap      map[string]string
 }
 
 //
@@ -65,12 +68,21 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		cfg.retries = int32(0)
 	}
 
-	env, err := basis.EnvDocument()
-	if err != nil {
-		return nil, err
+	// Env derivation
+	if cfg.envPath == "" {
+		cfg.envTemplate, err = basis.EnvTemplate()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		bytes, err := os.ReadFile(cfg.envPath)
+		if err != nil {
+			return nil, err
+		}
+		cfg.envTemplate = string(bytes)
 	}
 
-	cfg.env, err = dotenv.Parse(strings.NewReader(env))
+	cfg.envMap, err = dotenv.Parse(strings.NewReader(cfg.envTemplate))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +142,7 @@ func (c *Config) FunctionArn() string {
 
 // Env returns a map derived from the given env document
 func (c *Config) Env() map[string]string {
-	return c.env
+	return c.envMap
 }
 
 // Tags returns standardized Lambda resource tags

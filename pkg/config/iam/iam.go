@@ -3,6 +3,7 @@ package iam
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,8 +16,9 @@ type Basis interface {
 	AwsConfig() aws.Config
 	AccountId() string
 	Name() string
-	RoleDocument() (string, error)
-	PolicyDocument() (string, error)
+	RoleTemplate() (string, error)
+	PolicyTemplate() (string, error)
+	Render(string) (string, error)
 	Tags() map[string]string
 }
 
@@ -25,11 +27,15 @@ type Basis interface {
 //
 
 type Config struct {
-	basis    Basis
-	client   *iam.Client
-	boundary string
-	policy   string
-	role     string
+	basis          Basis
+	client         *iam.Client
+	boundary       string
+	policyPath     string
+	policyTemplate string
+	policyDocument string
+	rolePath       string
+	roleTemplate   string
+	roleDocument   string
 }
 
 //
@@ -43,12 +49,40 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	cfg.basis = basis
 	cfg.client = iam.NewFromConfig(basis.AwsConfig())
 
-	cfg.policy, err = basis.PolicyDocument()
+	// Policy derivation
+	if cfg.policyPath == "" {
+		cfg.policyTemplate, err = basis.PolicyTemplate()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		bytes, err := os.ReadFile(cfg.policyPath)
+		if err != nil {
+			return nil, err
+		}
+		cfg.policyTemplate = string(bytes)
+	}
+
+	cfg.policyDocument, err = basis.Render(cfg.policyTemplate)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.role, err = basis.RoleDocument()
+	// Role derivation
+	if cfg.rolePath == "" {
+		cfg.roleTemplate, err = basis.RoleTemplate()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		bytes, err := os.ReadFile(cfg.rolePath)
+		if err != nil {
+			return nil, err
+		}
+		cfg.roleTemplate = string(bytes)
+	}
+
+	cfg.roleDocument, err = basis.Render(cfg.roleTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +101,8 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
 		v.Field(&c.client, v.Required),
-		v.Field(&c.policy, v.Required),
-		v.Field(&c.role, v.Required),
+		v.Field(&c.policyDocument, v.Required),
+		v.Field(&c.roleDocument, v.Required),
 	)
 }
 
@@ -91,7 +125,7 @@ func (c *Config) RoleArn() string {
 
 // RoleDocument returns the IAM assume role document
 func (c *Config) RoleDocument() string {
-	return c.role
+	return c.roleDocument
 }
 
 // PolicyName returns the IAM policy name using axiom resource naming
@@ -106,7 +140,7 @@ func (c *Config) PolicyArn() string {
 
 // PolicyDocument returns the IAM policy document
 func (c *Config) PolicyDocument() string {
-	return c.policy
+	return c.policyDocument
 }
 
 // BoundaryPolicyName returns the boundary policy name (extracted from ARN if provided)

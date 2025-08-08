@@ -3,6 +3,7 @@ package eventbridge
 import (
 	"context"
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -18,7 +19,7 @@ type Basis interface {
 	AwsConfig() aws.Config
 	Region() string
 	Name() string
-	RuleDocument() (string, error)
+	Render(string) (string, error)
 	Tags() map[string]string
 }
 
@@ -33,6 +34,8 @@ type Config struct {
 	busName      string
 	ruleName     string
 	ruleDocument string
+	ruleTemplate string
+	rulePath     string
 }
 
 //
@@ -57,7 +60,16 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		cfg.ruleName = basis.Name()
 	}
 
-	cfg.ruleDocument, err = basis.RuleDocument()
+	if cfg.rulePath != "" {
+		bytes, err := os.ReadFile(cfg.rulePath)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.ruleTemplate = string(bytes)
+	}
+
+	cfg.ruleDocument, err = basis.Render(cfg.ruleTemplate)
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
 
@@ -30,13 +29,9 @@ type Basis struct {
 	git            *git.Data
 	caller         *caller.Data
 	service        *service.Data
-	registryID     string
-	registryRegion string
-	image          string
-	role           string
-	policy         string
-	rule           string
-	env            string
+	image          string `bind:"--image,MONAD_IMAGE" hint:"path:tag" desc:"repository path and tag"`
+	registryID     string `bind:"--ecr-id,MONAD_REGISTRY_ID" hint:"id|name" desc:"registry id"`
+	registryRegion string `bind:"--ecr-region,MONAD_REGISTRY_REGION" hint:"name" desc:"registry region"`
 }
 
 type TemplateData struct {
@@ -90,18 +85,6 @@ func Derive() (*Basis, error) {
 	basis.caller, err = caller.Derive(ctx, basis.awsconfig)
 	if err != nil {
 		return nil, err
-	}
-
-	if basis.policy == "" {
-		basis.policy = "defaults/policy.json.tmpl"
-	}
-
-	if basis.role == "" {
-		basis.role = "defaults/role.json.tmpl"
-	}
-
-	if basis.env == "" {
-		basis.env = "defaults/env.tmpl"
 	}
 
 	if err = basis.Validate(); err != nil {
@@ -214,44 +197,16 @@ func (b *Basis) Tags() map[string]string {
 }
 
 // Documents
-func (b *Basis) PolicyDocument() (string, error) {
-	document, err := read(b.policy)
-	if err != nil {
-		return "", err
-	}
-
-	return b.Render(document)
+func (b *Basis) PolicyTemplate() (string, error) {
+	return read("defaults/policy.json.tmpl")
 }
 
-func (b *Basis) RoleDocument() (string, error) {
-	document, err := read(b.role)
-	if err != nil {
-		return "", err
-	}
-
-	return b.Render(document)
+func (b *Basis) RoleTemplate() (string, error) {
+	return read("defaults/role.json.tmpl")
 }
 
-func (b *Basis) EnvDocument() (string, error) {
-	document, err := read(b.env)
-	if err != nil {
-		return "", err
-	}
-
-	return b.Render(document)
-}
-
-func (b *Basis) RuleDocument() (string, error) {
-	if b.rule == "" {
-		return b.rule, nil
-	}
-
-	document, err := read(b.rule)
-	if err != nil {
-		return "", err
-	}
-
-	return b.Render(document)
+func (b *Basis) EnvTemplate() (string, error) {
+	return read("defaults/env.tmpl")
 }
 
 //
@@ -283,51 +238,14 @@ func (b *Basis) Render(input string) (string, error) {
 	return buf.String(), nil
 }
 
-// Template accessors for raw templates
-func (b *Basis) PolicyTemplate() (string, error) {
-	return read(b.policy)
-}
-
-func (b *Basis) RoleTemplate() (string, error) {
-	return read(b.role)
-}
-
-func (b *Basis) EnvTemplate() (string, error) {
-	return read(b.env)
-}
-
-func (b *Basis) RuleTemplate() (string, error) {
-	if b.rule == "" {
-		return "", nil
-	}
-	return read(b.rule)
-}
-
 //
 // Helpers
 //
 
 func read(path string) (string, error) {
-	if strings.HasPrefix(path, "defaults/") {
-		return embedded(path)
-	}
-
-	return given(path)
-}
-
-func embedded(path string) (string, error) {
 	data, err := defaults.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 	return string(data), nil
-}
-
-func given(path string) (string, error) {
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	return string(bytes), nil
 }

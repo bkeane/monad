@@ -25,10 +25,10 @@ type Basis interface {
 	Path() string
 	Image() string
 	Tags() map[string]string
-	PolicyDocument() (string, error)
-	RoleDocument() (string, error)
-	EnvDocument() (string, error)
-	RuleDocument() (string, error)
+	PolicyTemplate() (string, error)
+	RoleTemplate() (string, error)
+	EnvTemplate() (string, error)
+	Render(string) (string, error)
 	Validate() error
 }
 
