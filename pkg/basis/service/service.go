@@ -10,7 +10,7 @@ import (
 // Data
 
 type Data struct {
-	name string `bind:"--service,MONAD_SERVICE" hint:"name" desc:"service name"`
+	name string `env:"MONAD_SERVICE"`
 }
 
 //

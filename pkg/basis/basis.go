@@ -14,6 +14,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	env "github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -29,9 +30,9 @@ type Basis struct {
 	git            *git.Data
 	caller         *caller.Data
 	service        *service.Data
-	image          string `bind:"--image,MONAD_IMAGE" hint:"path:tag" desc:"repository path and tag"`
-	registryID     string `bind:"--ecr-id,MONAD_REGISTRY_ID" hint:"id|name" desc:"registry id"`
-	registryRegion string `bind:"--ecr-region,MONAD_REGISTRY_REGION" hint:"name" desc:"registry region"`
+	image          string `env:"MONAD_IMAGE"`
+	registryID     string `env:"MONAD_REGISTRY_ID"`
+	registryRegion string `env:"MONAD_REGISTRY_REGION"`
 }
 
 type TemplateData struct {
@@ -61,11 +62,16 @@ type TemplateData struct {
 // Derive
 //
 
-func Derive() (*Basis, error) {
+func Derive(ctx context.Context, basis *Basis) (*Basis, error) {
 	var err error
-	var basis Basis
 
-	ctx := context.Background()
+	if basis == nil {
+		basis = &Basis{}
+	}
+
+	if err = env.Parse(basis); err != nil {
+		return nil, err
+	}
 
 	basis.awsconfig, err = config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -91,7 +97,7 @@ func Derive() (*Basis, error) {
 		return nil, err
 	}
 
-	return &basis, nil
+	return basis, nil
 }
 
 //
@@ -103,10 +109,10 @@ func (b *Basis) Validate() error {
 		v.Field(&b.awsconfig),
 		v.Field(&b.caller),
 		v.Field(&b.git),
-		v.Field(&b.image, v.Required),
-		v.Field(&b.registryID, v.Required),
-		v.Field(&b.registryRegion, v.Required),
 		v.Field(&b.service, v.Required),
+		// v.Field(&b.image, v.Required),
+		// v.Field(&b.registryID, v.Required),
+		// v.Field(&b.registryRegion, v.Required),
 	)
 }
 
@@ -129,7 +135,7 @@ func (b *Basis) Region() string {
 	return b.caller.Region()
 }
 
-// Ecr
+// ECR
 
 // RegistryID returns the ECR registry ID
 func (b *Basis) RegistryId() string {
