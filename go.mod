@@ -19,6 +19,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.33.0
+	github.com/urfave/cli/v3 v3.4.1
 )
 
 require (

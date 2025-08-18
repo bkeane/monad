@@ -27,12 +27,12 @@ type Basis interface {
 type Config struct {
 	basis       Basis
 	client      *lambda.Client
-	region      string
-	storage     int32
-	memory      int32
-	timeout     int32
-	retries     int32
-	envPath     string
+	region      string `env:"MONAD_LAMBDA_REGION"`
+	storage     int32  `env:"MONAD_STORAGE"`
+	memory      int32  `env:"MONAD_MEMORY"`
+	timeout     int32  `env:"MONAD_TIMEOUT"`
+	retries     int32  `env:"MONAD_RETRIES"`
+	envPath     string `env:"MONAD_ENV"`
 	envTemplate string
 	envMap      map[string]string
 }

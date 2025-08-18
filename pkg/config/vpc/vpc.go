@@ -24,9 +24,9 @@ type Basis interface {
 type Config struct {
 	basis            Basis
 	client           *ec2.Client
-	securityGroups   []string
+	securityGroups   []string `env:"MONAD_SECURITY_GROUPS"`
 	securityGroupIds []string
-	subnets          []string
+	subnets          []string `env:"MONAD_SUBNETS"`
 	subnetIds        []string
 }
 

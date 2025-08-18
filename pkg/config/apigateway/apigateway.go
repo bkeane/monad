@@ -26,10 +26,10 @@ type Basis interface {
 type Config struct {
 	client       *apigatewayv2.Client
 	basis        Basis
-	api          string
-	region       string
-	route        []string
-	auth         []string
+	api          string   `env:"MONAD_API"`
+	region       string   `env:"MONAD_API_REGION"`
+	route        []string `env:"MONAD_ROUTE"`
+	auth         []string `env:"MONAD_AUTH"`
 	apiId        string
 	authType     []string
 	authorizerId []string

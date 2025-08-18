@@ -29,11 +29,11 @@ type Basis interface {
 type Config struct {
 	basis          Basis
 	client         *iam.Client
-	boundary       string
-	policyPath     string
+	boundary       string `env:"MONAD_BOUNDARY_POLICY"`
+	policyPath     string `env:"MONAD_POLICY"`
 	policyTemplate string
 	policyDocument string
-	rolePath       string
+	rolePath       string `env:"MONAD_ROLE"`
 	roleTemplate   string
 	roleDocument   string
 }

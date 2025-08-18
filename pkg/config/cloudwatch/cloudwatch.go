@@ -22,8 +22,8 @@ type Basis interface {
 type Config struct {
 	basis     Basis
 	client    *cloudwatchlogs.Client
-	region    string
-	retention int32
+	region    string `env:"MONAD_LOG_REGION"`
+	retention int32  `env:"MONAD_LOG_RETENTION"`
 }
 
 //

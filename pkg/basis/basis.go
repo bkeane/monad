@@ -30,9 +30,9 @@ type Basis struct {
 	git            *git.Data
 	caller         *caller.Data
 	service        *service.Data
-	image          string `env:"MONAD_IMAGE"`
-	registryID     string `env:"MONAD_REGISTRY_ID"`
-	registryRegion string `env:"MONAD_REGISTRY_REGION"`
+	image          string `env:"MONAD_IMAGE" flag:"--image" usage:"ecr path:tag"`
+	registryID     string `env:"MONAD_REGISTRY_ID" flag:"--ecr-id" usage:"ecr registry id"`
+	registryRegion string `env:"MONAD_REGISTRY_REGION" flag:"--ecr-region" usage:"ecr registry region"`
 }
 
 type TemplateData struct {

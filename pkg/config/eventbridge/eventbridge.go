@@ -30,8 +30,8 @@ type Basis interface {
 type Config struct {
 	basis        Basis
 	client       *eventbridge.Client
-	region       string
-	busName      string
+	region       string `env:"MONAD_BUS_REGION"`
+	busName      string `env:"MONAD_BUS_NAME"`
 	ruleName     string
 	ruleDocument string
 	ruleTemplate string
