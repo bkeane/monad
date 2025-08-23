@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/bkeane/monad/pkg/basis"
+	"github.com/bkeane/monad/pkg/client"
+	"github.com/bkeane/monad/pkg/config"
 	"github.com/bkeane/monad/pkg/flag"
+	"github.com/bkeane/monad/pkg/saga"
+	"github.com/bkeane/monad/pkg/scaffold"
+	"github.com/bkeane/monad/pkg/state"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -24,41 +30,119 @@ func init() {
 	}
 }
 
+func Basis(ctx context.Context) (*basis.Basis, error) {
+	return basis.Derive(ctx)
+}
+
+func Config(ctx context.Context) (*config.Config, error) {
+	basis, err := Basis(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return config.Derive(ctx, basis)
+}
+
+func Client(ctx context.Context) (*client.Client, error) {
+	config, err := Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Derive(config)
+}
+
+func Saga(ctx context.Context) (*saga.Saga, error) {
+	client, err := Client(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return saga.Derive(ctx, client), nil
+}
+
+func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
+	basis, err := Basis(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return scaffold.Derive(basis), nil
+}
+
 func main() {
+	flag.DisableDefaults()
+
 	cmd := &cli.Command{
-		Name:  "monad",
-		Usage: "management plane",
-		Flags: flag.Parse(basis.Basis{}),
+		Name:   "monad",
+		Usage:  "management plane",
+		Flags:  flag.Flags[basis.Basis](),
+		Before: flag.Before[basis.Basis](),
 		Commands: []*cli.Command{
 			{
-				Name:  "init",
-				Usage: "scaffold a monad",
+				Name:      "init",
+				Usage:     "scaffold a monad",
+				UsageText: "monad init <LANGUAGE> [LOCATION]",
+				Flags:     flag.Flags[scaffold.Scaffold](),
+				Before:    flag.Before[scaffold.Scaffold](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					fmt.Println("initialized: ", cmd.Args().First())
-					return nil
+					language := cmd.Args().Get(0)
+					targetDir := cmd.Args().Get(1)
+
+					if language == "" {
+						return fmt.Errorf("language is required")
+					}
+
+					scaffold, err := Scaffold(ctx)
+					if err != nil {
+						return err
+					}
+
+					return scaffold.Create(language, targetDir)
 				},
 			},
 			{
-				Name:  "deploy",
-				Usage: "deploy a monad",
+				Name:   "deploy",
+				Usage:  "deploy a monad",
+				Flags:  flag.Flags[config.Config](),
+				Before: flag.Before[config.Config](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					fmt.Println("deployed: ", cmd.Args().First())
-					return nil
+					saga, err := Saga(ctx)
+					if err != nil {
+						return err
+					}
+
+					return saga.Do(ctx)
 				},
 			},
 			{
 				Name:  "destroy",
 				Usage: "destroy a monad",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					fmt.Println("destroyed: ", cmd.Args().First())
-					return nil
+					saga, err := Saga(ctx)
+					if err != nil {
+						return err
+					}
+
+					return saga.Undo(ctx)
 				},
 			},
 			{
 				Name:  "list",
 				Usage: "list monads",
 				Action: func(ctx context.Context, c *cli.Command) error {
-					fmt.Println("listing monads...")
+					state, err := state.Init(ctx)
+					if err != nil {
+						return err
+					}
+
+					table, err := state.Table(ctx)
+					if err != nil {
+						return err
+					}
+
+					fmt.Println(table)
+
 					return nil
 				},
 			},
@@ -70,40 +154,48 @@ func main() {
 						Name:  "login",
 						Usage: "login to ecr",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("logged in!")
-							return nil
+							client, err := Client(ctx)
+							if err != nil {
+								return err
+							}
+
+							return client.Ecr().Login(ctx)
 						},
 					},
 					{
 						Name:  "init",
 						Usage: "initialize monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("initialized: ", cmd.Args().First())
-							return nil
+							client, err := Client(ctx)
+							if err != nil {
+								return err
+							}
+
+							return client.Ecr().CreateRepository(ctx)
 						},
 					},
 					{
 						Name:  "destroy",
 						Usage: "destroy a monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("destroyed: ", cmd.Args().First())
-							return nil
-						},
-					},
-					{
-						Name:  "tag",
-						Usage: "tag a monad image",
-						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("tagged: ", cmd.Args().First())
-							return nil
+							client, err := Client(ctx)
+							if err != nil {
+								return err
+							}
+
+							return client.Ecr().DeleteRepository(ctx)
 						},
 					},
 					{
 						Name:  "untag",
 						Usage: "untag a monad image",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("untagged: ", cmd.Args().First())
-							return nil
+							client, err := Client(ctx)
+							if err != nil {
+								return err
+							}
+
+							return client.Ecr().Untag(ctx)
 						},
 					},
 				},
@@ -116,7 +208,20 @@ func main() {
 						Name:  "list",
 						Usage: "list available key/values",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("printing data table...")
+							basis, err := Basis(ctx)
+							if err != nil {
+								return err
+							}
+
+							vars := []string{"{{.Account.Id}}", "{{.Account.Region}}", "{{.Git.Repo}}", "{{.Git.Owner}}", "{{.Git.Branch}}", "{{.Git.Sha}}", "{{.Service.Name}}", "{{.Resource.Name}}", "{{.Resource.Path}}"}
+
+							for _, v := range vars {
+								val, err := basis.Render(v)
+								if err != nil {
+									return fmt.Errorf("failed to render %s: %w", v, err)
+								}
+								fmt.Printf("%-25s %s\n", v, strings.TrimSpace(val))
+							}
 							return nil
 						},
 					},
@@ -124,7 +229,27 @@ func main() {
 						Name:  "render",
 						Usage: "render file to stdout",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							fmt.Println("rendering file: ", cmd.Args().First())
+							file := cmd.Args().First()
+							if file == "" {
+								return fmt.Errorf("file required")
+							}
+
+							basis, err := Basis(ctx)
+							if err != nil {
+								return err
+							}
+
+							content, err := os.ReadFile(file)
+							if err != nil {
+								return err
+							}
+
+							result, err := basis.Render(string(content))
+							if err != nil {
+								return err
+							}
+
+							fmt.Print(result)
 							return nil
 						},
 					},
@@ -133,7 +258,8 @@ func main() {
 		},
 	}
 
-	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		log.Fatal().Err(err)
+	err := cmd.Run(context.Background(), os.Args)
+	if err != nil {
+		log.Fatal().Err(err).Msg("command failed")
 	}
 }

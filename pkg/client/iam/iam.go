@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type IamConvention interface {
+type IamConfig interface {
 	PolicyName() string
 	PolicyArn() string
 	PolicyDocument() string
@@ -27,10 +27,10 @@ type IamConvention interface {
 }
 
 type Client struct {
-	iam IamConvention
+	iam IamConfig
 }
 
-func Init(iam IamConvention) *Client {
+func Derive(iam IamConfig) *Client {
 	return &Client{
 		iam: iam,
 	}

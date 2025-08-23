@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type EventBridgeConvention interface {
+type EventBridgeConfig interface {
 	BusName() string
 	RuleName() string
 	RuleDocument() string
@@ -23,7 +23,7 @@ type EventBridgeConvention interface {
 	Tags() []eventbridgetypes.Tag
 }
 
-type LambdaConvention interface {
+type LambdaConfig interface {
 	FunctionName() string
 	FunctionArn() string
 	Client() *lambda.Client
@@ -37,11 +37,11 @@ type EventBridgeRule struct {
 }
 
 type Client struct {
-	eventbridge EventBridgeConvention
-	lambda      LambdaConvention
+	eventbridge EventBridgeConfig
+	lambda      LambdaConfig
 }
 
-func Init(eventbridge EventBridgeConvention, lambda LambdaConvention) *Client {
+func Derive(eventbridge EventBridgeConfig, lambda LambdaConfig) *Client {
 	return &Client{
 		eventbridge: eventbridge,
 		lambda:      lambda,

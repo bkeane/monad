@@ -57,6 +57,7 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.basis, v.Required),
 		v.Field(&c.ecr, v.Required),
 		v.Field(&c.registryv2, v.Required),
 	)
@@ -82,3 +83,4 @@ func (c *Config) ImageTag() string {
 	parts := strings.Split(c.basis.Image(), ":")
 	return parts[1]
 }
+

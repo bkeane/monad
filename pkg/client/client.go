@@ -26,17 +26,17 @@ type Client struct {
 }
 
 //
-// Init
+// Derive
 //
 
-func Init(config *config.Config) (*Client, error) {
+func Derive(config *config.Config) (*Client, error) {
 	client := &Client{
-		iam:         iam.Init(config.Iam()),
-		cloudwatch:  cloudwatch.Init(config.CloudWatch()),
-		lambda:      lambda.Init(config.Lambda(), config.Ecr(), config.Iam(), config.Vpc(), config.CloudWatch()),
-		apigateway:  apigateway.Init(config.ApiGateway(), config.Lambda()),
-		eventbridge: eventbridge.Init(config.EventBridge(), config.Lambda()),
-		ecr:         ecr.Init(config.Ecr()),
+		iam:         iam.Derive(config.Iam()),
+		cloudwatch:  cloudwatch.Derive(config.CloudWatch()),
+		lambda:      lambda.Derive(config.Lambda(), config.Ecr(), config.Iam(), config.Vpc(), config.CloudWatch()),
+		apigateway:  apigateway.Derive(config.ApiGateway(), config.Lambda()),
+		eventbridge: eventbridge.Derive(config.EventBridge(), config.Lambda()),
+		ecr:         ecr.Derive(config.Ecr()),
 	}
 
 	if err := client.Validate(); err != nil {
@@ -62,7 +62,7 @@ func (c *Client) Validate() error {
 }
 
 //
-// ACCESSOR METHODS
+// Accessors
 //
 
 // IAM returns the IAM client instance

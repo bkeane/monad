@@ -4,64 +4,53 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-// Data
+// Basis
 
-type Data struct {
-	accountId string
-	region    string
-	arn       string
-	userId    string
+type Basis struct {
+	AwsConfig aws.Config
+	AccountId string
+	Arn       string
 }
 
 //
 // Derive
 //
 
-func Derive(ctx context.Context, awsconfig aws.Config) (*Data, error) {
+func Derive(ctx context.Context) (*Basis, error) {
 	var err error
-	var data Data
+	var basis Basis
 
-	client := sts.NewFromConfig(awsconfig)
+	basis.AwsConfig, err = config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	client := sts.NewFromConfig(basis.AwsConfig)
 
 	caller, err := client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return nil, err
 	}
 
-	data.accountId = *caller.Account
-	data.arn = *caller.Arn
-	data.userId = *caller.UserId
-	data.region = awsconfig.Region
+	basis.AccountId = *caller.Account
+	basis.Arn = *caller.Arn
 
-	if err := data.Validate(); err != nil {
-		return nil, err
-	}
-
-	return &data, nil
+	return &basis, nil
 }
 
 //
 // Validations
 //
 
-func (c *Data) Validate() error {
+func (c *Basis) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.accountId, v.Required),
-		v.Field(&c.arn, v.Required),
-		v.Field(&c.userId, v.Required),
-		v.Field(&c.region, v.Required),
+		v.Field(&c.AwsConfig, v.Required),
+		v.Field(&c.AccountId, v.Required),
+		v.Field(&c.Arn, v.Required),
 	)
 }
-
-//
-// Accessors
-//
-
-func (c *Data) AccountId() string { return c.accountId } // AWS account ID
-func (c *Data) Region() string    { return c.region }    // AWS region
-func (c *Data) Arn() string       { return c.arn }       // Caller ARN
-func (c *Data) UserId() string    { return c.userId }    // Caller user ID

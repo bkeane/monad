@@ -16,9 +16,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ApiGatewayConvention interface {
+type ApiGatewayConfig interface {
 	Client() *apigatewayv2.Client
-	Api() string
+	ApiId() string
 	Route() []string
 	Auth() []string
 	AuthType() []string
@@ -28,7 +28,7 @@ type ApiGatewayConvention interface {
 	PermissionStatementId(apiId string) string
 }
 
-type LambdaConvention interface {
+type LambdaConfig interface {
 	FunctionArn() string
 	Client() *lambda.Client
 }
@@ -56,11 +56,15 @@ type Permission struct {
 }
 
 type Client struct {
-	apigateway ApiGatewayConvention
-	lambda     LambdaConvention
+	apigateway ApiGatewayConfig
+	lambda     LambdaConfig
 }
 
-func Init(apigateway ApiGatewayConvention, lambda LambdaConvention) *Client {
+//
+// Derive
+//
+
+func Derive(apigateway ApiGatewayConfig, lambda LambdaConfig) *Client {
 	return &Client{
 		apigateway: apigateway,
 		lambda:     lambda,
@@ -72,7 +76,7 @@ func (s *Client) Mount(ctx context.Context) error {
 		return err
 	}
 
-	api, err := s.GetApi(ctx, s.apigateway.Api())
+	api, err := s.GetApi(ctx, s.apigateway.ApiId())
 	if err != nil {
 		return err
 	}
@@ -215,13 +219,6 @@ func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integrati
 		AuthorizerId:      aws.String(authorizerIds[routeIndex]),
 	}
 
-	log.Debug().
-		Str("api_id", api.ApiId).
-		Str("route_key", routeKeys[routeIndex]).
-		Str("auth_type", authTypes[routeIndex]).
-		Int("route_index", routeIndex).
-		Msg("creating route")
-
 	route, err := client.CreateRoute(ctx, create)
 	if err != nil {
 		return Route{}, err
@@ -231,6 +228,16 @@ func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integrati
 	if route.AuthorizerId != nil {
 		authorizerId = *route.AuthorizerId
 	}
+
+	// Convert AWS auth type to lowercase to match deploy format
+	authTypeStr := strings.ToLower(string(route.AuthorizationType))
+
+	log.Info().
+		Str("id", api.ApiId).
+		Str("route", *route.RouteKey).
+		Str("auth", authTypeStr).
+		Str("action", "put").
+		Msg("apigatewayv2")
 
 	return Route{
 		ApiId:             api.ApiId,

@@ -2,10 +2,12 @@ package state
 
 import (
 	"context"
+	"sort"
 
 	"github.com/bkeane/monad/pkg/basis"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 //
@@ -29,11 +31,16 @@ type State struct {
 	client *lambda.Client
 }
 
-func Init(basis *basis.Basis) *State {
+func Init(ctx context.Context) (*State, error) {
+	basis, err := basis.Derive(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &State{
 		basis:  basis,
 		client: lambda.NewFromConfig(basis.AwsConfig()),
-	}
+	}, nil
 }
 
 func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
@@ -53,6 +60,42 @@ func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
 	return services, nil
 }
 
+func (s *State) Table(ctx context.Context) (string, error) {
+	services, err := s.List(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// Sort by repo first, then by branch with current branch first within each repo
+	currentBranch := s.basis.GitBasis.Branch
+	sort.Slice(services, func(i, j int) bool {
+		// First group by repo
+		if services[i].Repo != services[j].Repo {
+			return services[i].Repo < services[j].Repo
+		}
+		
+		// Within the same repo, current branch comes first
+		if services[i].Branch == currentBranch && services[j].Branch != currentBranch {
+			return true
+		}
+		if services[i].Branch != currentBranch && services[j].Branch == currentBranch {
+			return false
+		}
+		
+		// Otherwise sort alphabetically by branch within the same repo
+		return services[i].Branch < services[j].Branch
+	})
+
+	tbl := table.New()
+	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha")
+	
+	for _, service := range services {
+		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, service.Sha)
+	}
+
+	return tbl.Render(), nil
+}
+
 //
 // Helpers
 //
@@ -61,7 +104,7 @@ func (s *State) extractFromTags(ctx context.Context, functionArn string) *StateM
 	listTags := &lambda.ListTagsInput{
 		Resource: &functionArn,
 	}
-	
+
 	tagsOutput, err := s.client.ListTags(ctx, listTags)
 	if err != nil {
 		return nil

@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -16,8 +17,8 @@ type Basis interface {
 	AwsConfig() aws.Config
 	AccountId() string
 	Name() string
-	RoleTemplate() (string, error)
-	PolicyTemplate() (string, error)
+	RoleTemplate() string
+	PolicyTemplate() string
 	Render(string) (string, error)
 	Tags() map[string]string
 }
@@ -29,11 +30,11 @@ type Basis interface {
 type Config struct {
 	basis          Basis
 	client         *iam.Client
-	boundary       string `env:"MONAD_BOUNDARY_POLICY"`
-	policyPath     string `env:"MONAD_POLICY"`
+	Boundary       string `env:"MONAD_BOUNDARY_POLICY" flag:"--boundary" usage:"IAM boundary policy ARN or name"`
+	PolicyPath     string `env:"MONAD_POLICY" flag:"--policy" usage:"IAM policy template file path"`
 	policyTemplate string
 	policyDocument string
-	rolePath       string `env:"MONAD_ROLE"`
+	RolePath       string `env:"MONAD_ROLE" flag:"--role" usage:"IAM role template file path"`
 	roleTemplate   string
 	roleDocument   string
 }
@@ -46,17 +47,20 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	var err error
 	var cfg Config
 
+	// Parse environment variables into struct fields
+	if err = env.Parse(&cfg); err != nil {
+		return nil, err
+	}
+
 	cfg.basis = basis
 	cfg.client = iam.NewFromConfig(basis.AwsConfig())
 
 	// Policy derivation
-	if cfg.policyPath == "" {
-		cfg.policyTemplate, err = basis.PolicyTemplate()
-		if err != nil {
-			return nil, err
-		}
+	if cfg.PolicyPath == "" {
+		cfg.policyTemplate = basis.PolicyTemplate()
+
 	} else {
-		bytes, err := os.ReadFile(cfg.policyPath)
+		bytes, err := os.ReadFile(cfg.PolicyPath)
 		if err != nil {
 			return nil, err
 		}
@@ -69,13 +73,11 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	}
 
 	// Role derivation
-	if cfg.rolePath == "" {
-		cfg.roleTemplate, err = basis.RoleTemplate()
-		if err != nil {
-			return nil, err
-		}
+	if cfg.RolePath == "" {
+		cfg.roleTemplate = basis.RoleTemplate()
+
 	} else {
-		bytes, err := os.ReadFile(cfg.rolePath)
+		bytes, err := os.ReadFile(cfg.RolePath)
 		if err != nil {
 			return nil, err
 		}
@@ -100,6 +102,7 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
 		v.Field(&c.policyDocument, v.Required),
 		v.Field(&c.roleDocument, v.Required),
@@ -145,23 +148,23 @@ func (c *Config) PolicyDocument() string {
 
 // BoundaryPolicyName returns the boundary policy name (extracted from ARN if provided)
 func (c *Config) BoundaryPolicyName() string {
-	if strings.HasPrefix(c.boundary, "arn:aws:iam::") {
-		return strings.Split(c.boundary, ":policy/")[1]
+	if strings.HasPrefix(c.Boundary, "arn:aws:iam::") {
+		return strings.Split(c.Boundary, ":policy/")[1]
 	}
-	return c.boundary
+	return c.Boundary
 }
 
 // BoundaryPolicyArn returns the complete ARN for the boundary policy
 func (c *Config) BoundaryPolicyArn() string {
-	if c.boundary == "" {
-		return c.boundary
+	if c.Boundary == "" {
+		return c.Boundary
 	}
 
-	if strings.HasPrefix(c.boundary, "arn:aws:iam::") {
-		return c.boundary
+	if strings.HasPrefix(c.Boundary, "arn:aws:iam::") {
+		return c.Boundary
 	}
 
-	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.basis.AccountId(), c.boundary)
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", c.basis.AccountId(), c.Boundary)
 }
 
 // EniRoleName returns the standard AWS Lambda VPC execution role name

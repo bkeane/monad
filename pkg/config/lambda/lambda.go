@@ -16,7 +16,7 @@ type Basis interface {
 	AwsConfig() aws.Config
 	AccountId() string
 	Name() string
-	EnvTemplate() (string, error)
+	EnvTemplate() string
 	Tags() map[string]string
 }
 
@@ -27,12 +27,12 @@ type Basis interface {
 type Config struct {
 	basis       Basis
 	client      *lambda.Client
-	region      string `env:"MONAD_LAMBDA_REGION"`
-	storage     int32  `env:"MONAD_STORAGE"`
-	memory      int32  `env:"MONAD_MEMORY"`
-	timeout     int32  `env:"MONAD_TIMEOUT"`
-	retries     int32  `env:"MONAD_RETRIES"`
-	envPath     string `env:"MONAD_ENV"`
+	RegionName     string `env:"MONAD_LAMBDA_REGION"`
+	StorageSize    int32  `env:"MONAD_STORAGE" flag:"--disk" usage:"Ephemeral storage size in MB"`
+	MemorySizeMB   int32  `env:"MONAD_MEMORY" flag:"--memory" usage:"Memory size in MB"`
+	TimeoutSeconds int32  `env:"MONAD_TIMEOUT" flag:"--timeout" usage:"Function timeout in seconds"`
+	RetryCount     int32  `env:"MONAD_RETRIES" flag:"--retry" usage:"Async function invoke retries"`
+	EnvPath        string `env:"MONAD_ENV" flag:"--env" usage:"Environment template file path"`
 	envTemplate string
 	envMap      map[string]string
 }
@@ -48,34 +48,32 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	cfg.basis = basis
 	cfg.client = lambda.NewFromConfig(basis.AwsConfig())
 
-	if cfg.region == "" {
-		cfg.region = basis.AwsConfig().Region
+	if cfg.RegionName == "" {
+		cfg.RegionName = basis.AwsConfig().Region
 	}
 
-	if cfg.storage == 0 {
-		cfg.storage = int32(512)
+	if cfg.StorageSize == 0 {
+		cfg.StorageSize = int32(512)
 	}
 
-	if cfg.memory == 0 {
-		cfg.memory = int32(128)
+	if cfg.MemorySizeMB == 0 {
+		cfg.MemorySizeMB = int32(128)
 	}
 
-	if cfg.timeout == 0 {
-		cfg.timeout = int32(3)
+	if cfg.TimeoutSeconds == 0 {
+		cfg.TimeoutSeconds = int32(3)
 	}
 
-	if cfg.retries == 0 {
-		cfg.retries = int32(0)
+	if cfg.RetryCount == 0 {
+		cfg.RetryCount = int32(0)
 	}
 
 	// Env derivation
-	if cfg.envPath == "" {
-		cfg.envTemplate, err = basis.EnvTemplate()
-		if err != nil {
-			return nil, err
-		}
+	if cfg.EnvPath == "" {
+		cfg.envTemplate = basis.EnvTemplate()
+
 	} else {
-		bytes, err := os.ReadFile(cfg.envPath)
+		bytes, err := os.ReadFile(cfg.EnvPath)
 		if err != nil {
 			return nil, err
 		}
@@ -100,12 +98,13 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.region, v.Required),
-		v.Field(&c.storage, v.Required),
-		v.Field(&c.memory, v.Required),
-		v.Field(&c.timeout, v.Required),
-		v.Field(&c.retries, v.Min(int32(0))),
+		v.Field(&c.RegionName, v.Required),
+		v.Field(&c.StorageSize, v.Required),
+		v.Field(&c.MemorySizeMB, v.Required),
+		v.Field(&c.TimeoutSeconds, v.Required),
+		v.Field(&c.RetryCount, v.Min(int32(0))),
 	)
 }
 
@@ -117,19 +116,19 @@ func (c *Config) Validate() error {
 func (c *Config) Client() *lambda.Client { return c.client }
 
 // Region returns the AWS region for Lambda deployment
-func (c *Config) Region() string { return c.region }
+func (c *Config) Region() string { return c.RegionName }
 
 // Timeout returns the function timeout in seconds
-func (c *Config) Timeout() int32 { return c.timeout }
+func (c *Config) Timeout() int32 { return c.TimeoutSeconds }
 
 // MemorySize returns the allocated memory in MB
-func (c *Config) MemorySize() int32 { return c.memory }
+func (c *Config) MemorySize() int32 { return c.MemorySizeMB }
 
 // EphemeralStorage returns the ephemeral storage size in MB
-func (c *Config) EphemeralStorage() int32 { return c.storage }
+func (c *Config) EphemeralStorage() int32 { return c.StorageSize }
 
 // Retries returns the number of async invoke retries
-func (c *Config) Retries() int32 { return c.retries }
+func (c *Config) Retries() int32 { return c.RetryCount }
 
 // FunctionName returns the Lambda function name using axiom resource naming
 func (c *Config) FunctionName() string { return c.basis.Name() }
@@ -137,7 +136,7 @@ func (c *Config) FunctionName() string { return c.basis.Name() }
 // FunctionArn returns the complete ARN for the Lambda function
 func (c *Config) FunctionArn() string {
 	return fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s",
-		c.region, c.basis.AccountId(), c.FunctionName())
+		c.RegionName, c.basis.AccountId(), c.FunctionName())
 }
 
 // Env returns a map derived from the given env document

@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -13,17 +14,17 @@ type Basis interface {
 	AwsConfig() aws.Config
 	AccountId() string
 	Region() string
-	Path() string
+	Name() string
 	Tags() map[string]string
 }
 
 // Convention
 
 type Config struct {
-	basis     Basis
-	client    *cloudwatchlogs.Client
-	region    string `env:"MONAD_LOG_REGION"`
-	retention int32  `env:"MONAD_LOG_RETENTION"`
+	basis         Basis
+	client        *cloudwatchlogs.Client
+	RegionName    string `env:"MONAD_LOG_REGION"`
+	RetentionDays int32  `env:"MONAD_LOG_RETENTION" flag:"--retention" usage:"Log retention period in days"`
 }
 
 //
@@ -34,15 +35,20 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	var err error
 	var cfg Config
 
+	// Parse environment variables into struct fields
+	if err = env.Parse(&cfg); err != nil {
+		return nil, err
+	}
+
 	cfg.basis = basis
 	cfg.client = cloudwatchlogs.NewFromConfig(basis.AwsConfig())
 
-	if cfg.region == "" {
-		cfg.region = basis.Region()
+	if cfg.RegionName == "" {
+		cfg.RegionName = basis.Region()
 	}
 
-	if cfg.retention == 0 {
-		cfg.retention = int32(14)
+	if cfg.RetentionDays == 0 {
+		cfg.RetentionDays = int32(14)
 	}
 
 	if err = cfg.Validate(); err != nil {
@@ -58,9 +64,10 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.region, v.Required),
-		v.Field(&c.retention, v.Required),
+		v.Field(&c.RegionName, v.Required),
+		v.Field(&c.RetentionDays, v.Required),
 	)
 }
 
@@ -69,19 +76,19 @@ func (c *Config) Validate() error {
 // Client returns the AWS CloudWatch service client
 func (c *Config) Client() *cloudwatchlogs.Client { return c.client }
 
-// Path returns the CloudWatch log group name for the Lambda function
+// Name returns the CloudWatch log group name for the Lambda function
 func (c *Config) Name() string {
-	return fmt.Sprintf("/aws/lambda/%s", c.basis.Path())
+	return fmt.Sprintf("/aws/lambda/%s", c.basis.Name())
 }
 
 // Arn returns the complete ARN for the CloudWatch log group
 func (c *Config) Arn() string {
-	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.region, c.basis.AccountId(), c.Name())
+	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.RegionName, c.basis.AccountId(), c.Name())
 }
 
 // LogGroupRetention returns the log retention period in days
 func (c *Config) Retention() int32 {
-	return c.retention
+	return c.RetentionDays
 }
 
 // LogGroupTags returns the CloudWatch log group tags

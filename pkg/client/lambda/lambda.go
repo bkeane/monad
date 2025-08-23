@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type LambdaConvention interface {
+type LambdaConfig interface {
 	Client() *lambda.Client
 	FunctionName() string
 	Timeout() int32
@@ -28,35 +28,35 @@ type LambdaConvention interface {
 	Tags() map[string]string
 }
 
-type IamConvention interface {
+type IamConfig interface {
 	EniRoleArn() string
 	RoleArn() string
 }
 
-type VpcConvention interface {
+type VpcConfig interface {
 	SecurityGroupIds() []string
 	SubnetIds() []string
 }
 
-type CloudWatchConvention interface {
+type CloudWatchConfig interface {
 	Name() string
 }
 
-type EcrConvention interface {
+type EcrConfig interface {
 	Clients() (*ecr.Client, *registryv2.Client)
 	ImagePath() string
 	ImageTag() string
 }
 
 type Client struct {
-	lambda     LambdaConvention
-	ecr        EcrConvention
-	iam        IamConvention
-	vpc        VpcConvention
-	cloudwatch CloudWatchConvention
+	lambda     LambdaConfig
+	ecr        EcrConfig
+	iam        IamConfig
+	vpc        VpcConfig
+	cloudwatch CloudWatchConfig
 }
 
-func Init(lambda LambdaConvention, ecr EcrConvention, iam IamConvention, vpc VpcConvention, cloudwatch CloudWatchConvention) *Client {
+func Derive(lambda LambdaConfig, ecr EcrConfig, iam IamConfig, vpc VpcConfig, cloudwatch CloudWatchConfig) *Client {
 	return &Client{
 		lambda:     lambda,
 		ecr:        ecr,

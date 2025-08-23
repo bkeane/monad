@@ -3,36 +3,35 @@ package basis
 import (
 	"bytes"
 	"context"
-	"embed"
 	"fmt"
-	"strings"
+	"os"
 	"text/template"
 
-	"github.com/bkeane/monad/pkg/basis/caller"
-	"github.com/bkeane/monad/pkg/basis/git"
-	"github.com/bkeane/monad/pkg/basis/service"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/defaults"
+	"github.com/bkeane/monad/pkg/basis/ecr"
+	"github.com/bkeane/monad/pkg/basis/git"
+	"github.com/bkeane/monad/pkg/basis/resource"
+	"github.com/bkeane/monad/pkg/basis/service"
+	"github.com/rs/zerolog/log"
+
 	env "github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
-
-//go:embed defaults/*
-var defaults embed.FS
 
 //
 // Basis
 //
 
 type Basis struct {
-	awsconfig      aws.Config
-	git            *git.Data
-	caller         *caller.Data
-	service        *service.Data
-	image          string `env:"MONAD_IMAGE" flag:"--image" usage:"ecr path:tag"`
-	registryID     string `env:"MONAD_REGISTRY_ID" flag:"--ecr-id" usage:"ecr registry id"`
-	registryRegion string `env:"MONAD_REGISTRY_REGION" flag:"--ecr-region" usage:"ecr registry region"`
+	Chdir         string `env:"MONAD_CHDIR" flag:"--chdir" usage:"Change working directory"`
+	GitBasis      *git.Basis
+	CallerBasis   *caller.Basis
+	ServiceBasis  *service.Basis
+	EcrBasis      *ecr.Basis
+	ResourceBasis *resource.Basis
+	DefaultBasis  *defaults.Basis
 }
 
 type TemplateData struct {
@@ -62,33 +61,47 @@ type TemplateData struct {
 // Derive
 //
 
-func Derive(ctx context.Context, basis *Basis) (*Basis, error) {
+func Derive(ctx context.Context) (*Basis, error) {
 	var err error
-
-	if basis == nil {
-		basis = &Basis{}
-	}
+	basis := &Basis{}
 
 	if err = env.Parse(basis); err != nil {
 		return nil, err
 	}
 
-	basis.awsconfig, err = config.LoadDefaultConfig(ctx)
+	// Handle chdir first, before other derivations
+	if basis.Chdir != "" {
+		if err := os.Chdir(basis.Chdir); err != nil {
+			return nil, fmt.Errorf("failed to change directory to %s: %w", basis.Chdir, err)
+		}
+	}
+
+	basis.GitBasis, err = git.Derive()
 	if err != nil {
 		return nil, err
 	}
 
-	basis.git, err = git.Derive()
+	basis.CallerBasis, err = caller.Derive(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	basis.service, err = service.Derive()
+	basis.ServiceBasis, err = service.Derive()
 	if err != nil {
 		return nil, err
 	}
 
-	basis.caller, err = caller.Derive(ctx, basis.awsconfig)
+	basis.DefaultBasis, err = defaults.Derive()
+	if err != nil {
+		return nil, err
+	}
+
+	basis.ResourceBasis, err = resource.Derive(basis.GitBasis, basis.ServiceBasis)
+	if err != nil {
+		return nil, err
+	}
+
+	basis.EcrBasis, err = ecr.Derive(basis.CallerBasis, basis.GitBasis, basis.ServiceBasis)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +109,24 @@ func Derive(ctx context.Context, basis *Basis) (*Basis, error) {
 	if err = basis.Validate(); err != nil {
 		return nil, err
 	}
+
+	log.Info().
+		Str("owner", basis.GitBasis.Owner).
+		Str("repo", basis.GitBasis.Repository).
+		Str("branch", basis.GitBasis.Branch).
+		Str("sha", truncate(basis.GitBasis.Sha)).
+		Msg("git")
+
+	log.Info().
+		Str("account", basis.CallerBasis.AccountId).
+		Str("region", basis.CallerBasis.AwsConfig.Region).
+		Msg("caller")
+
+	log.Info().
+		Str("id", basis.EcrBasis.RegistryId).
+		Str("region", basis.EcrBasis.RegistryRegion).
+		Str("image", basis.EcrBasis.Image).
+		Msg("ecr")
 
 	return basis, nil
 }
@@ -106,13 +137,12 @@ func Derive(ctx context.Context, basis *Basis) (*Basis, error) {
 
 func (b *Basis) Validate() error {
 	return v.ValidateStruct(b,
-		v.Field(&b.awsconfig),
-		v.Field(&b.caller),
-		v.Field(&b.git),
-		v.Field(&b.service, v.Required),
-		// v.Field(&b.image, v.Required),
-		// v.Field(&b.registryID, v.Required),
-		// v.Field(&b.registryRegion, v.Required),
+		v.Field(&b.GitBasis),
+		v.Field(&b.CallerBasis),
+		v.Field(&b.ServiceBasis),
+		v.Field(&b.DefaultBasis),
+		v.Field(&b.ResourceBasis),
+		v.Field(&b.EcrBasis),
 	)
 }
 
@@ -120,116 +150,37 @@ func (b *Basis) Validate() error {
 // Accessors
 //
 
-// AwsConfig returns the aws.Config derived from the defaul credential chain
-func (b *Basis) AwsConfig() aws.Config {
-	return b.awsconfig
-}
+func (b *Basis) AwsConfig() aws.Config { return b.CallerBasis.AwsConfig }
+func (b *Basis) AccountId() string     { return b.CallerBasis.AccountId }
+func (b *Basis) Region() string        { return b.CallerBasis.AwsConfig.Region }
 
-// AccountId returns the AWS account ID from sts get caller identity
-func (b *Basis) AccountId() string {
-	return b.caller.AccountId()
-}
+func (b *Basis) Name() string            { return b.ResourceBasis.Name }
+func (b *Basis) Path() string            { return b.ResourceBasis.Path }
+func (b *Basis) Tags() map[string]string { return b.ResourceBasis.Tags }
 
-// Region returns the AWS region from the default credential chain
-func (b *Basis) Region() string {
-	return b.caller.Region()
-}
+func (b *Basis) Image() string          { return b.EcrBasis.Image }
+func (b *Basis) RegistryId() string     { return b.EcrBasis.RegistryId }
+func (b *Basis) RegistryRegion() string { return b.EcrBasis.RegistryRegion }
 
-// ECR
-
-// RegistryID returns the ECR registry ID
-func (b *Basis) RegistryId() string {
-	if b.registryID == "" {
-		return b.caller.AccountId()
-	}
-
-	return b.registryID
-}
-
-// RegistryRegion returns the ECR registry region
-func (b *Basis) RegistryRegion() string {
-	if b.registryRegion == "" {
-		return b.caller.Region()
-	}
-
-	return b.registryRegion
-}
-
-// Image returns full image path + tag: {owner}/{repo}/{service}:{branch}
-func (b *Basis) Image() string {
-	if b.image == "" {
-		return fmt.Sprintf("%s/%s/%s:%s", b.git.Owner(), b.git.Repository(), b.service.Name(), b.git.Branch())
-	}
-
-	if !strings.Contains(b.image, ":") {
-		return fmt.Sprintf("%s:%s", b.image, b.git.Branch())
-	}
-
-	return b.image
-}
-
-// Resource Naming
-
-// NamePrefix returns resource name prefix: {repo}-{branch}
-func (b *Basis) NamePrefix() string {
-	return fmt.Sprintf("%s-%s", b.git.Repository(), b.git.Branch())
-}
-
-// Name returns full resource name: {repo}-{branch}-{service}
-func (b *Basis) Name() string {
-	return fmt.Sprintf("%s-%s", b.NamePrefix(), b.service.Name())
-}
-
-// PathPrefix returns resource path prefix: {repo}/{branch}
-func (b *Basis) PathPrefix() string {
-	return fmt.Sprintf("%s/%s", b.git.Repository(), b.git.Branch())
-}
-
-// Path returns full resource path: {repo}/{branch}/{service}
-func (b *Basis) Path() string {
-	return fmt.Sprintf("%s/%s", b.PathPrefix(), b.service.Name())
-}
-
-// Tags returns standardized AWS resource tags
-func (b *Basis) Tags() map[string]string {
-	return map[string]string{
-		"Monad":   "true",
-		"Service": b.service.Name(),
-		"Owner":   b.git.Owner(),
-		"Repo":    b.git.Repository(),
-		"Branch":  b.git.Branch(),
-		"Sha":     b.git.Sha(),
-	}
-}
-
-// Documents
-func (b *Basis) PolicyTemplate() (string, error) {
-	return read("defaults/policy.json.tmpl")
-}
-
-func (b *Basis) RoleTemplate() (string, error) {
-	return read("defaults/role.json.tmpl")
-}
-
-func (b *Basis) EnvTemplate() (string, error) {
-	return read("defaults/env.tmpl")
-}
+func (b *Basis) PolicyTemplate() string { return b.DefaultBasis.Policy }
+func (b *Basis) RoleTemplate() string   { return b.DefaultBasis.Role }
+func (b *Basis) EnvTemplate() string    { return b.DefaultBasis.Env }
 
 //
-// Helpers
+// Templating
 //
 
 func (b *Basis) Render(input string) (string, error) {
 	data := TemplateData{}
-	data.Account.Id = b.caller.AccountId()
-	data.Account.Region = b.caller.Region()
-	data.Git.Repo = b.git.Repository()
-	data.Git.Owner = b.git.Owner()
-	data.Git.Branch = b.git.Branch()
-	data.Git.Sha = b.git.Sha()
-	data.Service.Name = b.service.Name()
-	data.Resource.Name = b.Name()
-	data.Resource.Path = b.Path()
+	data.Account.Id = b.CallerBasis.AccountId
+	data.Account.Region = b.CallerBasis.AwsConfig.Region
+	data.Git.Repo = b.GitBasis.Repository
+	data.Git.Owner = b.GitBasis.Owner
+	data.Git.Branch = b.GitBasis.Branch
+	data.Git.Sha = b.GitBasis.Sha
+	data.Service.Name = b.ServiceBasis.Name
+	data.Resource.Name = b.ResourceBasis.Name
+	data.Resource.Path = b.ResourceBasis.Path
 
 	tmpl, err := template.New("template").Parse(input)
 	if err != nil {
@@ -248,10 +199,11 @@ func (b *Basis) Render(input string) (string, error) {
 // Helpers
 //
 
-func read(path string) (string, error) {
-	data, err := defaults.ReadFile(path)
-	if err != nil {
-		return "", err
+// truncate shortens git SHA to 7 characters for display
+func truncate(s string) string {
+	if len(s) <= 7 {
+		return s
 	}
-	return string(data), nil
+	return s[:7]
 }
+

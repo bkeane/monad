@@ -8,8 +8,8 @@
                 "logs:*"
             ],
             "Resource": [
-                "{{.Cloudwatch.LogGroupArn}}*",
-                "{{.Cloudwatch.LogGroupArn}}:log-stream:*"
+                "arn:aws:logs:{{.Account.Region}}:{{.Account.Id}}:log-group:/aws/lambda/{{.Resource.Name}}*",
+                "arn:aws:logs:{{.Account.Region}}:{{.Account.Id}}:log-group:/aws/lambda/{{.Resource.Name}}:log-stream:*"
             ]
         }
     ]

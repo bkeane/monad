@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type CloudWatchConvention interface {
+type CloudWatchConfig interface {
 	Client() *cloudwatchlogs.Client
 	Name() string
 	Arn() string
@@ -23,14 +23,14 @@ type CloudWatchConvention interface {
 //
 
 type Client struct {
-	cloudwatch CloudWatchConvention
+	cloudwatch CloudWatchConfig
 }
 
 //
-// Init
+// Derive
 //
 
-func Init(cloudwatch CloudWatchConvention) *Client {
+func Derive(cloudwatch CloudWatchConfig) *Client {
 	return &Client{
 		cloudwatch: cloudwatch,
 	}

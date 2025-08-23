@@ -6,110 +6,77 @@ import (
 	"github.com/bkeane/monad/internal/git"
 
 	v "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/rs/zerolog/log"
 )
 
 //
 // Basis
 //
 
-type Data struct {
+type Basis struct {
 	cwd        string
-	owner      string `env:"MONAD_OWNER"`
-	repository string `env:"MONAD_REPOSITORY"`
-	branch     string `env:"MONAD_BRANCH"`
-	sha        string `env:"MONAD_SHA"`
+	Owner      string `env:"MONAD_OWNER" flag:"--owner" usage:"Git repository owner"`
+	Repository string `env:"MONAD_REPO" flag:"--repo" usage:"Git repository name"`
+	Branch     string `env:"MONAD_BRANCH" flag:"--branch" usage:"Git branch name"`
+	Sha        string `env:"MONAD_SHA" flag:"--sha" usage:"Git commit SHA"`
 }
 
 //
 // Derive
 //
 
-func Derive() (*Data, error) {
+func Derive() (*Basis, error) {
 	var err error
-	var data Data
+	var basis Basis
 
-	data.cwd, err = os.Getwd()
+	basis.cwd, err = os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	if data.owner == "" {
-		git, err := git.Parse(data.cwd)
+	if basis.Owner == "" {
+		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		data.owner = git.Owner
+		basis.Owner = git.Owner
 	}
 
-	if data.repository == "" {
-		git, err := git.Parse(data.cwd)
+	if basis.Repository == "" {
+		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		data.repository = git.Repo
+		basis.Repository = git.Repo
 	}
 
-	if data.branch == "" {
-		git, err := git.Parse(data.cwd)
+	if basis.Branch == "" {
+		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		data.branch = git.Branch
+		basis.Branch = git.Branch
 	}
 
-	if data.sha == "" {
-		git, err := git.Parse(data.cwd)
+	if basis.Sha == "" {
+		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		data.sha = git.Sha
+		basis.Sha = git.Sha
 	}
 
-	log.Info().
-		Str("owner", data.owner).
-		Str("repo", data.repository).
-		Str("branch", data.branch).
-		Str("sha", truncate(data.sha)).
-		Msg("git")
-
-	if err := data.Validate(); err != nil {
-		return nil, err
-	}
-
-	return &data, nil
+	return &basis, nil
 }
 
 //
 // Validations
 //
 
-func (g *Data) Validate() error {
+func (g *Basis) Validate() error {
 	return v.ValidateStruct(g,
-		v.Field(&g.owner, v.Required),
-		v.Field(&g.repository, v.Required),
-		v.Field(&g.branch, v.Required),
-		v.Field(&g.sha, v.Required),
+		v.Field(&g.Owner, v.Required),
+		v.Field(&g.Repository, v.Required),
+		v.Field(&g.Branch, v.Required),
+		v.Field(&g.Sha, v.Required),
 	)
-}
-
-//
-// Accessors
-//
-
-func (g *Data) Owner() string      { return g.owner }      // Git repository owner
-func (g *Data) Repository() string { return g.repository } // Git repository name
-func (g *Data) Branch() string     { return g.branch }     // Git branch name
-func (g *Data) Sha() string        { return g.sha }        // Git commit SHA
-
-//
-// Helpers
-//
-
-// truncate shortens git SHA to 7 characters for display
-func truncate(s string) string {
-	if len(s) <= 7 {
-		return s
-	}
-	return s[:7]
 }

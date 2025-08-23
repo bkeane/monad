@@ -16,15 +16,19 @@ import (
 	"github.com/aws/smithy-go"
 )
 
-type EcrConvention interface {
+type EcrConfig interface {
 	Clients() (*ecr.Client, *registryv2.Client)
+	ImagePath() string
+	ImageTag() string
 }
+
 
 //
 // Client
 //
 
 type Client struct {
+	config     EcrConfig
 	ecr        *ecr.Client
 	registryv2 *registryv2.Client
 }
@@ -33,9 +37,10 @@ type Client struct {
 // Init
 //
 
-func Init(ecr EcrConvention) *Client {
+func Derive(config EcrConfig) *Client {
 	var client Client
-	client.ecr, client.registryv2 = ecr.Clients()
+	client.config = config
+	client.ecr, client.registryv2 = config.Clients()
 	return &client
 }
 
@@ -81,7 +86,10 @@ func (c *Client) Login(ctx context.Context) error {
 }
 
 // Untag removes a tag from a repository image
-func (c *Client) Untag(ctx context.Context, repo, tag string) error {
+func (c *Client) Untag(ctx context.Context) error {
+	repo := c.config.ImagePath()
+	tag := c.config.ImageTag()
+
 	log.Info().
 		Str("action", "untag").
 		Str("repo", repo).
@@ -92,7 +100,10 @@ func (c *Client) Untag(ctx context.Context, repo, tag string) error {
 }
 
 // GetImage retrieves image information from registry
-func (c *Client) GetImage(ctx context.Context, repo, tag string) (registryv2.ImagePointer, error) {
+func (c *Client) GetImage(ctx context.Context) (registryv2.ImagePointer, error) {
+	repo := c.config.ImagePath()
+	tag := c.config.ImageTag()
+
 	log.Info().
 		Str("action", "get").
 		Str("repo", repo).
@@ -103,8 +114,9 @@ func (c *Client) GetImage(ctx context.Context, repo, tag string) (registryv2.Ima
 }
 
 // CreateRepository creates a new ECR repository
-func (c *Client) CreateRepository(ctx context.Context, repo string) error {
+func (c *Client) CreateRepository(ctx context.Context) error {
 	var apiErr smithy.APIError
+	repo := c.config.ImagePath()
 
 	log.Info().
 		Str("action", "put").
@@ -128,8 +140,9 @@ func (c *Client) CreateRepository(ctx context.Context, repo string) error {
 }
 
 // DeleteRepository removes an ECR repository
-func (c *Client) DeleteRepository(ctx context.Context, repo string) error {
+func (c *Client) DeleteRepository(ctx context.Context) error {
 	var apiErr smithy.APIError
+	repo := c.config.ImagePath()
 
 	log.Info().
 		Str("action", "delete").

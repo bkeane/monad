@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/bkeane/monad/pkg/config/apigateway"
 	"github.com/bkeane/monad/pkg/config/cloudwatch"
 	"github.com/bkeane/monad/pkg/config/ecr"
@@ -11,9 +12,12 @@ import (
 	"github.com/bkeane/monad/pkg/config/lambda"
 	"github.com/bkeane/monad/pkg/config/vpc"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
+
+//
+// Dependencies
+//
 
 type Basis interface {
 	AwsConfig() aws.Config
@@ -25,9 +29,9 @@ type Basis interface {
 	Path() string
 	Image() string
 	Tags() map[string]string
-	PolicyTemplate() (string, error)
-	RoleTemplate() (string, error)
-	EnvTemplate() (string, error)
+	PolicyTemplate() string
+	RoleTemplate() string
+	EnvTemplate() string
 	Render(string) (string, error)
 	Validate() error
 }
@@ -37,13 +41,13 @@ type Basis interface {
 //
 
 type Config struct {
-	apigateway  *apigateway.Config
-	cloudwatch  *cloudwatch.Config
-	eventbridge *eventbridge.Config
-	iam         *iam.Config
-	lambda      *lambda.Config
-	ecr         *ecr.Config
-	vpc         *vpc.Config
+	ApiGatewayConfig  *apigateway.Config
+	CloudwatchConfig  *cloudwatch.Config
+	EventbridgeConfig *eventbridge.Config
+	IamConfig         *iam.Config
+	LambdaConfig      *lambda.Config
+	EcrConfig         *ecr.Config
+	VpcConfig         *vpc.Config
 }
 
 //
@@ -58,37 +62,37 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		return nil, err
 	}
 
-	cfg.apigateway, err = apigateway.Derive(ctx, basis)
+	cfg.ApiGatewayConfig, err = apigateway.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.cloudwatch, err = cloudwatch.Derive(ctx, basis)
+	cfg.CloudwatchConfig, err = cloudwatch.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.eventbridge, err = eventbridge.Derive(ctx, basis)
+	cfg.EventbridgeConfig, err = eventbridge.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.iam, err = iam.Derive(ctx, basis)
+	cfg.IamConfig, err = iam.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.lambda, err = lambda.Derive(ctx, basis)
+	cfg.LambdaConfig, err = lambda.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.ecr, err = ecr.Derive(ctx, basis)
+	cfg.EcrConfig, err = ecr.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.vpc, err = vpc.Derive(ctx, basis)
+	cfg.VpcConfig, err = vpc.Derive(ctx, basis)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +111,13 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (d *Config) Validate() error {
 	return v.ValidateStruct(d,
-		v.Field(&d.apigateway),
-		v.Field(&d.cloudwatch),
-		v.Field(&d.ecr),
-		v.Field(&d.eventbridge),
-		v.Field(&d.iam),
-		v.Field(&d.lambda),
-		v.Field(&d.vpc),
+		v.Field(&d.ApiGatewayConfig),
+		v.Field(&d.CloudwatchConfig),
+		v.Field(&d.EcrConfig),
+		v.Field(&d.EventbridgeConfig),
+		v.Field(&d.IamConfig),
+		v.Field(&d.LambdaConfig),
+		v.Field(&d.VpcConfig),
 	)
 }
 
@@ -122,29 +126,29 @@ func (d *Config) Validate() error {
 //
 
 func (c *Config) Lambda() *lambda.Config {
-	return c.lambda
+	return c.LambdaConfig
 }
 
 func (c *Config) ApiGateway() *apigateway.Config {
-	return c.apigateway
+	return c.ApiGatewayConfig
 }
 
 func (c *Config) EventBridge() *eventbridge.Config {
-	return c.eventbridge
+	return c.EventbridgeConfig
 }
 
 func (c *Config) CloudWatch() *cloudwatch.Config {
-	return c.cloudwatch
+	return c.CloudwatchConfig
 }
 
 func (c *Config) Ecr() *ecr.Config {
-	return c.ecr
+	return c.EcrConfig
 }
 
 func (c *Config) Iam() *iam.Config {
-	return c.iam
+	return c.IamConfig
 }
 
 func (c *Config) Vpc() *vpc.Config {
-	return c.vpc
+	return c.VpcConfig
 }

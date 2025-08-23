@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	"github.com/caarlos0/env/v11"
 
 	eventbridgetypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -30,12 +31,12 @@ type Basis interface {
 type Config struct {
 	basis        Basis
 	client       *eventbridge.Client
-	region       string `env:"MONAD_BUS_REGION"`
-	busName      string `env:"MONAD_BUS_NAME"`
+	RegionName      string `env:"MONAD_BUS_REGION"`
+	EventBusName    string `env:"MONAD_BUS_NAME" flag:"--bus" usage:"EventBridge bus name"`
 	ruleName     string
 	ruleDocument string
 	ruleTemplate string
-	rulePath     string
+	RulePath     string `env:"MONAD_RULE" flag:"--rule" usage:"EventBridge rule template file path"`
 }
 
 //
@@ -46,22 +47,28 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	var err error
 	var cfg Config
 
-	cfg.client = eventbridge.NewFromConfig(basis.AwsConfig())
-
-	if cfg.region == "" {
-		cfg.region = basis.Region()
+	// Parse environment variables into struct fields
+	if err = env.Parse(&cfg); err != nil {
+		return nil, err
 	}
 
-	if cfg.busName == "" {
-		cfg.busName = "default"
+	cfg.basis = basis
+	cfg.client = eventbridge.NewFromConfig(basis.AwsConfig())
+
+	if cfg.RegionName == "" {
+		cfg.RegionName = basis.Region()
+	}
+
+	if cfg.EventBusName == "" {
+		cfg.EventBusName = "default"
 	}
 
 	if cfg.ruleName == "" {
 		cfg.ruleName = basis.Name()
 	}
 
-	if cfg.rulePath != "" {
-		bytes, err := os.ReadFile(cfg.rulePath)
+	if cfg.RulePath != "" {
+		bytes, err := os.ReadFile(cfg.RulePath)
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +94,9 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
+		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.busName, v.By(c.exists)),
+		v.Field(&c.EventBusName, v.By(c.exists)),
 	)
 }
 
@@ -98,7 +106,7 @@ func (c *Config) exists(value interface{}) error {
 
 	busName, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("invalid bus name format: %s", c.busName)
+		return fmt.Errorf("invalid bus name format: %s", c.EventBusName)
 	}
 
 	var validBusNames []string
@@ -131,10 +139,10 @@ func (c *Config) exists(value interface{}) error {
 func (c *Config) Client() *eventbridge.Client { return c.client }
 
 // Region returns the AWS region for EventBridge deployment
-func (c *Config) Region() string { return c.region }
+func (c *Config) Region() string { return c.RegionName }
 
 // BusName returns the EventBridge custom bus name
-func (c *Config) BusName() string { return c.busName }
+func (c *Config) BusName() string { return c.EventBusName }
 
 // RuleTemplate returns the EventBridge rule name
 func (c *Config) RuleName() string { return c.ruleName }
