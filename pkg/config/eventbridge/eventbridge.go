@@ -9,9 +9,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
-	"github.com/caarlos0/env/v11"
 
 	eventbridgetypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -31,8 +31,8 @@ type Basis interface {
 type Config struct {
 	basis        Basis
 	client       *eventbridge.Client
-	RegionName      string `env:"MONAD_BUS_REGION"`
-	EventBusName    string `env:"MONAD_BUS_NAME" flag:"--bus" usage:"EventBridge bus name"`
+	RegionName   string `env:"MONAD_BUS_REGION"`
+	EventBusName string `env:"MONAD_BUS_NAME" flag:"--bus" usage:"EventBridge bus name"`
 	ruleName     string
 	ruleDocument string
 	ruleTemplate string

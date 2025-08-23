@@ -51,14 +51,20 @@ Describe "Lambda"
     End
 
     Describe "Env"
-        It "MONAD_SERVICE"
-            When call curl_sigv4 $target/env/MONAD_SERVICE  
+        It "MONAD_RESOURCE_NAME"
+            When call curl_sigv4 $target/env/MONAD_RESOURCE_NAME 
             The output should eq "${MONAD_SERVICE}"
             The status should be success
         End
 
+        It "MONAD_RESOURCE_PATH"
+            When call curl_sigv4 $target/env/MONAD_  
+            The output should eq "${MONAD_REPO}"
+            The status should be success
+        End
+
         It "MONAD_REPO"
-            When call curl_sigv4 $target/env/MONAD_REPO  
+            When call curl_sigv4 $target/env/MONAD_  
             The output should eq "${MONAD_REPO}"
             The status should be success
         End
@@ -72,12 +78,6 @@ Describe "Lambda"
         It "MONAD_BRANCH"
             When call curl_sigv4 $target/env/MONAD_BRANCH  
             The output should eq "${MONAD_BRANCH}"
-            The status should be success
-        End
-
-        It "MONAD_IMAGE"
-            When call curl_sigv4 $target/env/MONAD_IMAGE  
-            The output should eq "${image_path}:${MONAD_BRANCH}"
             The status should be success
         End
 

@@ -8,6 +8,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
+
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	dotenv "github.com/joho/godotenv"
 )
@@ -25,16 +27,16 @@ type Basis interface {
 //
 
 type Config struct {
-	basis       Basis
-	client      *lambda.Client
+	basis          Basis
+	client         *lambda.Client
 	RegionName     string `env:"MONAD_LAMBDA_REGION"`
 	StorageSize    int32  `env:"MONAD_STORAGE" flag:"--disk" usage:"Ephemeral storage size in MB"`
 	MemorySizeMB   int32  `env:"MONAD_MEMORY" flag:"--memory" usage:"Memory size in MB"`
 	TimeoutSeconds int32  `env:"MONAD_TIMEOUT" flag:"--timeout" usage:"Function timeout in seconds"`
 	RetryCount     int32  `env:"MONAD_RETRIES" flag:"--retry" usage:"Async function invoke retries"`
 	EnvPath        string `env:"MONAD_ENV" flag:"--env" usage:"Environment template file path"`
-	envTemplate string
-	envMap      map[string]string
+	envTemplate    string
+	envMap         map[string]string
 }
 
 //
@@ -47,6 +49,10 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 	cfg.basis = basis
 	cfg.client = lambda.NewFromConfig(basis.AwsConfig())
+
+	if err = env.Parse(&cfg); err != nil {
+		return nil, err
+	}
 
 	if cfg.RegionName == "" {
 		cfg.RegionName = basis.AwsConfig().Region
