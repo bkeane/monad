@@ -75,9 +75,9 @@ jobs:
         run: |
           go run cmd/monad/main.go deploy \
             --chdir e2e/echo \
-            --env file://.env.tmpl \
-            --policy file://policy.json.tmpl \
-            --rule file://rule.json.tmpl \
+            --env .env.tmpl \
+            --policy policy.json.tmpl \
+            --rule rule.json.tmpl \
             --memory 256 \
             --disk 1024 \
             --timeout 10 \
