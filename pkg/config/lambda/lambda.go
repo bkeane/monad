@@ -86,7 +86,13 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		cfg.envTemplate = string(bytes)
 	}
 
-	cfg.envMap, err = dotenv.Parse(strings.NewReader(cfg.envTemplate))
+	// Render the environment template before parsing
+	renderedEnvTemplate, err := basis.Render(cfg.envTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render env template: %w", err)
+	}
+
+	cfg.envMap, err = dotenv.Parse(strings.NewReader(renderedEnvTemplate))
 	if err != nil {
 		return nil, err
 	}

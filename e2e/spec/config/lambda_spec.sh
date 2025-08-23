@@ -45,7 +45,7 @@ Describe "Lambda"
 
         It "Log Group"
             When call curl_sigv4 $target/function/log_group
-            The output should eq "/aws/lambda/${resource_path}"
+            The output should eq "/aws/lambda/${resource_name}"
             The status should be success
         End
     End
