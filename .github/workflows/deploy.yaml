@@ -82,9 +82,9 @@ jobs:
             --disk 1024 \
             --timeout 10 \
             --api kaixo \
-            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}" \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}/{proxy+}" \
             --auth aws_iam \
-            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/public/{proxy+}" \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}/public/{proxy+}" \
             --auth none
 
   e2e:
