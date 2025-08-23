@@ -5,6 +5,7 @@ import (
 
 	"github.com/bkeane/monad/internal/git"
 
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -27,6 +28,10 @@ type Basis struct {
 func Derive() (*Basis, error) {
 	var err error
 	var basis Basis
+
+	if err = env.Parse(&basis); err != nil {
+		return nil, err
+	}
 
 	basis.cwd, err = os.Getwd()
 	if err != nil {

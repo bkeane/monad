@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -18,7 +19,12 @@ type Basis struct {
 //
 
 func Derive() (*Basis, error) {
+	var err error
 	var basis Basis
+
+	if err = env.Parse(&basis); err != nil {
+		return nil, err
+	}
 
 	if basis.Name == "" {
 		wd, err := os.Getwd()

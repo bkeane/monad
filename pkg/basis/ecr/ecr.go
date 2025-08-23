@@ -8,6 +8,7 @@ import (
 	"github.com/bkeane/monad/pkg/basis/git"
 	"github.com/bkeane/monad/pkg/basis/service"
 
+	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -24,7 +25,12 @@ type Basis struct {
 //
 
 func Derive(caller *caller.Basis, git *git.Basis, service *service.Basis) (*Basis, error) {
+	var err error
 	var basis Basis
+
+	if err = env.Parse(&basis); err != nil {
+		return nil, err
+	}
 
 	if caller == nil {
 		return nil, fmt.Errorf("caller basis must not be nil when deriving ecr basis")

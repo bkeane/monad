@@ -5,6 +5,7 @@ provider "registry.opentofu.org/hashicorp/aws" {
   version     = "5.98.0"
   constraints = ">= 4.40.0, >= 5.96.0"
   hashes = [
+    "h1:WQ3rRWzDt0FA9Oi7gVo6xkMgS07ZmyPpPd0O0uB5xsY=",
     "h1:l0YRNODVmQ0KrZRiD9oOjAI+6cZCG2AQE5J9Qvf6u7I=",
     "zh:1c8e4073151bc3f4e201a89ea5934733b7fe8a88399cf476bb53417e52e5a2d6",
     "zh:433b575d313742cfffc808907cfdabf6f16ad4b2b4b722b33624c2c45ab28003",
@@ -23,6 +24,7 @@ provider "registry.opentofu.org/hashicorp/local" {
   version = "2.5.3"
   hashes = [
     "h1:31Clmfoe7hzkcdgwuhUuGuPGfeG2Ksk+YWcJgzBTN7M=",
+    "h1:mC9+u1eaUILTjxey6Ivyf/3djm//RNNze9kBVX/trng=",
     "zh:32e1d4b0595cea6cda4ca256195c162772ddff25594ab4008731a2ec7be230bf",
     "zh:48c390af0c87df994ec9796f04ec2582bcac581fb81ed6bb58e0671da1c17991",
     "zh:4be7289c969218a57b40902e2f359914f8d35a7f97b439140cb711aa21e494bd",
@@ -40,6 +42,7 @@ provider "registry.opentofu.org/northwood-labs/corefunc" {
   version     = "1.5.1"
   constraints = "~> 1.0"
   hashes = [
+    "h1:YZaghvRsEmLg524NtsBYS/0+KqmEqMT0+t4dBOjm4n0=",
     "h1:ydKYZOzn8h3suVPhUN34x5j2YsJF3R3NzPnm2/lO6bs=",
     "zh:031f9f7e9a6d7fffb9e4484703c0fd8027a3a9a5c083c7f5bae2aae904cc52a6",
     "zh:18006d104860a142bb6442efb0624eb7c0223ddc0f038cfec00a3856d0d24f3f",

@@ -206,4 +206,3 @@ func truncate(s string) string {
 	}
 	return s[:7]
 }
-
