@@ -19,6 +19,7 @@ type Basis interface {
 	AccountId() string
 	Name() string
 	EnvTemplate() string
+	Render(string) (string, error)
 	Tags() map[string]string
 }
 
@@ -87,7 +88,7 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	}
 
 	// Render the environment template before parsing
-	renderedEnvTemplate, err := basis.Render(cfg.envTemplate)
+	renderedEnvTemplate, err := cfg.basis.Render(cfg.envTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render env template: %w", err)
 	}
