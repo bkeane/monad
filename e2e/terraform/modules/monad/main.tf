@@ -144,8 +144,8 @@ data "aws_iam_policy_document" "deployment" {
       "logs:*"
     ]
     resources = [
-      "arn:aws:logs:*:${local.account_id}:log-group:/aws/lambda/${local.resource_path_wildcard}",
-      "arn:aws:logs:*:${local.account_id}:log-group:/aws/lambda/${local.resource_path_wildcard}:*",
+      "arn:aws:logs:*:${local.account_id}:log-group:/aws/lambda/${local.resource_name_wildcard}",
+      "arn:aws:logs:*:${local.account_id}:log-group:/aws/lambda/${local.resource_name_wildcard}:*",
     ]
   }
 

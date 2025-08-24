@@ -75,16 +75,16 @@ jobs:
         run: |
           go run cmd/monad/main.go deploy \
             --chdir e2e/echo \
-            --env file://.env.tmpl \
-            --policy file://policy.json.tmpl \
-            --rule file://rule.json.tmpl \
+            --env .env.tmpl \
+            --policy policy.json.tmpl \
+            --rule rule.json.tmpl \
             --memory 256 \
             --disk 1024 \
             --timeout 10 \
             --api kaixo \
-            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/{proxy+}" \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}/{proxy+}" \
             --auth aws_iam \
-            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Monad.Service}}/public/{proxy+}" \
+            --route "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}/public/{proxy+}" \
             --auth none
 
   e2e:

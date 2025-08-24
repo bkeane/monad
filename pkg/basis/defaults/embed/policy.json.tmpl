@@ -1,0 +1,16 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowLogWrite",
+            "Effect": "Allow",
+            "Action": [
+                "logs:*"
+            ],
+            "Resource": [
+                "arn:aws:logs:{{.Account.Region}}:{{.Account.Id}}:log-group:/aws/lambda/{{.Resource.Name}}*",
+                "arn:aws:logs:{{.Account.Region}}:{{.Account.Id}}:log-group:/aws/lambda/{{.Resource.Name}}:log-stream:*"
+            ]
+        }
+    ]
+}
