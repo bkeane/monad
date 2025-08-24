@@ -32,7 +32,7 @@ type Summary struct {
 // Client
 //
 
-type Client struct {
+type Step struct {
 	cloudwatch CloudWatchConfig
 }
 
@@ -40,13 +40,13 @@ type Client struct {
 // Derive
 //
 
-func Derive(cloudwatch CloudWatchConfig) *Client {
-	return &Client{
+func Derive(cloudwatch CloudWatchConfig) *Step {
+	return &Step{
 		cloudwatch: cloudwatch,
 	}
 }
 
-func (s *Client) Mount(ctx context.Context) error {
+func (s *Step) Mount(ctx context.Context) error {
 	summary, err := s.mount(ctx)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (s *Client) Mount(ctx context.Context) error {
 	return nil
 }
 
-func (s *Client) Unmount(ctx context.Context) error {
+func (s *Step) Unmount(ctx context.Context) error {
 	summary, err := s.unmount(ctx)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 }
 
 // Internal methods that return summaries of work done
-func (s *Client) mount(ctx context.Context) (Summary, error) {
+func (s *Step) mount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if err := s.PutLogGroup(ctx); err != nil {
@@ -103,7 +103,7 @@ func (s *Client) mount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (s *Client) unmount(ctx context.Context) (Summary, error) {
+func (s *Step) unmount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if err := s.DeleteLogGroup(ctx); err != nil {
@@ -120,7 +120,7 @@ func (s *Client) unmount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (s *Client) PutLogGroup(ctx context.Context) error {
+func (s *Step) PutLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	_, err := s.cloudwatch.Client().CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
@@ -144,7 +144,7 @@ func (s *Client) PutLogGroup(ctx context.Context) error {
 	return err
 }
 
-func (c *Client) PutRetentionPolicy(ctx context.Context) error {
+func (c *Step) PutRetentionPolicy(ctx context.Context) error {
 	_, err := c.cloudwatch.Client().PutRetentionPolicy(ctx, &cloudwatchlogs.PutRetentionPolicyInput{
 		LogGroupName:    aws.String(c.cloudwatch.Name()),
 		RetentionInDays: aws.Int32(c.cloudwatch.Retention()),
@@ -153,7 +153,7 @@ func (c *Client) PutRetentionPolicy(ctx context.Context) error {
 	return err
 }
 
-func (c *Client) DeleteLogGroup(ctx context.Context) error {
+func (c *Step) DeleteLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	_, err := c.cloudwatch.Client().DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{

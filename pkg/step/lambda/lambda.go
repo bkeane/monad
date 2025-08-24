@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/bkeane/monad/internal/registryv2"
+	"github.com/bkeane/monad/pkg/registry"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
-	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/smithy-go"
@@ -42,11 +42,6 @@ type CloudWatchConfig interface {
 	Name() string
 }
 
-type EcrConfig interface {
-	Clients() (*ecr.Client, *registryv2.Client)
-	ImagePath() string
-	ImageTag() string
-}
 
 type Function struct {
 	Name    string
@@ -60,25 +55,25 @@ type Summary struct {
 	FunctionsDeleted []Function
 }
 
-type Client struct {
+type Step struct {
 	lambda     LambdaConfig
-	ecr        EcrConfig
+	registry   registry.ImageRegistry
 	iam        IamConfig
 	vpc        VpcConfig
 	cloudwatch CloudWatchConfig
 }
 
-func Derive(lambda LambdaConfig, ecr EcrConfig, iam IamConfig, vpc VpcConfig, cloudwatch CloudWatchConfig) *Client {
-	return &Client{
+func Derive(lambda LambdaConfig, ecr registry.ImageRegistry, iam IamConfig, vpc VpcConfig, cloudwatch CloudWatchConfig) *Step {
+	return &Step{
 		lambda:     lambda,
-		ecr:        ecr,
+		registry:   ecr,
 		iam:        iam,
 		vpc:        vpc,
 		cloudwatch: cloudwatch,
 	}
 }
 
-func (c *Client) Mount(ctx context.Context) error {
+func (c *Step) Mount(ctx context.Context) error {
 	summary, err := c.mount(ctx)
 	if err != nil {
 		return err
@@ -98,7 +93,7 @@ func (c *Client) Mount(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) Unmount(ctx context.Context) error {
+func (c *Step) Unmount(ctx context.Context) error {
 	summary, err := c.unmount(ctx)
 	if err != nil {
 		return err
@@ -116,7 +111,7 @@ func (c *Client) Unmount(ctx context.Context) error {
 }
 
 // Internal methods that return summaries of work done
-func (c *Client) mount(ctx context.Context) (Summary, error) {
+func (c *Step) mount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if _, err := c.PutFunction(ctx); err != nil {
@@ -135,7 +130,7 @@ func (c *Client) mount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (c *Client) unmount(ctx context.Context) (Summary, error) {
+func (c *Step) unmount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if _, err := c.DeleteFunction(ctx); err != nil {
@@ -155,13 +150,12 @@ func (c *Client) unmount(ctx context.Context) (Summary, error) {
 }
 
 // GET Operations
-func (c *Client) GetImage(ctx context.Context) (registryv2.ImagePointer, error) {
-	_, registry := c.ecr.Clients()
-	return registry.GetImage(ctx, c.ecr.ImagePath(), c.ecr.ImageTag())
+func (c *Step) GetImage(ctx context.Context) (registryv2.ImagePointer, error) {
+	return c.registry.GetImage(ctx)
 }
 
 // PUT Operations
-func (c *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, error) {
+func (c *Step) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, error) {
 	var apiErr smithy.APIError
 	var architecture []types.Architecture
 
@@ -302,7 +296,7 @@ func (c *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, er
 }
 
 // DELETE Operations
-func (c *Client) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
+func (c *Step) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
 	var apiErr smithy.APIError
 
 	log.Info().

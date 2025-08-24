@@ -1,4 +1,4 @@
-package ecr
+package registry
 
 import (
 	"context"
@@ -22,20 +22,17 @@ type EcrConfig interface {
 	ImageTag() string
 }
 
-
-//
-// Client
-//
+type ImageRegistry interface {
+	GetImage(ctx context.Context) (registryv2.ImagePointer, error)
+	ImagePath() string
+	ImageTag() string
+}
 
 type Client struct {
 	config     EcrConfig
 	ecr        *ecr.Client
 	registryv2 *registryv2.Client
 }
-
-//
-// Init
-//
 
 func Derive(config EcrConfig) *Client {
 	var client Client
@@ -44,7 +41,27 @@ func Derive(config EcrConfig) *Client {
 	return &client
 }
 
-// Login authenticates Docker with ECR registry
+func (c *Client) GetImage(ctx context.Context) (registryv2.ImagePointer, error) {
+	repo := c.config.ImagePath()
+	tag := c.config.ImageTag()
+
+	log.Info().
+		Str("action", "get").
+		Str("repo", repo).
+		Str("tag", tag).
+		Msg("registry")
+
+	return c.registryv2.GetImage(ctx, repo, tag)
+}
+
+func (c *Client) ImagePath() string {
+	return c.config.ImagePath()
+}
+
+func (c *Client) ImageTag() string {
+	return c.config.ImageTag()
+}
+
 func (c *Client) Login(ctx context.Context) error {
 	input := &ecr.GetAuthorizationTokenInput{
 		RegistryIds: []string{},
@@ -85,7 +102,6 @@ func (c *Client) Login(ctx context.Context) error {
 	return nil
 }
 
-// Untag removes a tag from a repository image
 func (c *Client) Untag(ctx context.Context) error {
 	repo := c.config.ImagePath()
 	tag := c.config.ImageTag()
@@ -94,26 +110,11 @@ func (c *Client) Untag(ctx context.Context) error {
 		Str("action", "untag").
 		Str("repo", repo).
 		Str("tag", tag).
-		Msg("ecr")
+		Msg("registry")
 
 	return c.registryv2.Untag(ctx, repo, tag)
 }
 
-// GetImage retrieves image information from registry
-func (c *Client) GetImage(ctx context.Context) (registryv2.ImagePointer, error) {
-	repo := c.config.ImagePath()
-	tag := c.config.ImageTag()
-
-	log.Info().
-		Str("action", "get").
-		Str("repo", repo).
-		Str("tag", tag).
-		Msg("ecr")
-
-	return c.registryv2.GetImage(ctx, repo, tag)
-}
-
-// CreateRepository creates a new ECR repository
 func (c *Client) CreateRepository(ctx context.Context) error {
 	var apiErr smithy.APIError
 	repo := c.config.ImagePath()
@@ -121,7 +122,7 @@ func (c *Client) CreateRepository(ctx context.Context) error {
 	log.Info().
 		Str("action", "put").
 		Str("repo", repo).
-		Msg("ecr")
+		Msg("registry")
 
 	err := c.registryv2.CreateRepository(ctx, repo)
 	if err != nil {
@@ -139,7 +140,6 @@ func (c *Client) CreateRepository(ctx context.Context) error {
 	return nil
 }
 
-// DeleteRepository removes an ECR repository
 func (c *Client) DeleteRepository(ctx context.Context) error {
 	var apiErr smithy.APIError
 	repo := c.config.ImagePath()
@@ -147,7 +147,7 @@ func (c *Client) DeleteRepository(ctx context.Context) error {
 	log.Info().
 		Str("action", "delete").
 		Str("repo", repo).
-		Msg("ecr")
+		Msg("registry")
 
 	err := c.registryv2.DeleteRepository(ctx, repo)
 	if err != nil {
@@ -165,11 +165,6 @@ func (c *Client) DeleteRepository(ctx context.Context) error {
 	return nil
 }
 
-//
-// Helpers
-//
-
-// parseToken decodes base64 ECR authorization token
 func parseToken(token *string) (username string, password string, err error) {
 	decodedToken, err := base64.StdEncoding.DecodeString(*token)
 	if err != nil {

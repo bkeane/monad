@@ -44,17 +44,17 @@ type Summary struct {
 	AttachmentsDeleted []Attachment
 }
 
-type Client struct {
+type Step struct {
 	iam IamConfig
 }
 
-func Derive(iam IamConfig) *Client {
-	return &Client{
+func Derive(iam IamConfig) *Step {
+	return &Step{
 		iam: iam,
 	}
 }
 
-func (c *Client) Mount(ctx context.Context) error {
+func (c *Step) Mount(ctx context.Context) error {
 	summary, err := c.mount(ctx)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (c *Client) Mount(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) Unmount(ctx context.Context) error {
+func (c *Step) Unmount(ctx context.Context) error {
 	summary, err := c.unmount(ctx)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (c *Client) Unmount(ctx context.Context) error {
 }
 
 // Internal methods that return summaries of work done
-func (c *Client) mount(ctx context.Context) (Summary, error) {
+func (c *Step) mount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if err := c.PutEniRole(ctx); err != nil {
@@ -148,7 +148,7 @@ func (c *Client) mount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (c *Client) unmount(ctx context.Context) (Summary, error) {
+func (c *Step) unmount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	if err := c.DetachRolePolicy(ctx); err != nil {
@@ -181,7 +181,7 @@ func (c *Client) unmount(ctx context.Context) (Summary, error) {
 
 // PUT OPERATIONS
 
-func (c *Client) PutPolicy(ctx context.Context) error {
+func (c *Step) PutPolicy(ctx context.Context) error {
 	var err error
 	var apiErr smithy.APIError
 
@@ -228,7 +228,7 @@ func (c *Client) PutPolicy(ctx context.Context) error {
 }
 
 // Always ensure VPC role exists to ensure ENI garbage collection works after lambda deletion
-func (c *Client) PutEniRole(ctx context.Context) error {
+func (c *Step) PutEniRole(ctx context.Context) error {
 	var err error
 	var apiErr smithy.APIError
 
@@ -268,7 +268,7 @@ func (c *Client) PutEniRole(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) PutRole(ctx context.Context) error {
+func (c *Step) PutRole(ctx context.Context) error {
 	var err error
 	var apiErr smithy.APIError
 
@@ -313,7 +313,7 @@ func (c *Client) PutRole(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) AttachRolePolicy(ctx context.Context) error {
+func (c *Step) AttachRolePolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	attach := &iam.AttachRolePolicyInput{
@@ -357,7 +357,7 @@ func (c *Client) AttachRolePolicy(ctx context.Context) error {
 
 // DELETE OPERATIONS
 
-func (c *Client) DetachRolePolicy(ctx context.Context) error {
+func (c *Step) DetachRolePolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	detach := &iam.DetachRolePolicyInput{
@@ -394,7 +394,7 @@ func (c *Client) DetachRolePolicy(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) DeleteRole(ctx context.Context) error {
+func (c *Step) DeleteRole(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	delete := &iam.DeleteRoleInput{
@@ -414,7 +414,7 @@ func (c *Client) DeleteRole(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) DeletePolicy(ctx context.Context) error {
+func (c *Step) DeletePolicy(ctx context.Context) error {
 	var apiErr smithy.APIError
 
 	delete := &iam.DeletePolicyInput{
@@ -440,7 +440,7 @@ func (c *Client) DeletePolicy(ctx context.Context) error {
 
 // Util
 
-func (c *Client) GCPolicyVersions(ctx context.Context, policyArn string) error {
+func (c *Step) GCPolicyVersions(ctx context.Context, policyArn string) error {
 	var apiErr smithy.APIError
 
 	index := &iam.ListPolicyVersionsInput{

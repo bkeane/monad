@@ -46,19 +46,19 @@ type Summary struct {
 	RulesDeleted []Rule
 }
 
-type Client struct {
+type Step struct {
 	eventbridge EventBridgeConfig
 	lambda      LambdaConfig
 }
 
-func Derive(eventbridge EventBridgeConfig, lambda LambdaConfig) *Client {
-	return &Client{
+func Derive(eventbridge EventBridgeConfig, lambda LambdaConfig) *Step {
+	return &Step{
 		eventbridge: eventbridge,
 		lambda:      lambda,
 	}
 }
 
-func (s *Client) Mount(ctx context.Context) error {
+func (s *Step) Mount(ctx context.Context) error {
 	summary, err := s.mount(ctx)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (s *Client) Mount(ctx context.Context) error {
 	return nil
 }
 
-func (s *Client) Unmount(ctx context.Context) error {
+func (s *Step) Unmount(ctx context.Context) error {
 	summary, err := s.unmount(ctx)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 }
 
 // Internal methods that return summaries of work done
-func (s *Client) mount(ctx context.Context) (Summary, error) {
+func (s *Step) mount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	definedRules, err := s.GetDefinedRules(ctx)
@@ -121,7 +121,7 @@ func (s *Client) mount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (s *Client) unmount(ctx context.Context) (Summary, error) {
+func (s *Step) unmount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	rules, err := s.GetAssociatedRules(ctx)
@@ -151,7 +151,7 @@ func (s *Client) unmount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (s *Client) prune(ctx context.Context) error {
+func (s *Step) prune(ctx context.Context) error {
 	undefinedRules, err := s.GetUndefinedRules(ctx)
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func (s *Client) prune(ctx context.Context) error {
 }
 
 // PUT Operations
-func (s *Client) PutRule(ctx context.Context, rule EventBridgeRule) error {
+func (s *Step) PutRule(ctx context.Context, rule EventBridgeRule) error {
 	var apiErr smithy.APIError
 
 	putRuleInput := eventbridge.PutRuleInput{
@@ -244,7 +244,7 @@ func (s *Client) PutRule(ctx context.Context, rule EventBridgeRule) error {
 }
 
 // DELETE Operations
-func (s *Client) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
+func (s *Step) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 	var apiErr smithy.APIError
 
 	log.Info().
@@ -299,7 +299,7 @@ func (s *Client) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 }
 
 // GET Operations
-func (s *Client) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
+func (s *Step) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	// This code _can_ handle many defined rules, but monad currently will only support one until more are necessary.
 	document := s.eventbridge.RuleDocument()
 
@@ -321,7 +321,7 @@ func (s *Client) GetDefinedRules(ctx context.Context) (map[string]map[string]Eve
 	return ruleMap, nil
 }
 
-func (s *Client) GetUndefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
+func (s *Step) GetUndefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	definedRules, err := s.GetDefinedRules(ctx)
 	if err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func (s *Client) GetUndefinedRules(ctx context.Context) (map[string]map[string]E
 	return undefinedRules, nil
 }
 
-func (s *Client) GetAssociatedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
+func (s *Step) GetAssociatedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	listBuses := &eventbridge.ListEventBusesInput{}
 
 	buses, err := s.eventbridge.Client().ListEventBuses(ctx, listBuses)

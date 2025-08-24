@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"github.com/bkeane/monad/pkg/basis"
-	"github.com/bkeane/monad/pkg/client"
 	"github.com/bkeane/monad/pkg/config"
 	"github.com/bkeane/monad/pkg/flag"
+	"github.com/bkeane/monad/pkg/registry"
 	"github.com/bkeane/monad/pkg/saga"
 	"github.com/bkeane/monad/pkg/scaffold"
 	"github.com/bkeane/monad/pkg/state"
+	"github.com/bkeane/monad/pkg/step"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -43,22 +44,22 @@ func Config(ctx context.Context) (*config.Config, error) {
 	return config.Derive(ctx, basis)
 }
 
-func Client(ctx context.Context) (*client.Client, error) {
+func Steps(ctx context.Context) (*step.Steps, error) {
 	config, err := Config(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.Derive(config)
+	return step.Derive(config)
 }
 
 func Saga(ctx context.Context) (*saga.Saga, error) {
-	client, err := Client(ctx)
+	steps, err := Steps(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return saga.Derive(ctx, client), nil
+	return saga.Derive(ctx, steps), nil
 }
 
 func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
@@ -68,6 +69,15 @@ func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
 	}
 
 	return scaffold.Derive(basis), nil
+}
+
+func Registry(ctx context.Context) (*registry.Client, error) {
+	config, err := Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return registry.Derive(config.Ecr()), nil
 }
 
 func main() {
@@ -154,48 +164,48 @@ func main() {
 						Name:  "login",
 						Usage: "login to ecr",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							client, err := Client(ctx)
+							registry, err := Registry(ctx)
 							if err != nil {
 								return err
 							}
 
-							return client.Ecr().Login(ctx)
+							return registry.Login(ctx)
 						},
 					},
 					{
 						Name:  "init",
 						Usage: "initialize monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							client, err := Client(ctx)
+							registry, err := Registry(ctx)
 							if err != nil {
 								return err
 							}
 
-							return client.Ecr().CreateRepository(ctx)
+							return registry.CreateRepository(ctx)
 						},
 					},
 					{
 						Name:  "destroy",
 						Usage: "destroy a monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							client, err := Client(ctx)
+							registry, err := Registry(ctx)
 							if err != nil {
 								return err
 							}
 
-							return client.Ecr().DeleteRepository(ctx)
+							return registry.DeleteRepository(ctx)
 						},
 					},
 					{
 						Name:  "untag",
 						Usage: "untag a monad image",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							client, err := Client(ctx)
+							registry, err := Registry(ctx)
 							if err != nil {
 								return err
 							}
 
-							return client.Ecr().Untag(ctx)
+							return registry.Untag(ctx)
 						},
 					},
 				},

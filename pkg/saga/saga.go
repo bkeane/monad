@@ -3,22 +3,22 @@ package saga
 import (
 	"context"
 
-	"github.com/bkeane/monad/pkg/client"
-	"github.com/bkeane/monad/pkg/client/apigateway"
-	"github.com/bkeane/monad/pkg/client/cloudwatch"
-	"github.com/bkeane/monad/pkg/client/eventbridge"
-	"github.com/bkeane/monad/pkg/client/iam"
-	"github.com/bkeane/monad/pkg/client/lambda"
+	"github.com/bkeane/monad/pkg/step"
+	"github.com/bkeane/monad/pkg/step/apigateway"
+	"github.com/bkeane/monad/pkg/step/cloudwatch"
+	"github.com/bkeane/monad/pkg/step/eventbridge"
+	"github.com/bkeane/monad/pkg/step/iam"
+	"github.com/bkeane/monad/pkg/step/lambda"
 
 	"github.com/rs/zerolog/log"
 )
 
-type Client interface {
-	IAM() *iam.Client
-	CloudWatch() *cloudwatch.Client
-	Lambda() *lambda.Client
-	ApiGateway() *apigateway.Client
-	EventBridge() *eventbridge.Client
+type StepCollection interface {
+	IAM() *iam.Step
+	CloudWatch() *cloudwatch.Step
+	Lambda() *lambda.Step
+	ApiGateway() *apigateway.Step
+	EventBridge() *eventbridge.Step
 }
 
 type Step interface {
@@ -34,13 +34,13 @@ type Saga struct {
 	lambda      Step
 }
 
-func Derive(ctx context.Context, client *client.Client) *Saga {
+func Derive(ctx context.Context, steps *step.Steps) *Saga {
 	return &Saga{
-		iam:         client.IAM(),
-		cloudwatch:  client.CloudWatch(),
-		lambda:      client.Lambda(),
-		apigateway:  client.ApiGateway(),
-		eventbridge: client.EventBridge(),
+		iam:         steps.IAM(),
+		cloudwatch:  steps.CloudWatch(),
+		lambda:      steps.Lambda(),
+		apigateway:  steps.ApiGateway(),
+		eventbridge: steps.EventBridge(),
 	}
 }
 

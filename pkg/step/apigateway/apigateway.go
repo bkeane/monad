@@ -64,7 +64,7 @@ type Summary struct {
 	PermissionsCreated  []Permission
 }
 
-type Client struct {
+type Step struct {
 	apigateway ApiGatewayConfig
 	lambda     LambdaConfig
 }
@@ -73,14 +73,14 @@ type Client struct {
 // Derive
 //
 
-func Derive(apigateway ApiGatewayConfig, lambda LambdaConfig) *Client {
-	return &Client{
+func Derive(apigateway ApiGatewayConfig, lambda LambdaConfig) *Step {
+	return &Step{
 		apigateway: apigateway,
 		lambda:     lambda,
 	}
 }
 
-func (s *Client) Mount(ctx context.Context) error {
+func (s *Step) Mount(ctx context.Context) error {
 	// Call internal unmount silently (don't log deletes)
 	if _, err := s.unmount(ctx); err != nil {
 		return err
@@ -106,7 +106,7 @@ func (s *Client) Mount(ctx context.Context) error {
 	return nil
 }
 
-func (s *Client) Unmount(ctx context.Context) error {
+func (s *Step) Unmount(ctx context.Context) error {
 	// Call internal unmount and log the deletes as action=delete
 	summary, err := s.unmount(ctx)
 	if err != nil {
@@ -128,7 +128,7 @@ func (s *Client) Unmount(ctx context.Context) error {
 }
 
 // Internal methods that return summaries of work done
-func (s *Client) mount(ctx context.Context) (Summary, error) {
+func (s *Step) mount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	api, err := s.GetApi(ctx, s.apigateway.ApiId())
@@ -170,7 +170,7 @@ func (s *Client) mount(ctx context.Context) (Summary, error) {
 	return summary, nil
 }
 
-func (s *Client) unmount(ctx context.Context) (Summary, error) {
+func (s *Step) unmount(ctx context.Context) (Summary, error) {
 	var summary Summary
 
 	apis, err := s.GetApis(ctx)
@@ -218,7 +218,7 @@ func (s *Client) unmount(ctx context.Context) (Summary, error) {
 }
 
 // Internal create functions (no logging)
-func (s *Client) CreateIntegration(ctx context.Context, api Api, routeIndex int) (Integration, error) {
+func (s *Step) CreateIntegration(ctx context.Context, api Api, routeIndex int) (Integration, error) {
 	forwardedPrefixes, err := s.apigateway.ForwardedPrefixes()
 	if err != nil {
 		return Integration{}, err
@@ -252,7 +252,7 @@ func (s *Client) CreateIntegration(ctx context.Context, api Api, routeIndex int)
 	}, nil
 }
 
-func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integration, routeIndex int) (Route, error) {
+func (s *Step) CreateRoute(ctx context.Context, api Api, integration Integration, routeIndex int) (Route, error) {
 	client := s.apigateway.Client()
 	authTypeMap := map[string]types.AuthorizationType{
 		"NONE":    types.AuthorizationTypeNone,
@@ -301,7 +301,7 @@ func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integrati
 	}, nil
 }
 
-func (s *Client) CreatePermission(ctx context.Context, api Api, routeIndex int) (Permission, error) {
+func (s *Step) CreatePermission(ctx context.Context, api Api, routeIndex int) (Permission, error) {
 	sourceArns, err := s.apigateway.PermissionSourceArns()
 	if err != nil {
 		return Permission{}, err
@@ -334,7 +334,7 @@ func (s *Client) CreatePermission(ctx context.Context, api Api, routeIndex int) 
 }
 
 // Internal delete functions (no logging)
-func (s *Client) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.DeleteRouteOutput, error) {
+func (s *Step) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.DeleteRouteOutput, error) {
 	input := &apigatewayv2.DeleteRouteInput{
 		ApiId:   aws.String(route.ApiId),
 		RouteId: aws.String(route.RouteId),
@@ -343,7 +343,7 @@ func (s *Client) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.De
 	return s.apigateway.Client().DeleteRoute(ctx, input)
 }
 
-func (s *Client) DeleteIntegration(ctx context.Context, integration Integration) (*apigatewayv2.DeleteIntegrationOutput, error) {
+func (s *Step) DeleteIntegration(ctx context.Context, integration Integration) (*apigatewayv2.DeleteIntegrationOutput, error) {
 	input := &apigatewayv2.DeleteIntegrationInput{
 		ApiId:         aws.String(integration.ApiId),
 		IntegrationId: aws.String(integration.IntegrationId),
@@ -352,7 +352,7 @@ func (s *Client) DeleteIntegration(ctx context.Context, integration Integration)
 	return s.apigateway.Client().DeleteIntegration(ctx, input)
 }
 
-func (s *Client) DeletePermissions(ctx context.Context, permission Permission) error {
+func (s *Step) DeletePermissions(ctx context.Context, permission Permission) error {
 	var apiErr smithy.APIError
 
 	input := &lambda.RemovePermissionInput{
@@ -374,7 +374,7 @@ func (s *Client) DeletePermissions(ctx context.Context, permission Permission) e
 }
 
 // GET functions
-func (s *Client) GetApis(ctx context.Context) ([]Api, error) {
+func (s *Step) GetApis(ctx context.Context) ([]Api, error) {
 	var apis []Api
 	var nextToken *string
 
@@ -403,7 +403,7 @@ func (s *Client) GetApis(ctx context.Context) ([]Api, error) {
 	return apis, nil
 }
 
-func (s *Client) GetRoutes(ctx context.Context, apis []Api) ([]Route, error) {
+func (s *Step) GetRoutes(ctx context.Context, apis []Api) ([]Route, error) {
 	var routes []Route
 	var integrations []Integration
 	var nextToken *string
@@ -454,7 +454,7 @@ func (s *Client) GetRoutes(ctx context.Context, apis []Api) ([]Route, error) {
 	return routes, nil
 }
 
-func (s *Client) GetApi(ctx context.Context, apiId string) (Api, error) {
+func (s *Step) GetApi(ctx context.Context, apiId string) (Api, error) {
 	apis, err := s.GetApis(ctx)
 	if err != nil {
 		return Api{}, err
@@ -469,7 +469,7 @@ func (s *Client) GetApi(ctx context.Context, apiId string) (Api, error) {
 	return Api{}, fmt.Errorf("api not found")
 }
 
-func (s *Client) GetIntegrations(ctx context.Context, apis []Api) ([]Integration, error) {
+func (s *Step) GetIntegrations(ctx context.Context, apis []Api) ([]Integration, error) {
 	var integrations []Integration
 	var nextToken *string
 
@@ -504,7 +504,7 @@ func (s *Client) GetIntegrations(ctx context.Context, apis []Api) ([]Integration
 	return integrations, nil
 }
 
-func (s *Client) GetPermissions(ctx context.Context, apis []Api) ([]Permission, error) {
+func (s *Step) GetPermissions(ctx context.Context, apis []Api) ([]Permission, error) {
 	var permissions []Permission
 
 	// Get Lambda's resource-based policy
