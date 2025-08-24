@@ -18,6 +18,16 @@ type CloudWatchConfig interface {
 	Tags() map[string]string
 }
 
+type LogGroup struct {
+	Name      string
+	Retention int32
+}
+
+type Summary struct {
+	LogGroupsCreated []LogGroup
+	LogGroupsDeleted []LogGroup
+}
+
 //
 // Client
 //
@@ -37,29 +47,81 @@ func Derive(cloudwatch CloudWatchConfig) *Client {
 }
 
 func (s *Client) Mount(ctx context.Context) error {
-	if err := s.PutLogGroup(ctx); err != nil {
+	summary, err := s.mount(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := s.PutRetentionPolicy(ctx); err != nil {
-		return err
+	// Log only action=put for consistency with other services
+	for _, logGroup := range summary.LogGroupsCreated {
+		log.Info().
+			Str("action", "put").
+			Str("group", logGroup.Name).
+			Int32("retention", logGroup.Retention).
+			Msg("cloudwatch")
 	}
 
 	return nil
 }
 
 func (s *Client) Unmount(ctx context.Context) error {
-	return s.DeleteLogGroup(ctx)
+	summary, err := s.unmount(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Log action=delete
+	for _, logGroup := range summary.LogGroupsDeleted {
+		log.Info().
+			Str("action", "delete").
+			Str("group", logGroup.Name).
+			Msg("cloudwatch")
+	}
+
+	return nil
+}
+
+// Internal methods that return summaries of work done
+func (s *Client) mount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if err := s.PutLogGroup(ctx); err != nil {
+		return summary, err
+	}
+
+	if err := s.PutRetentionPolicy(ctx); err != nil {
+		return summary, err
+	}
+
+	// Record what was created
+	logGroup := LogGroup{
+		Name:      s.cloudwatch.Name(),
+		Retention: s.cloudwatch.Retention(),
+	}
+	summary.LogGroupsCreated = append(summary.LogGroupsCreated, logGroup)
+
+	return summary, nil
+}
+
+func (s *Client) unmount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if err := s.DeleteLogGroup(ctx); err != nil {
+		return summary, err
+	}
+
+	// Record what was deleted
+	logGroup := LogGroup{
+		Name:      s.cloudwatch.Name(),
+		Retention: s.cloudwatch.Retention(),
+	}
+	summary.LogGroupsDeleted = append(summary.LogGroupsDeleted, logGroup)
+
+	return summary, nil
 }
 
 func (s *Client) PutLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
-
-	log.Info().
-		Str("action", "put").
-		Str("group", s.cloudwatch.Name()).
-		Int32("retention", s.cloudwatch.Retention()).
-		Msg("cloudwatch")
 
 	_, err := s.cloudwatch.Client().CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
 		LogGroupName: aws.String(s.cloudwatch.Name()),
@@ -93,11 +155,6 @@ func (c *Client) PutRetentionPolicy(ctx context.Context) error {
 
 func (c *Client) DeleteLogGroup(ctx context.Context) error {
 	var apiErr smithy.APIError
-
-	log.Info().
-		Str("action", "delete").
-		Str("group", c.cloudwatch.Name()).
-		Msg("cloudwatch")
 
 	_, err := c.cloudwatch.Client().DeleteLogGroup(ctx, &cloudwatchlogs.DeleteLogGroupInput{
 		LogGroupName: aws.String(c.cloudwatch.Name()),

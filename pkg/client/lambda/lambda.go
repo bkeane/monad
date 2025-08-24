@@ -48,6 +48,18 @@ type EcrConfig interface {
 	ImageTag() string
 }
 
+type Function struct {
+	Name    string
+	Memory  int32
+	Disk    int32
+	Timeout int32
+}
+
+type Summary struct {
+	FunctionsCreated []Function
+	FunctionsDeleted []Function
+}
+
 type Client struct {
 	lambda     LambdaConfig
 	ecr        EcrConfig
@@ -67,19 +79,79 @@ func Derive(lambda LambdaConfig, ecr EcrConfig, iam IamConfig, vpc VpcConfig, cl
 }
 
 func (c *Client) Mount(ctx context.Context) error {
-	if _, err := c.PutFunction(ctx); err != nil {
+	summary, err := c.mount(ctx)
+	if err != nil {
 		return err
+	}
+
+	// Log only action=put for consistency with other services
+	for _, function := range summary.FunctionsCreated {
+		log.Info().
+			Str("action", "put").
+			Str("name", function.Name).
+			Int32("memory", function.Memory).
+			Int32("disk", function.Disk).
+			Int32("timeout", function.Timeout).
+			Msg("lambda")
 	}
 
 	return nil
 }
 
 func (c *Client) Unmount(ctx context.Context) error {
-	if _, err := c.DeleteFunction(ctx); err != nil {
+	summary, err := c.unmount(ctx)
+	if err != nil {
 		return err
 	}
 
+	// Log action=delete
+	for _, function := range summary.FunctionsDeleted {
+		log.Info().
+			Str("action", "delete").
+			Str("name", function.Name).
+			Msg("lambda")
+	}
+
 	return nil
+}
+
+// Internal methods that return summaries of work done
+func (c *Client) mount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if _, err := c.PutFunction(ctx); err != nil {
+		return summary, err
+	}
+
+	// Record what was created
+	function := Function{
+		Name:    c.lambda.FunctionName(),
+		Memory:  c.lambda.MemorySize(),
+		Disk:    c.lambda.EphemeralStorage(),
+		Timeout: c.lambda.Timeout(),
+	}
+	summary.FunctionsCreated = append(summary.FunctionsCreated, function)
+
+	return summary, nil
+}
+
+func (c *Client) unmount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if _, err := c.DeleteFunction(ctx); err != nil {
+		return summary, err
+	}
+
+	// Record what was deleted
+	function := Function{
+		Name:    c.lambda.FunctionName(),
+		Memory:  c.lambda.MemorySize(),
+		Disk:    c.lambda.EphemeralStorage(),
+		Timeout: c.lambda.Timeout(),
+	}
+	summary.FunctionsDeleted = append(summary.FunctionsDeleted, function)
+
+	return summary, nil
 }
 
 // GET Operations
@@ -92,11 +164,6 @@ func (c *Client) GetImage(ctx context.Context) (registryv2.ImagePointer, error) 
 func (c *Client) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, error) {
 	var apiErr smithy.APIError
 	var architecture []types.Architecture
-
-	log.Info().
-		Str("action", "put").
-		Str("name", c.lambda.FunctionName()).
-		Msg("lambda")
 
 	image, err := c.GetImage(ctx)
 	if err != nil {

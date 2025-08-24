@@ -26,6 +26,24 @@ type IamConfig interface {
 	Tags() []types.Tag
 }
 
+type Resource struct {
+	Type string // "role" or "policy"
+	Name string
+}
+
+type Attachment struct {
+	Role     string
+	Policy   string
+	Boundary string
+}
+
+type Summary struct {
+	ResourcesCreated  []Resource
+	ResourcesDeleted  []Resource
+	AttachmentsCreated []Attachment
+	AttachmentsDeleted []Attachment
+}
+
 type Client struct {
 	iam IamConfig
 }
@@ -37,78 +55,128 @@ func Derive(iam IamConfig) *Client {
 }
 
 func (c *Client) Mount(ctx context.Context) error {
-	log.Info().
-		Str("action", "put").
-		Str("role", c.iam.EniRoleName()).
-		Msg("iam")
-
-	if err := c.PutEniRole(ctx); err != nil {
+	summary, err := c.mount(ctx)
+	if err != nil {
 		return err
 	}
 
-	log.Info().
-		Str("action", "put").
-		Str("policy", c.iam.PolicyName()).
-		Msg("iam")
-
-	if err := c.PutPolicy(ctx); err != nil {
-		return err
+	// Log all resources as action=put for consistency
+	for _, resource := range summary.ResourcesCreated {
+		log.Info().
+			Str("action", "put").
+			Str(resource.Type, resource.Name).
+			Msg("iam")
 	}
 
-	log.Info().
-		Str("action", "put").
-		Str("role", c.iam.PolicyName()).
-		Msg("iam")
-
-	if err := c.PutRole(ctx); err != nil {
-		return err
-	}
-
-	log.Info().
-		Str("action", "attach").
-		Str("role", c.iam.RoleName()).
-		Str("policy", c.iam.PolicyName()).
-		Str("boundary", c.iam.BoundaryPolicyName()).
-		Msg("iam")
-
-	if err := c.AttachRolePolicy(ctx); err != nil {
-		return err
+	// Log attachments separately
+	for _, attachment := range summary.AttachmentsCreated {
+		log.Info().
+			Str("action", "attach").
+			Str("role", attachment.Role).
+			Str("policy", attachment.Policy).
+			Str("boundary", attachment.Boundary).
+			Msg("iam")
 	}
 
 	return nil
 }
 
 func (c *Client) Unmount(ctx context.Context) error {
-	log.Info().
-		Str("action", "detach").
-		Str("role", c.iam.RoleName()).
-		Str("policy", c.iam.PolicyName()).
-		Str("boundary", c.iam.BoundaryPolicyName()).
-		Msg("iam")
-
-	if err := c.DetachRolePolicy(ctx); err != nil {
+	summary, err := c.unmount(ctx)
+	if err != nil {
 		return err
 	}
 
-	log.Info().
-		Str("action", "delete").
-		Str("role", c.iam.RoleName()).
-		Msg("iam")
-
-	if err := c.DeleteRole(ctx); err != nil {
-		return err
+	// Log detachments first
+	for _, attachment := range summary.AttachmentsDeleted {
+		log.Info().
+			Str("action", "detach").
+			Str("role", attachment.Role).
+			Str("policy", attachment.Policy).
+			Str("boundary", attachment.Boundary).
+			Msg("iam")
 	}
 
-	log.Info().
-		Str("action", "delete").
-		Str("policy", c.iam.PolicyName()).
-		Msg("iam")
-
-	if err := c.DeletePolicy(ctx); err != nil {
-		return err
+	// Log deletions
+	for _, resource := range summary.ResourcesDeleted {
+		log.Info().
+			Str("action", "delete").
+			Str(resource.Type, resource.Name).
+			Msg("iam")
 	}
 
 	return nil
+}
+
+// Internal methods that return summaries of work done
+func (c *Client) mount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if err := c.PutEniRole(ctx); err != nil {
+		return summary, err
+	}
+	summary.ResourcesCreated = append(summary.ResourcesCreated, Resource{
+		Type: "role",
+		Name: c.iam.EniRoleName(),
+	})
+
+	if err := c.PutPolicy(ctx); err != nil {
+		return summary, err
+	}
+	summary.ResourcesCreated = append(summary.ResourcesCreated, Resource{
+		Type: "policy",
+		Name: c.iam.PolicyName(),
+	})
+
+	if err := c.PutRole(ctx); err != nil {
+		return summary, err
+	}
+	summary.ResourcesCreated = append(summary.ResourcesCreated, Resource{
+		Type: "role",
+		Name: c.iam.RoleName(),
+	})
+
+	if err := c.AttachRolePolicy(ctx); err != nil {
+		return summary, err
+	}
+	summary.AttachmentsCreated = append(summary.AttachmentsCreated, Attachment{
+		Role:     c.iam.RoleName(),
+		Policy:   c.iam.PolicyName(),
+		Boundary: c.iam.BoundaryPolicyName(),
+	})
+
+	return summary, nil
+}
+
+func (c *Client) unmount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	if err := c.DetachRolePolicy(ctx); err != nil {
+		return summary, err
+	}
+	summary.AttachmentsDeleted = append(summary.AttachmentsDeleted, Attachment{
+		Role:     c.iam.RoleName(),
+		Policy:   c.iam.PolicyName(),
+		Boundary: c.iam.BoundaryPolicyName(),
+	})
+
+	if err := c.DeleteRole(ctx); err != nil {
+		return summary, err
+	}
+	summary.ResourcesDeleted = append(summary.ResourcesDeleted, Resource{
+		Type: "role",
+		Name: c.iam.RoleName(),
+	})
+
+	if err := c.DeletePolicy(ctx); err != nil {
+		return summary, err
+	}
+	summary.ResourcesDeleted = append(summary.ResourcesDeleted, Resource{
+		Type: "policy",
+		Name: c.iam.PolicyName(),
+	})
+
+	return summary, nil
 }
 
 // PUT OPERATIONS

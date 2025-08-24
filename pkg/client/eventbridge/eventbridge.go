@@ -36,6 +36,16 @@ type EventBridgeRule struct {
 	Document string
 }
 
+type Rule struct {
+	BusName  string
+	RuleName string
+}
+
+type Summary struct {
+	RulesCreated []Rule
+	RulesDeleted []Rule
+}
+
 type Client struct {
 	eventbridge EventBridgeConfig
 	lambda      LambdaConfig
@@ -49,43 +59,96 @@ func Derive(eventbridge EventBridgeConfig, lambda LambdaConfig) *Client {
 }
 
 func (s *Client) Mount(ctx context.Context) error {
-	definedRules, err := s.GetDefinedRules(ctx)
+	summary, err := s.mount(ctx)
 	if err != nil {
 		return err
 	}
 
-	for bus, rules := range definedRules {
-		for name, rule := range rules {
-			log.Debug().Str("bus", bus).Str("rule", name).Msg("put rule")
-			if err := s.PutRule(ctx, rule); err != nil {
-				return err
-			}
-		}
+	// Log only action=put for consistency with other services
+	for _, rule := range summary.RulesCreated {
+		log.Info().
+			Str("action", "put").
+			Str("bus", rule.BusName).
+			Str("rule", rule.RuleName).
+			Msg("eventbridge")
 	}
 
 	return nil
 }
 
 func (s *Client) Unmount(ctx context.Context) error {
-	rules, err := s.GetAssociatedRules(ctx)
+	summary, err := s.unmount(ctx)
 	if err != nil {
 		return err
+	}
+
+	// Log action=delete
+	for _, rule := range summary.RulesDeleted {
+		log.Info().
+			Str("action", "delete").
+			Str("bus", rule.BusName).
+			Str("rule", rule.RuleName).
+			Msg("eventbridge")
+	}
+
+	return nil
+}
+
+// Internal methods that return summaries of work done
+func (s *Client) mount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	definedRules, err := s.GetDefinedRules(ctx)
+	if err != nil {
+		return summary, err
+	}
+
+	for bus, rules := range definedRules {
+		for name, rule := range rules {
+			log.Debug().Str("bus", bus).Str("rule", name).Msg("put rule")
+			if err := s.PutRule(ctx, rule); err != nil {
+				return summary, err
+			}
+			
+			// Record what was created
+			summary.RulesCreated = append(summary.RulesCreated, Rule{
+				BusName:  bus,
+				RuleName: name,
+			})
+		}
+	}
+
+	return summary, nil
+}
+
+func (s *Client) unmount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	rules, err := s.GetAssociatedRules(ctx)
+	if err != nil {
+		return summary, err
 	}
 
 	for bus, rules := range rules {
 		for name, rule := range rules {
 			log.Debug().Str("bus", bus).Str("rule", name).Msg("delete rule")
 			if err := s.DeleteRule(ctx, rule); err != nil {
-				return err
+				return summary, err
 			}
+			
+			// Record what was deleted
+			summary.RulesDeleted = append(summary.RulesDeleted, Rule{
+				BusName:  bus,
+				RuleName: name,
+			})
 		}
 	}
 
 	if err := s.prune(ctx); err != nil {
-		return err
+		return summary, err
 	}
 
-	return nil
+	return summary, nil
 }
 
 func (s *Client) prune(ctx context.Context) error {
@@ -109,12 +172,6 @@ func (s *Client) prune(ctx context.Context) error {
 // PUT Operations
 func (s *Client) PutRule(ctx context.Context, rule EventBridgeRule) error {
 	var apiErr smithy.APIError
-
-	log.Info().
-		Str("bus", s.eventbridge.BusName()).
-		Str("rule", s.eventbridge.RuleName()).
-		Str("action", "put").
-		Msg("eventbridge")
 
 	putRuleInput := eventbridge.PutRuleInput{
 		EventBusName: aws.String(rule.BusName),

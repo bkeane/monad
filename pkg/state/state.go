@@ -73,7 +73,7 @@ func (s *State) Table(ctx context.Context) (string, error) {
 		if services[i].Repo != services[j].Repo {
 			return services[i].Repo < services[j].Repo
 		}
-		
+
 		// Within the same repo, current branch comes first
 		if services[i].Branch == currentBranch && services[j].Branch != currentBranch {
 			return true
@@ -81,16 +81,16 @@ func (s *State) Table(ctx context.Context) (string, error) {
 		if services[i].Branch != currentBranch && services[j].Branch == currentBranch {
 			return false
 		}
-		
+
 		// Otherwise sort alphabetically by branch within the same repo
 		return services[i].Branch < services[j].Branch
 	})
 
 	tbl := table.New()
 	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha")
-	
+
 	for _, service := range services {
-		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, service.Sha)
+		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, truncate(service.Sha))
 	}
 
 	return tbl.Render(), nil
@@ -141,4 +141,12 @@ func (s *State) extractFromTags(ctx context.Context, functionArn string) *StateM
 	}
 
 	return metadata
+}
+
+// truncate shortens git SHA to 7 characters for display
+func truncate(s string) string {
+	if len(s) <= 7 {
+		return s
+	}
+	return s[:7]
 }

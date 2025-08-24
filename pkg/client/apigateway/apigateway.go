@@ -55,6 +55,15 @@ type Permission struct {
 	StatementId string
 }
 
+type Summary struct {
+	RoutesDeleted       []Route
+	RoutesCreated       []Route
+	IntegrationsDeleted []Integration
+	IntegrationsCreated []Integration
+	PermissionsDeleted  []Permission
+	PermissionsCreated  []Permission
+}
+
 type Client struct {
 	apigateway ApiGatewayConfig
 	lambda     LambdaConfig
@@ -72,13 +81,59 @@ func Derive(apigateway ApiGatewayConfig, lambda LambdaConfig) *Client {
 }
 
 func (s *Client) Mount(ctx context.Context) error {
-	if err := s.Unmount(ctx); err != nil {
+	// Call internal unmount silently (don't log deletes)
+	if _, err := s.unmount(ctx); err != nil {
 		return err
 	}
 
-	api, err := s.GetApi(ctx, s.apigateway.ApiId())
+	// Call internal mount and log only the creates as action=put
+	summary, err := s.mount(ctx)
 	if err != nil {
 		return err
+	}
+
+	// Log only the creates as action=put for consistency with other services
+	for _, route := range summary.RoutesCreated {
+		authType := strings.ToLower(route.AuthorizationType)
+		log.Info().
+			Str("id", route.ApiId).
+			Str("route", route.RouteKey).
+			Str("auth", authType).
+			Str("action", "put").
+			Msg("apigatewayv2")
+	}
+
+	return nil
+}
+
+func (s *Client) Unmount(ctx context.Context) error {
+	// Call internal unmount and log the deletes as action=delete
+	summary, err := s.unmount(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Log the deletes as action=delete
+	for _, route := range summary.RoutesDeleted {
+		authType := strings.ToLower(route.AuthorizationType)
+		log.Info().
+			Str("id", route.ApiId).
+			Str("route", route.RouteKey).
+			Str("auth", authType).
+			Str("action", "delete").
+			Msg("apigatewayv2")
+	}
+
+	return nil
+}
+
+// Internal methods that return summaries of work done
+func (s *Client) mount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
+	api, err := s.GetApi(ctx, s.apigateway.ApiId())
+	if err != nil {
+		return summary, err
 	}
 
 	routeKeys := s.apigateway.Route()
@@ -87,7 +142,7 @@ func (s *Client) Mount(ctx context.Context) error {
 
 	// Validate 1:1 pairing (this should already be validated in param validation, but double-check)
 	if len(routeKeys) != len(authTypes) || len(routeKeys) != len(authorizerIds) {
-		return fmt.Errorf("route/auth configuration mismatch: %d routes, %d auth types, %d authorizer ids",
+		return summary, fmt.Errorf("route/auth configuration mismatch: %d routes, %d auth types, %d authorizer ids",
 			len(routeKeys), len(authTypes), len(authorizerIds))
 	}
 
@@ -95,66 +150,74 @@ func (s *Client) Mount(ctx context.Context) error {
 	for i := 0; i < len(routeKeys); i++ {
 		integration, err := s.CreateIntegration(ctx, api, i)
 		if err != nil {
-			return fmt.Errorf("failed to create integration for route %d: %w", i, err)
+			return summary, fmt.Errorf("failed to create integration for route %d: %w", i, err)
 		}
+		summary.IntegrationsCreated = append(summary.IntegrationsCreated, integration)
 
-		_, err = s.CreateRoute(ctx, api, integration, i)
+		route, err := s.CreateRoute(ctx, api, integration, i)
 		if err != nil {
-			return fmt.Errorf("failed to create route %d: %w", i, err)
+			return summary, fmt.Errorf("failed to create route %d: %w", i, err)
 		}
+		summary.RoutesCreated = append(summary.RoutesCreated, route)
 
-		_, err = s.CreatePermission(ctx, api, i)
+		permission, err := s.CreatePermission(ctx, api, i)
 		if err != nil {
-			return fmt.Errorf("failed to create permission for route %d: %w", i, err)
+			return summary, fmt.Errorf("failed to create permission for route %d: %w", i, err)
 		}
+		summary.PermissionsCreated = append(summary.PermissionsCreated, permission)
 	}
 
-	return nil
+	return summary, nil
 }
 
-func (s *Client) Unmount(ctx context.Context) error {
+func (s *Client) unmount(ctx context.Context) (Summary, error) {
+	var summary Summary
+
 	apis, err := s.GetApis(ctx)
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	routes, err := s.GetRoutes(ctx, apis)
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	integrations, err := s.GetIntegrations(ctx, apis)
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	permissions, err := s.GetPermissions(ctx, apis)
 	if err != nil {
-		return err
+		return summary, err
 	}
 
 	for _, route := range routes {
 		if _, err := s.DeleteRoute(ctx, route); err != nil {
-			return err
+			return summary, err
 		}
+		summary.RoutesDeleted = append(summary.RoutesDeleted, route)
 	}
 
 	for _, integration := range integrations {
 		if _, err := s.DeleteIntegration(ctx, integration); err != nil {
-			return err
+			return summary, err
 		}
+		summary.IntegrationsDeleted = append(summary.IntegrationsDeleted, integration)
 	}
 
 	for _, permission := range permissions {
 		if err := s.DeletePermissions(ctx, permission); err != nil {
-			return err
+			return summary, err
 		}
+		summary.PermissionsDeleted = append(summary.PermissionsDeleted, permission)
 	}
 
-	return nil
+	return summary, nil
 }
 
-// Create functions
+// Internal create functions (no logging)
 func (s *Client) CreateIntegration(ctx context.Context, api Api, routeIndex int) (Integration, error) {
 	forwardedPrefixes, err := s.apigateway.ForwardedPrefixes()
 	if err != nil {
@@ -229,16 +292,6 @@ func (s *Client) CreateRoute(ctx context.Context, api Api, integration Integrati
 		authorizerId = *route.AuthorizerId
 	}
 
-	// Convert AWS auth type to lowercase to match deploy format
-	authTypeStr := strings.ToLower(string(route.AuthorizationType))
-
-	log.Info().
-		Str("id", api.ApiId).
-		Str("route", *route.RouteKey).
-		Str("auth", authTypeStr).
-		Str("action", "put").
-		Msg("apigatewayv2")
-
 	return Route{
 		ApiId:             api.ApiId,
 		RouteId:           *route.RouteId,
@@ -280,22 +333,12 @@ func (s *Client) CreatePermission(ctx context.Context, api Api, routeIndex int) 
 	}, nil
 }
 
-// Delete functions
+// Internal delete functions (no logging)
 func (s *Client) DeleteRoute(ctx context.Context, route Route) (*apigatewayv2.DeleteRouteOutput, error) {
 	input := &apigatewayv2.DeleteRouteInput{
 		ApiId:   aws.String(route.ApiId),
 		RouteId: aws.String(route.RouteId),
 	}
-
-	// Convert AWS auth type to lowercase to match deploy format
-	authType := strings.ToLower(route.AuthorizationType)
-
-	log.Info().
-		Str("id", route.ApiId).
-		Str("route", route.RouteKey).
-		Str("auth", authType).
-		Str("action", "delete").
-		Msg("apigatewayv2")
 
 	return s.apigateway.Client().DeleteRoute(ctx, input)
 }
