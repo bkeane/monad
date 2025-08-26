@@ -9,6 +9,7 @@ import (
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/config"
 	"github.com/bkeane/monad/pkg/flag"
+	monadlog "github.com/bkeane/monad/pkg/log"
 	"github.com/bkeane/monad/pkg/scaffold"
 
 	"github.com/rs/zerolog"
@@ -207,6 +208,20 @@ func main() {
 							return nil
 						},
 					},
+				},
+			},
+			{
+				Name:   "logs",
+				Usage:  "stream logs from monad",
+				Flags:  flag.Flags[monadlog.Log](),
+				Before: flag.Before[monadlog.Log](),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					logs, err := pkg.Log(ctx)
+					if err != nil {
+						return err
+					}
+
+					return logs.Fetch(ctx)
 				},
 			},
 		},

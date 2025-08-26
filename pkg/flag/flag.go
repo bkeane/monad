@@ -80,10 +80,21 @@ func parseType(typ reflect.Type, visited map[reflect.Type]bool) []cli.Flag {
 			envVar := field.Tag.Get("env")
 			defaultValue := field.Tag.Get("default")
 			
-			// Clean the flag name (remove -- prefix if present)
-			cleanFlagName := strings.TrimPrefix(flagTag, "--")
+			// Parse flag name and aliases (comma-separated)
+			flagParts := strings.Split(flagTag, ",")
+			var cleanFlagName string
+			var aliases []string
 			
-			flag := createFlag(field.Type, cleanFlagName, usage, envVar, defaultValue)
+			for i, part := range flagParts {
+				cleanPart := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(part, "--"), "-"))
+				if i == 0 {
+					cleanFlagName = cleanPart
+				} else {
+					aliases = append(aliases, cleanPart)
+				}
+			}
+			
+			flag := createFlag(field.Type, cleanFlagName, usage, envVar, defaultValue, aliases)
 			if flag != nil {
 				flags = append(flags, flag)
 			}
@@ -107,7 +118,7 @@ func parseType(typ reflect.Type, visited map[reflect.Type]bool) []cli.Flag {
 }
 
 // createFlag creates the appropriate cli.Flag based on the field type
-func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string) cli.Flag {
+func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string, aliases []string) cli.Flag {
 	var sources cli.ValueSourceChain
 	if envVar != "" {
 		sources = cli.EnvVars(envVar)
@@ -124,6 +135,7 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		}
 		return &cli.StringFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       value,
@@ -142,6 +154,7 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		}
 		return &cli.IntFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       defaultInt,
@@ -160,6 +173,7 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		}
 		return &cli.BoolFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       defaultBool,
@@ -178,6 +192,7 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 			}
 			return &cli.StringSliceFlag{
 				Name:        name,
+				Aliases:     aliases,
 				Usage:       usage,
 				Sources:     sources,
 				Value:       defaultSlice,
@@ -187,7 +202,7 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		
 	case reflect.Ptr:
 		// Handle pointer types by checking the underlying type
-		return createFlag(fieldType.Elem(), name, usage, envVar, defaultValue)
+		return createFlag(fieldType.Elem(), name, usage, envVar, defaultValue, aliases)
 	}
 	
 	// For unsupported types, return nil and log a warning
