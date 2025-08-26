@@ -4,16 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/bkeane/monad/cmd/monad/pkg"
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/config"
 	"github.com/bkeane/monad/pkg/flag"
-	"github.com/bkeane/monad/pkg/registry"
-	"github.com/bkeane/monad/pkg/saga"
 	"github.com/bkeane/monad/pkg/scaffold"
-	"github.com/bkeane/monad/pkg/state"
-	"github.com/bkeane/monad/pkg/step"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -29,55 +25,6 @@ func init() {
 			zerolog.SetGlobalLevel(level)
 		}
 	}
-}
-
-func Basis(ctx context.Context) (*basis.Basis, error) {
-	return basis.Derive(ctx)
-}
-
-func Config(ctx context.Context) (*config.Config, error) {
-	basis, err := Basis(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return config.Derive(ctx, basis)
-}
-
-func Steps(ctx context.Context) (*step.Steps, error) {
-	config, err := Config(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return step.Derive(config)
-}
-
-func Saga(ctx context.Context) (*saga.Saga, error) {
-	steps, err := Steps(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return saga.Derive(ctx, steps), nil
-}
-
-func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
-	basis, err := Basis(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return scaffold.Derive(basis), nil
-}
-
-func Registry(ctx context.Context) (*registry.Client, error) {
-	config, err := Config(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return registry.Derive(config.Ecr()), nil
 }
 
 func main() {
@@ -103,7 +50,7 @@ func main() {
 						return fmt.Errorf("language is required")
 					}
 
-					scaffold, err := Scaffold(ctx)
+					scaffold, err := pkg.Scaffold(ctx)
 					if err != nil {
 						return err
 					}
@@ -117,7 +64,7 @@ func main() {
 				Flags:  flag.Flags[config.Config](),
 				Before: flag.Before[config.Config](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					saga, err := Saga(ctx)
+					saga, err := pkg.Saga(ctx)
 					if err != nil {
 						return err
 					}
@@ -129,7 +76,7 @@ func main() {
 				Name:  "destroy",
 				Usage: "destroy a monad",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					saga, err := Saga(ctx)
+					saga, err := pkg.Saga(ctx)
 					if err != nil {
 						return err
 					}
@@ -141,7 +88,7 @@ func main() {
 				Name:  "list",
 				Usage: "list monads",
 				Action: func(ctx context.Context, c *cli.Command) error {
-					state, err := state.Init(ctx)
+					state, err := pkg.State(ctx)
 					if err != nil {
 						return err
 					}
@@ -164,7 +111,7 @@ func main() {
 						Name:  "login",
 						Usage: "login to ecr",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							registry, err := Registry(ctx)
+							registry, err := pkg.Registry(ctx)
 							if err != nil {
 								return err
 							}
@@ -176,7 +123,7 @@ func main() {
 						Name:  "init",
 						Usage: "initialize monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							registry, err := Registry(ctx)
+							registry, err := pkg.Registry(ctx)
 							if err != nil {
 								return err
 							}
@@ -188,7 +135,7 @@ func main() {
 						Name:  "destroy",
 						Usage: "destroy a monad repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							registry, err := Registry(ctx)
+							registry, err := pkg.Registry(ctx)
 							if err != nil {
 								return err
 							}
@@ -200,7 +147,7 @@ func main() {
 						Name:  "untag",
 						Usage: "untag a monad image",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							registry, err := Registry(ctx)
+							registry, err := pkg.Registry(ctx)
 							if err != nil {
 								return err
 							}
@@ -218,20 +165,17 @@ func main() {
 						Name:  "list",
 						Usage: "list available key/values",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							basis, err := Basis(ctx)
+							basis, err := pkg.Basis(ctx)
 							if err != nil {
 								return err
 							}
 
-							vars := []string{"{{.Account.Id}}", "{{.Account.Region}}", "{{.Git.Repo}}", "{{.Git.Owner}}", "{{.Git.Branch}}", "{{.Git.Sha}}", "{{.Service.Name}}", "{{.Resource.Name}}", "{{.Resource.Path}}"}
-
-							for _, v := range vars {
-								val, err := basis.Render(v)
-								if err != nil {
-									return fmt.Errorf("failed to render %s: %w", v, err)
-								}
-								fmt.Printf("%-25s %s\n", v, strings.TrimSpace(val))
+							table, err := basis.Table()
+							if err != nil {
+								return err
 							}
+
+							fmt.Print(table)
 							return nil
 						},
 					},
@@ -244,7 +188,7 @@ func main() {
 								return fmt.Errorf("file required")
 							}
 
-							basis, err := Basis(ctx)
+							basis, err := pkg.Basis(ctx)
 							if err != nil {
 								return err
 							}

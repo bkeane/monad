@@ -1,6 +1,8 @@
 package step
 
 import (
+	"context"
+
 	"github.com/bkeane/monad/pkg/config"
 	"github.com/bkeane/monad/pkg/registry"
 	"github.com/bkeane/monad/pkg/step/apigateway"
@@ -28,15 +30,49 @@ type Steps struct {
 // Derive
 //
 
-func Derive(config *config.Config) (*Steps, error) {
-	registryClient := registry.Derive(config.Ecr())
+func Derive(ctx context.Context, config *config.Config) (*Steps, error) {
+	ecrConfig, err := config.Ecr(ctx)
+	if err != nil {
+		return nil, err
+	}
+	registryClient := registry.Derive(ecrConfig)
+
+	iamConfig, err := config.Iam(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudwatchConfig, err := config.CloudWatch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	lambdaConfig, err := config.Lambda(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	vpcConfig, err := config.Vpc(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	apigatewayConfig, err := config.ApiGateway(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eventbridgeConfig, err := config.EventBridge(ctx)
+	if err != nil {
+		return nil, err
+	}
 	
 	steps := &Steps{
-		iam:         iam.Derive(config.Iam()),
-		cloudwatch:  cloudwatch.Derive(config.CloudWatch()),
-		lambda:      lambda.Derive(config.Lambda(), registryClient, config.Iam(), config.Vpc(), config.CloudWatch()),
-		apigateway:  apigateway.Derive(config.ApiGateway(), config.Lambda()),
-		eventbridge: eventbridge.Derive(config.EventBridge(), config.Lambda()),
+		iam:         iam.Derive(iamConfig),
+		cloudwatch:  cloudwatch.Derive(cloudwatchConfig),
+		lambda:      lambda.Derive(lambdaConfig, registryClient, iamConfig, vpcConfig, cloudwatchConfig),
+		apigateway:  apigateway.Derive(apigatewayConfig, lambdaConfig),
+		eventbridge: eventbridge.Derive(eventbridgeConfig, lambdaConfig),
 	}
 
 	if err := steps.Validate(); err != nil {

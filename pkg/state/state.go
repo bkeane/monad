@@ -31,12 +31,7 @@ type State struct {
 	client *lambda.Client
 }
 
-func Init(ctx context.Context) (*State, error) {
-	basis, err := basis.Derive(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func Init(ctx context.Context, basis *basis.Basis) (*State, error) {
 	return &State{
 		basis:  basis,
 		client: lambda.NewFromConfig(basis.AwsConfig()),
