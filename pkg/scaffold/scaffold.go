@@ -19,8 +19,8 @@ type Basis interface {
 type Scaffold struct {
 	basis       Basis
 	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY"`
-	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE`
-	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV`
+	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE"`
+	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV"`
 }
 
 func Derive(basis Basis) *Scaffold {

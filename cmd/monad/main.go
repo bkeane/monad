@@ -50,7 +50,7 @@ func Steps(ctx context.Context) (*step.Steps, error) {
 		return nil, err
 	}
 
-	return step.Derive(config)
+	return step.Derive(ctx, config)
 }
 
 func Saga(ctx context.Context) (*saga.Saga, error) {
@@ -77,7 +77,12 @@ func Registry(ctx context.Context) (*registry.Client, error) {
 		return nil, err
 	}
 
-	return registry.Derive(config.Ecr()), nil
+	ecrConfig, err := config.Ecr(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return registry.Derive(ecrConfig), nil
 }
 
 func main() {
