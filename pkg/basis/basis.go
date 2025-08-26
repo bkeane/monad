@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,6 +17,7 @@ import (
 	"github.com/bkeane/monad/pkg/basis/service"
 	"github.com/rs/zerolog/log"
 
+	"github.com/charmbracelet/lipgloss/table"
 	env "github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
@@ -193,6 +195,33 @@ func (b *Basis) Render(input string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func (b *Basis) Table() (string, error) {
+	vars := []string{
+		"{{.Account.Id}}", 
+		"{{.Account.Region}}", 
+		"{{.Git.Repo}}", 
+		"{{.Git.Owner}}", 
+		"{{.Git.Branch}}", 
+		"{{.Git.Sha}}", 
+		"{{.Service.Name}}", 
+		"{{.Resource.Name}}", 
+		"{{.Resource.Path}}",
+	}
+
+	tbl := table.New()
+	tbl.Headers("Template", "Value")
+
+	for _, v := range vars {
+		val, err := b.Render(v)
+		if err != nil {
+			return "", fmt.Errorf("failed to render %s: %w", v, err)
+		}
+		tbl.Row(v, strings.TrimSpace(val))
+	}
+
+	return tbl.Render(), nil
 }
 
 //
