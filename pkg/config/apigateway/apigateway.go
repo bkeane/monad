@@ -129,7 +129,7 @@ func (c *Config) Client() *apigatewayv2.Client {
 }
 
 // Api returns the resolved API Gateway ID
-func (c *Config) ApiId() string { return c.ApiGateway }
+func (c *Config) ApiId() string { return c.ApiGatewayId }
 
 // Route returns the list of route patterns
 func (c *Config) Route() []string { return c.ApiGatewayRoutePatterns }
