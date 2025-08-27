@@ -12,9 +12,9 @@ import (
 // Basis
 
 type Basis struct {
-	AwsConfig aws.Config
-	AccountId string
-	Arn       string
+	CallerConfig  *aws.Config
+	CallerAccount *string
+	CallerArn     *string
 }
 
 //
@@ -25,22 +25,27 @@ func Derive(ctx context.Context) (*Basis, error) {
 	var err error
 	var basis Basis
 
-	basis.AwsConfig, err = config.LoadDefaultConfig(ctx)
+	awsconfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	client := sts.NewFromConfig(basis.AwsConfig)
-
+	client := sts.NewFromConfig(awsconfig)
 	caller, err := client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return nil, err
 	}
 
-	basis.AccountId = *caller.Account
-	basis.Arn = *caller.Arn
+	basis.CallerConfig = &awsconfig
+	basis.CallerAccount = caller.Account
+	basis.CallerArn = caller.Arn
 
-	return &basis, nil
+	err = basis.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return &basis, err
 }
 
 //
@@ -49,8 +54,22 @@ func Derive(ctx context.Context) (*Basis, error) {
 
 func (c *Basis) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.AwsConfig, v.Required),
-		v.Field(&c.AccountId, v.Required),
-		v.Field(&c.Arn, v.Required),
+		v.Field(&c.CallerConfig, v.Required),
+		v.Field(&c.CallerAccount, v.Required),
+		v.Field(&c.CallerArn, v.Required),
 	)
+}
+
+// Accessors
+
+func (c *Basis) AwsConfig() aws.Config {
+	return *c.CallerConfig
+}
+
+func (c *Basis) AccountId() string {
+	return *c.CallerAccount
+}
+
+func (c *Basis) Arn() string {
+	return *c.CallerArn
 }

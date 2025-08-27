@@ -40,6 +40,11 @@ func Derive() (*Basis, error) {
 		return nil, err
 	}
 
+	err = basis.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	return &basis, nil
 }
 
@@ -53,6 +58,20 @@ func (s *Basis) Validate() error {
 		v.Field(&s.Role, v.Required),
 		v.Field(&s.Env, v.Required),
 	)
+}
+
+// Accessors
+
+func (s *Basis) PolicyTemplate() string {
+	return s.Policy
+}
+
+func (s *Basis) RoleTemplate() string {
+	return s.Role
+}
+
+func (s *Basis) EnvTemplate() string {
+	return s.Env
 }
 
 //

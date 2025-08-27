@@ -5,10 +5,21 @@ import (
 	"sort"
 
 	"github.com/bkeane/monad/pkg/basis"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/git"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/charmbracelet/lipgloss/table"
 )
+
+//
+// Dependencies
+//
+
+type Basis interface {
+	Caller() (caller.Basis, error)
+	Git() (git.Basis, error)
+}
 
 //
 // StateMetadata
@@ -27,15 +38,28 @@ type StateMetadata struct {
 //
 
 type State struct {
-	basis  *basis.Basis
 	client *lambda.Client
+	caller *caller.Basis
+	git    *git.Basis
 }
 
 func Init(ctx context.Context, basis *basis.Basis) (*State, error) {
-	return &State{
-		basis:  basis,
-		client: lambda.NewFromConfig(basis.AwsConfig()),
-	}, nil
+	var err error
+	var state State
+
+	state.caller, err = basis.Caller()
+	if err != nil {
+		return nil, err
+	}
+
+	state.git, err = basis.Git()
+	if err != nil {
+		return nil, err
+	}
+
+	state.client = lambda.NewFromConfig(state.caller.AwsConfig())
+
+	return &state, nil
 }
 
 func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
@@ -62,7 +86,7 @@ func (s *State) Table(ctx context.Context) (string, error) {
 	}
 
 	// Sort by repo first, then by branch with current branch first within each repo
-	currentBranch := s.basis.GitBasis.Branch
+	currentBranch := s.git.Branch()
 	sort.Slice(services, func(i, j int) bool {
 		// First group by repo
 		if services[i].Repo != services[j].Repo {

@@ -46,7 +46,7 @@ func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
 		return nil, err
 	}
 
-	return scaffold.Derive(basis), nil
+	return scaffold.Derive(basis)
 }
 
 func Registry(ctx context.Context) (*registry.Client, error) {

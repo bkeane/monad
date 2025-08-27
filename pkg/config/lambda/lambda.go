@@ -6,21 +6,21 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/defaults"
+	"github.com/bkeane/monad/pkg/basis/resource"
 
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	dotenv "github.com/joho/godotenv"
 )
 
 type Basis interface {
-	AwsConfig() aws.Config
-	AccountId() string
-	Name() string
-	EnvTemplate() string
+	Caller() (*caller.Basis, error)
+	Resource() (*resource.Basis, error)
+	Defaults() (*defaults.Basis, error)
 	Render(string) (string, error)
-	Tags() map[string]string
 }
 
 //
@@ -28,16 +28,17 @@ type Basis interface {
 //
 
 type Config struct {
-	basis          Basis
-	client         *lambda.Client
-	RegionName     string `env:"MONAD_LAMBDA_REGION"`
-	StorageSize    int32  `env:"MONAD_STORAGE" flag:"--disk" usage:"Ephemeral storage size in MB"`
-	MemorySizeMB   int32  `env:"MONAD_MEMORY" flag:"--memory" usage:"Memory size in MB"`
-	TimeoutSeconds int32  `env:"MONAD_TIMEOUT" flag:"--timeout" usage:"Function timeout in seconds"`
-	RetryCount     int32  `env:"MONAD_RETRIES" flag:"--retry" usage:"Async function invoke retries"`
-	EnvPath        string `env:"MONAD_ENV" flag:"--env" usage:"Environment template file path"`
-	envTemplate    string
-	envMap         map[string]string
+	client        *lambda.Client
+	LambdaRegion  string `env:"MONAD_LAMBDA_REGION"`
+	LambdaStorage int32  `env:"MONAD_STORAGE" flag:"--disk" usage:"Lambda storage" hint:"mb"`
+	LambdaMemory  int32  `env:"MONAD_MEMORY" flag:"--memory" usage:"Lambda memory" hint:"mb"`
+	LambdaTimeout int32  `env:"MONAD_TIMEOUT" flag:"--timeout" usage:"Lambda timeout" hint:"sec"`
+	LambdaRetries int32  `env:"MONAD_RETRIES" flag:"--retry" usage:"Lambda async invoke retries" hint:"count"`
+	LambdaEnvPath string `env:"MONAD_ENV" flag:"--env" usage:"Lambda env template file path" hint:"path"`
+	caller        *caller.Basis
+	defaults      *defaults.Basis
+	resource      *resource.Basis
+	env           map[string]string
 }
 
 //
@@ -48,52 +49,67 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	var err error
 	var cfg Config
 
-	cfg.basis = basis
-	cfg.client = lambda.NewFromConfig(basis.AwsConfig())
+	cfg.caller, err = basis.Caller()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.defaults, err = basis.Defaults()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.resource, err = basis.Resource()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.client = lambda.NewFromConfig(cfg.caller.AwsConfig())
 
 	if err = env.Parse(&cfg); err != nil {
 		return nil, err
 	}
 
-	if cfg.RegionName == "" {
-		cfg.RegionName = basis.AwsConfig().Region
+	if cfg.LambdaRegion == "" {
+		cfg.LambdaRegion = cfg.caller.AwsConfig().Region
 	}
 
-	if cfg.StorageSize == 0 {
-		cfg.StorageSize = int32(512)
+	if cfg.LambdaStorage == 0 {
+		cfg.LambdaStorage = int32(512)
 	}
 
-	if cfg.MemorySizeMB == 0 {
-		cfg.MemorySizeMB = int32(128)
+	if cfg.LambdaMemory == 0 {
+		cfg.LambdaMemory = int32(128)
 	}
 
-	if cfg.TimeoutSeconds == 0 {
-		cfg.TimeoutSeconds = int32(3)
+	if cfg.LambdaTimeout == 0 {
+		cfg.LambdaTimeout = int32(3)
 	}
 
-	if cfg.RetryCount == 0 {
-		cfg.RetryCount = int32(0)
+	if cfg.LambdaRetries == 0 {
+		cfg.LambdaRetries = int32(0)
 	}
 
 	// Env derivation
-	if cfg.EnvPath == "" {
-		cfg.envTemplate = basis.EnvTemplate()
+	var envTemplate string
+
+	if cfg.LambdaEnvPath == "" {
+		envTemplate = cfg.defaults.EnvTemplate()
 
 	} else {
-		bytes, err := os.ReadFile(cfg.EnvPath)
+		bytes, err := os.ReadFile(cfg.LambdaEnvPath)
 		if err != nil {
 			return nil, err
 		}
-		cfg.envTemplate = string(bytes)
+		envTemplate = string(bytes)
 	}
 
-	// Render the environment template before parsing
-	renderedEnvTemplate, err := cfg.basis.Render(cfg.envTemplate)
+	templated, err := basis.Render(envTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render env template: %w", err)
 	}
 
-	cfg.envMap, err = dotenv.Parse(strings.NewReader(renderedEnvTemplate))
+	cfg.env, err = dotenv.Parse(strings.NewReader(templated))
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +127,13 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.RegionName, v.Required),
-		v.Field(&c.StorageSize, v.Required),
-		v.Field(&c.MemorySizeMB, v.Required),
-		v.Field(&c.TimeoutSeconds, v.Required),
-		v.Field(&c.RetryCount, v.Min(int32(0))),
+		v.Field(&c.LambdaRegion, v.Required),
+		v.Field(&c.LambdaStorage, v.Required),
+		v.Field(&c.LambdaMemory, v.Required),
+		v.Field(&c.LambdaTimeout, v.Required),
+		v.Field(&c.LambdaRetries, v.Min(int32(0))),
+		v.Field(&c.env, v.Required),
 	)
 }
 
@@ -129,35 +145,37 @@ func (c *Config) Validate() error {
 func (c *Config) Client() *lambda.Client { return c.client }
 
 // Region returns the AWS region for Lambda deployment
-func (c *Config) Region() string { return c.RegionName }
+func (c *Config) Region() string { return c.LambdaRegion }
 
 // Timeout returns the function timeout in seconds
-func (c *Config) Timeout() int32 { return c.TimeoutSeconds }
+func (c *Config) Timeout() int32 { return c.LambdaTimeout }
 
 // MemorySize returns the allocated memory in MB
-func (c *Config) MemorySize() int32 { return c.MemorySizeMB }
+func (c *Config) MemorySize() int32 { return c.LambdaMemory }
 
 // EphemeralStorage returns the ephemeral storage size in MB
-func (c *Config) EphemeralStorage() int32 { return c.StorageSize }
+func (c *Config) EphemeralStorage() int32 { return c.LambdaStorage }
 
 // Retries returns the number of async invoke retries
-func (c *Config) Retries() int32 { return c.RetryCount }
+func (c *Config) Retries() int32 { return c.LambdaRetries }
 
-// FunctionName returns the Lambda function name using axiom resource naming
-func (c *Config) FunctionName() string { return c.basis.Name() }
+// FunctionName returns the Lambda function name using basis resource naming
+func (c *Config) FunctionName() string {
+	return c.resource.Name()
+}
 
 // FunctionArn returns the complete ARN for the Lambda function
 func (c *Config) FunctionArn() string {
 	return fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s",
-		c.RegionName, c.basis.AccountId(), c.FunctionName())
+		c.LambdaRegion, c.caller.AccountId(), c.FunctionName())
 }
 
 // Env returns a map derived from the given env document
 func (c *Config) Env() map[string]string {
-	return c.envMap
+	return c.env
 }
 
 // Tags returns standardized Lambda resource tags
 func (c *Config) Tags() map[string]string {
-	return c.basis.Tags()
+	return c.resource.Tags()
 }

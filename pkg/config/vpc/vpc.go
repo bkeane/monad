@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bkeane/monad/pkg/basis/caller"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -14,8 +16,7 @@ import (
 )
 
 type Basis interface {
-	AwsConfig() aws.Config
-	Name() string
+	Caller() (*caller.Basis, error)
 }
 
 //
@@ -23,12 +24,11 @@ type Basis interface {
 //
 
 type Config struct {
-	basis            Basis
-	client           *ec2.Client
-	SecurityGroupNames []string `env:"MONAD_SECURITY_GROUPS" flag:"--vpc-sg" usage:"VPC security group IDs or names"`
-	securityGroupIds []string
-	SubnetNames        []string `env:"MONAD_SUBNETS" flag:"--vpc-sn" usage:"VPC subnet IDs or names"`
-	subnetIds        []string
+	client              *ec2.Client
+	VpcSecurityGroups   []string `env:"MONAD_SECURITY_GROUPS" flag:"--vpc-sg" usage:"VPC security group IDs or names" hint:"name|id"`
+	VpcSecurityGroupIds []string
+	VpcSubnets          []string `env:"MONAD_SUBNETS" flag:"--vpc-sn" usage:"VPC subnet IDs or names" hint:"name|id"`
+	VpcSubnetIds        []string
 }
 
 //
@@ -44,8 +44,12 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		return nil, err
 	}
 
-	cfg.basis = basis
-	cfg.client = ec2.NewFromConfig(basis.AwsConfig())
+	caller, err := basis.Caller()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.client = ec2.NewFromConfig(caller.AwsConfig())
 
 	if err := cfg.resolveSecurityGroups(ctx); err != nil {
 		return nil, err
@@ -65,16 +69,15 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 // Validate ensures VPC configuration is complete
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
 		// When security groups are provided, subnets must be provided
-		v.Field(&c.securityGroupIds, v.When(len(c.subnetIds) != 0, v.Required)),
+		v.Field(&c.VpcSecurityGroups, v.When(len(c.VpcSubnets) != 0, v.Required)),
 		// When subnets are provided, security groups must be provided
-		v.Field(&c.subnetIds, v.When(len(c.SecurityGroupNames) != 0, v.Required)),
+		v.Field(&c.VpcSubnets, v.When(len(c.VpcSecurityGroups) != 0, v.Required)),
 		// When security groups are provided, we must resolve them
-		v.Field(&c.securityGroupIds, v.When(len(c.SecurityGroupNames) != 0, v.Required)),
+		v.Field(&c.VpcSecurityGroupIds, v.When(len(c.VpcSecurityGroups) != 0, v.Required)),
 		// When subnets are provided, we must resolve them
-		v.Field(&c.subnetIds, v.When(len(c.SubnetNames) != 0, v.Required)),
+		v.Field(&c.VpcSubnets, v.When(len(c.VpcSubnets) != 0, v.Required)),
 	)
 }
 
@@ -86,16 +89,16 @@ func (c *Config) Validate() error {
 func (c *Config) Client() *ec2.Client { return c.client }
 
 // SecurityGroups returns the security group names/IDs from configuration
-func (c *Config) SecurityGroups() []string { return c.SecurityGroupNames }
-
-// Subnets returns the subnet names/IDs from configuration
-func (c *Config) Subnets() []string { return c.SubnetNames }
+func (c *Config) SecurityGroups() []string { return c.VpcSecurityGroups }
 
 // SecurityGroupIds returns the resolved security group IDs
-func (c *Config) SecurityGroupIds() []string { return c.securityGroupIds }
+func (c *Config) SecurityGroupIds() []string { return c.VpcSecurityGroupIds }
+
+// Subnets returns the subnet names/IDs from configuration
+func (c *Config) Subnets() []string { return c.VpcSubnets }
 
 // SubnetIds returns the resolved subnet IDs
-func (c *Config) SubnetIds() []string { return c.subnetIds }
+func (c *Config) SubnetIds() []string { return c.VpcSubnetIds }
 
 //
 // Helpers
@@ -103,9 +106,9 @@ func (c *Config) SubnetIds() []string { return c.subnetIds }
 
 // resolveSecurityGroups resolves security group names to IDs
 func (c *Config) resolveSecurityGroups(ctx context.Context) error {
-	for _, nameOrId := range c.SecurityGroupNames {
+	for _, nameOrId := range c.VpcSecurityGroups {
 		if strings.HasPrefix(nameOrId, "sg-") {
-			c.securityGroupIds = append(c.securityGroupIds, nameOrId)
+			c.VpcSecurityGroupIds = append(c.VpcSecurityGroupIds, nameOrId)
 			continue
 		}
 
@@ -125,7 +128,7 @@ func (c *Config) resolveSecurityGroups(ctx context.Context) error {
 
 		for _, sg := range result.SecurityGroups {
 			if *sg.GroupName == nameOrId {
-				c.securityGroupIds = append(c.securityGroupIds, *sg.GroupId)
+				c.VpcSecurityGroupIds = append(c.VpcSecurityGroupIds, *sg.GroupId)
 			}
 		}
 	}
@@ -135,9 +138,9 @@ func (c *Config) resolveSecurityGroups(ctx context.Context) error {
 
 // resolveSubnets resolves subnet names to IDs
 func (c *Config) resolveSubnets(ctx context.Context) error {
-	for _, nameOrId := range c.SubnetNames {
+	for _, nameOrId := range c.VpcSubnets {
 		if strings.HasPrefix(nameOrId, "subnet-") {
-			c.subnetIds = append(c.subnetIds, nameOrId)
+			c.VpcSubnetIds = append(c.VpcSubnetIds, nameOrId)
 			continue
 		}
 
@@ -158,12 +161,12 @@ func (c *Config) resolveSubnets(ctx context.Context) error {
 		for _, subnet := range result.Subnets {
 			for _, tag := range subnet.Tags {
 				if *tag.Key == "Name" && *tag.Value == nameOrId {
-					c.subnetIds = append(c.subnetIds, *subnet.SubnetId)
+					c.VpcSubnetIds = append(c.VpcSubnetIds, *subnet.SubnetId)
 				}
 			}
 		}
 
-		if len(c.subnetIds) == 0 {
+		if len(c.VpcSubnetIds) == 0 {
 			log.Warn().Str("given", nameOrId).Msg("no subnets found for given")
 		}
 	}

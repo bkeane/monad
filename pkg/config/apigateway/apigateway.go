@@ -8,16 +8,16 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewayv2"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/resource"
 	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/rs/zerolog/log"
 )
 
 type Basis interface {
-	AwsConfig() aws.Config
-	Region() string
-	Name() string
-	AccountId() string
+	Caller() (*caller.Basis, error)
+	Resource() (*resource.Basis, error)
 	Render(string) (string, error)
 }
 
@@ -26,15 +26,17 @@ type Basis interface {
 //
 
 type Config struct {
-	client        *apigatewayv2.Client
-	basis         Basis
-	Api           string   `env:"MONAD_API" flag:"--api" usage:"API Gateway ID or name"`
-	RegionName    string   `env:"MONAD_API_REGION"`
-	RoutePatterns []string `env:"MONAD_ROUTE" flag:"--route" usage:"API Gateway route patterns"`
-	AuthTypes     []string `env:"MONAD_AUTH" flag:"--auth" usage:"API Gateway authorization types"`
-	apiId         string
-	authType      []string
-	authorizerId  []string
+	client                  *apigatewayv2.Client
+	ApiGateway              string   `env:"MONAD_API" flag:"--api" usage:"API Gateway ID or name" hint:"name|id"`
+	ApiGatewayRegion        string   `env:"MONAD_API_REGION"`
+	ApiGatewayRoutePatterns []string `env:"MONAD_ROUTE" flag:"--route" usage:"API Gateway route patterns" hint:"pattern"`
+	ApiGatewayAuthTypes     []string `env:"MONAD_AUTH" flag:"--auth" usage:"API Gateway authorization types" hint:"name|id"`
+	ApiGatewayId            string
+	ApiGatewayAuthType      []string
+	ApiGatewayAuthorizerId  []string
+	caller                  *caller.Basis
+	resource                *resource.Basis
+	basis                   Basis
 }
 
 //
@@ -51,32 +53,43 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	}
 
 	cfg.basis = basis
-	cfg.client = apigatewayv2.NewFromConfig(basis.AwsConfig())
 
-	if cfg.RegionName == "" {
-		cfg.RegionName = basis.Region()
+	cfg.resource, err = basis.Resource()
+	if err != nil {
+		return nil, err
 	}
 
-	if len(cfg.RoutePatterns) == 0 {
+	cfg.caller, err = basis.Caller()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.client = apigatewayv2.NewFromConfig(cfg.caller.AwsConfig())
+
+	if cfg.ApiGatewayRegion == "" {
+		cfg.ApiGatewayRegion = cfg.caller.AwsConfig().Region
+	}
+
+	if len(cfg.ApiGatewayRoutePatterns) == 0 {
 		standard := "ANY /{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}/{proxy+}"
-		cfg.RoutePatterns = append(cfg.RoutePatterns, standard)
+		cfg.ApiGatewayRoutePatterns = append(cfg.ApiGatewayRoutePatterns, standard)
 	}
 
 	// Render template variables in route patterns
-	for i, pattern := range cfg.RoutePatterns {
+	for i, pattern := range cfg.ApiGatewayRoutePatterns {
 		rendered, err := cfg.basis.Render(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to render route pattern %q: %w", pattern, err)
 		}
-		cfg.RoutePatterns[i] = rendered
+		cfg.ApiGatewayRoutePatterns[i] = rendered
 	}
 
-	if len(cfg.AuthTypes) == 0 {
+	if len(cfg.ApiGatewayAuthTypes) == 0 {
 		standard := "aws_iam"
-		cfg.AuthTypes = append(cfg.AuthTypes, standard)
+		cfg.ApiGatewayAuthTypes = append(cfg.ApiGatewayAuthTypes, standard)
 	}
 
-	if cfg.Api != "" {
+	if cfg.ApiGateway != "" {
 		if err = cfg.resolve(ctx); err != nil {
 			return nil, err
 		}
@@ -97,12 +110,12 @@ func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
 		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.RoutePatterns, v.Required, v.Each(v.By(onlyGreedyProxies)), v.Length(len(c.AuthTypes), len(c.AuthTypes))),
-		v.Field(&c.RegionName, v.Required),
-		v.Field(&c.AuthTypes, v.Required),
-		v.Field(&c.authType, v.Each(v.In("NONE", "AWS_IAM", "CUSTOM", "JWT"))),
-		v.Field(&c.authType, v.Length(len(c.authorizerId), len(c.authorizerId))),
-		v.Field(&c.authorizerId, v.Length(len(c.authType), len(c.authType))),
+		v.Field(&c.ApiGatewayRoutePatterns, v.Required, v.Each(v.By(onlyGreedyProxies)), v.Length(len(c.ApiGatewayAuthTypes), len(c.ApiGatewayAuthTypes))),
+		v.Field(&c.ApiGatewayRegion, v.Required),
+		v.Field(&c.ApiGatewayAuthTypes, v.Required),
+		v.Field(&c.ApiGatewayAuthType, v.Each(v.In("NONE", "AWS_IAM", "CUSTOM", "JWT"))),
+		v.Field(&c.ApiGatewayAuthType, v.Length(len(c.ApiGatewayAuthorizerId), len(c.ApiGatewayAuthorizerId))),
+		v.Field(&c.ApiGatewayAuthorizerId, v.Length(len(c.ApiGatewayAuthType), len(c.ApiGatewayAuthType))),
 	)
 }
 
@@ -116,19 +129,19 @@ func (c *Config) Client() *apigatewayv2.Client {
 }
 
 // Api returns the resolved API Gateway ID
-func (c *Config) ApiId() string { return c.apiId }
+func (c *Config) ApiId() string { return c.ApiGateway }
 
 // Route returns the list of route patterns
-func (c *Config) Route() []string { return c.RoutePatterns }
+func (c *Config) Route() []string { return c.ApiGatewayRoutePatterns }
 
 // Auth returns the list of authorization configurations
-func (c *Config) Auth() []string { return c.AuthTypes }
+func (c *Config) Auth() []string { return c.ApiGatewayAuthTypes }
 
 // AuthType returns the resolved authorization types
-func (c *Config) AuthType() []string { return c.authType }
+func (c *Config) AuthType() []string { return c.ApiGatewayAuthType }
 
 // AuthorizerId returns the resolved authorizer IDs
-func (c *Config) AuthorizerId() []string { return c.authorizerId }
+func (c *Config) AuthorizerId() []string { return c.ApiGatewayAuthorizerId }
 
 // ForwardedPrefixes returns path prefixes extracted from all route patterns
 func (c *Config) ForwardedPrefixes() ([]string, error) {
@@ -143,7 +156,7 @@ func (c *Config) ForwardedPrefixes() ([]string, error) {
 
 // PermissionStatementId returns Lambda permission statement ID for API Gateway
 func (c *Config) PermissionStatementId(apiId string) string {
-	return strings.Join([]string{"apigatewayv2", c.basis.Name(), apiId}, "-")
+	return strings.Join([]string{"apigatewayv2", c.resource.Name(), apiId}, "-")
 }
 
 // PermissionSourceArns returns API Gateway execution ARNs for Lambda permissions
@@ -152,7 +165,7 @@ func (c *Config) PermissionSourceArns() ([]string, error) {
 	for _, routeKey := range c.Route() {
 		routeWithoutVerb := strings.Split(routeKey, " ")[1]
 		permissionSourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*%s",
-			c.RegionName, c.basis.AccountId(), c.ApiId(), routeWithoutVerb)
+			c.ApiGatewayRegion, c.caller.AccountId(), c.ApiId(), routeWithoutVerb)
 		sourceArns = append(sourceArns, permissionSourceArn)
 	}
 	return sourceArns, nil
@@ -193,19 +206,19 @@ func (c *Config) resolveApi(ctx context.Context) error {
 		apiIds = append(apiIds, *api.ApiId)
 		apiNames = append(apiNames, *api.Name)
 
-		if *api.Name == c.Api || *api.ApiId == c.Api {
-			c.apiId = *api.ApiId
+		if *api.Name == c.ApiGateway || *api.ApiId == c.ApiGateway {
+			c.ApiGatewayId = *api.ApiId
 			return nil
 		}
 	}
 
 	log.Error().
-		Str("given", c.Api).
+		Str("given", c.ApiGateway).
 		Strs("valid_ids", apiIds).
 		Strs("valid_names", apiNames).
 		Msg("API not found")
 
-	return fmt.Errorf("API %s not found", c.Api)
+	return fmt.Errorf("API %s not found", c.ApiGateway)
 }
 
 // resolveAuth resolves authorizer names to IDs and types
@@ -214,12 +227,12 @@ func (c *Config) resolveAuth(ctx context.Context) error {
 	foundIds := []string{"", ""}
 	foundTypes := []string{"NONE", "AWS_IAM"}
 
-	if c.apiId == "" {
+	if c.ApiGatewayId == "" {
 		return fmt.Errorf("API Gateway ID not resolved, cannot resolve authorizers")
 	}
 
 	index, err := c.client.GetAuthorizers(ctx, &apigatewayv2.GetAuthorizersInput{
-		ApiId: aws.String(c.apiId),
+		ApiId: aws.String(c.ApiGatewayId),
 	})
 	if err != nil {
 		return err
@@ -236,28 +249,28 @@ func (c *Config) resolveAuth(ctx context.Context) error {
 			len(foundIds), len(foundNames), len(foundTypes))
 	}
 
-	for _, given := range c.AuthTypes {
+	for _, given := range c.ApiGatewayAuthTypes {
 		if slices.Contains(foundIds, given) {
 			index := slices.Index(foundIds, given)
-			c.authorizerId = append(c.authorizerId, foundIds[index])
-			c.authType = append(c.authType, foundTypes[index])
+			c.ApiGatewayAuthorizerId = append(c.ApiGatewayAuthorizerId, foundIds[index])
+			c.ApiGatewayAuthType = append(c.ApiGatewayAuthType, foundTypes[index])
 			continue
 		}
 
 		if slices.Contains(foundNames, strings.ToLower(given)) {
 			index := slices.Index(foundNames, strings.ToLower(given))
-			c.authorizerId = append(c.authorizerId, foundIds[index])
-			c.authType = append(c.authType, foundTypes[index])
+			c.ApiGatewayAuthorizerId = append(c.ApiGatewayAuthorizerId, foundIds[index])
+			c.ApiGatewayAuthType = append(c.ApiGatewayAuthType, foundTypes[index])
 			continue
 		}
 
 		log.Error().
-			Str("api", c.apiId).
+			Str("api", c.ApiGatewayId).
 			Strs("valid_ids", foundIds).
 			Strs("valid_names", foundNames).
 			Msg("resolve auth")
 
-		return fmt.Errorf("authorizer %s not found for API %s", given, c.apiId)
+		return fmt.Errorf("authorizer %s not found for API %s", given, c.ApiGatewayId)
 	}
 
 	return nil

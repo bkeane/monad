@@ -299,11 +299,6 @@ func (c *Step) PutFunction(ctx context.Context) (*lambda.GetFunctionOutput, erro
 func (c *Step) DeleteFunction(ctx context.Context) (*lambda.DeleteFunctionOutput, error) {
 	var apiErr smithy.APIError
 
-	log.Info().
-		Str("action", "delete").
-		Str("name", c.lambda.FunctionName()).
-		Msg("lambda")
-
 	delete := &lambda.DeleteFunctionInput{
 		FunctionName: aws.String(c.lambda.FunctionName()),
 	}

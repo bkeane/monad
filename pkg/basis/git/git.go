@@ -14,11 +14,11 @@ import (
 //
 
 type Basis struct {
-	cwd        string
-	Owner      string `env:"MONAD_OWNER" flag:"--owner" usage:"Git repository owner"`
-	Repository string `env:"MONAD_REPO" flag:"--repo" usage:"Git repository name"`
-	Branch     string `env:"MONAD_BRANCH" flag:"--branch" usage:"Git branch name"`
-	Sha        string `env:"MONAD_SHA" flag:"--sha" usage:"Git commit SHA"`
+	cwd       string
+	GitOwner  string `env:"MONAD_OWNER" flag:"--owner" usage:"Git repository owner" hint:"name"`
+	GitRepo   string `env:"MONAD_REPO" flag:"--repo" usage:"Git repository name" hint:"name"`
+	GitBranch string `env:"MONAD_BRANCH" flag:"--branch" usage:"Git branch name" hint:"name"`
+	GitSha    string `env:"MONAD_SHA" flag:"--sha" usage:"Git commit SHA" hint:"hash"`
 }
 
 //
@@ -38,36 +38,41 @@ func Derive() (*Basis, error) {
 		return nil, err
 	}
 
-	if basis.Owner == "" {
+	if basis.GitOwner == "" {
 		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		basis.Owner = git.Owner
+		basis.GitOwner = git.Owner
 	}
 
-	if basis.Repository == "" {
+	if basis.GitRepo == "" {
 		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		basis.Repository = git.Repo
+		basis.GitRepo = git.Repo
 	}
 
-	if basis.Branch == "" {
+	if basis.GitBranch == "" {
 		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		basis.Branch = git.Branch
+		basis.GitBranch = git.Branch
 	}
 
-	if basis.Sha == "" {
+	if basis.GitSha == "" {
 		git, err := git.Parse(basis.cwd)
 		if err != nil {
 			return nil, err
 		}
-		basis.Sha = git.Sha
+		basis.GitSha = git.Sha
+	}
+
+	err = basis.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	return &basis, nil
@@ -79,9 +84,29 @@ func Derive() (*Basis, error) {
 
 func (g *Basis) Validate() error {
 	return v.ValidateStruct(g,
-		v.Field(&g.Owner, v.Required),
-		v.Field(&g.Repository, v.Required),
-		v.Field(&g.Branch, v.Required),
-		v.Field(&g.Sha, v.Required),
+		v.Field(&g.GitOwner, v.Required),
+		v.Field(&g.GitRepo, v.Required),
+		v.Field(&g.GitBranch, v.Required),
+		v.Field(&g.GitSha, v.Required),
 	)
+}
+
+//
+// Accessors
+//
+
+func (g *Basis) Owner() string {
+	return g.GitOwner
+}
+
+func (g *Basis) Repo() string {
+	return g.GitRepo
+}
+
+func (g *Basis) Branch() string {
+	return g.GitBranch
+}
+
+func (g *Basis) Sha() string {
+	return g.GitSha
 }

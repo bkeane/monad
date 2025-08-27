@@ -5,17 +5,16 @@ import (
 	"strings"
 
 	"github.com/bkeane/monad/internal/registryv2"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/registry"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type Basis interface {
-	AwsConfig() aws.Config
-	RegistryId() string
-	RegistryRegion() string
-	Image() string
+	Caller() (*caller.Basis, error)
+	Registry() (*registry.Basis, error)
 }
 
 //
@@ -23,9 +22,10 @@ type Basis interface {
 //
 
 type Config struct {
-	basis      Basis
-	ecr        *ecr.Client
+	client     *ecr.Client
 	registryv2 *registryv2.Client
+	caller     *caller.Basis
+	registry   *registry.Basis
 }
 
 //
@@ -36,10 +36,19 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	var err error
 	var cfg Config
 
-	cfg.basis = basis
-	cfg.ecr = ecr.NewFromConfig(basis.AwsConfig())
+	cfg.caller, err = basis.Caller()
+	if err != nil {
+		return nil, err
+	}
 
-	cfg.registryv2, err = registryv2.InitEcr(ctx, basis.AwsConfig(), basis.RegistryId(), basis.RegistryRegion())
+	cfg.registry, err = basis.Registry()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.client = ecr.NewFromConfig(cfg.caller.AwsConfig())
+
+	cfg.registryv2, err = registryv2.InitEcr(ctx, cfg.caller.AwsConfig(), cfg.registry.Id(), cfg.registry.Region())
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +66,7 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.basis, v.Required),
-		v.Field(&c.ecr, v.Required),
+		v.Field(&c.registry, v.Required),
 		v.Field(&c.registryv2, v.Required),
 	)
 }
@@ -69,18 +77,17 @@ func (c *Config) Validate() error {
 
 // Client returns the registry client
 func (c *Config) Clients() (*ecr.Client, *registryv2.Client) {
-	return c.ecr, c.registryv2
+	return c.client, c.registryv2
 }
 
 // ImagePath returns the path of the image
 func (c *Config) ImagePath() string {
-	parts := strings.Split(c.basis.Image(), ":")
+	parts := strings.Split(c.registry.Image(), ":")
 	return parts[0]
 }
 
 // ImageTag returns the tag of the image
 func (c *Config) ImageTag() string {
-	parts := strings.Split(c.basis.Image(), ":")
+	parts := strings.Split(c.registry.Image(), ":")
 	return parts[1]
 }
-

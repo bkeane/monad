@@ -4,27 +4,26 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/resource"
 	"github.com/caarlos0/env/v11"
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type Basis interface {
-	AwsConfig() aws.Config
-	AccountId() string
-	Region() string
-	Name() string
-	Tags() map[string]string
+	Caller() (*caller.Basis, error)
+	Resource() (*resource.Basis, error)
 }
 
 // Convention
 
 type Config struct {
-	basis         Basis
-	client        *cloudwatchlogs.Client
-	RegionName    string `env:"MONAD_LOG_REGION"`
-	RetentionDays int32  `env:"MONAD_LOG_RETENTION" flag:"--retention" usage:"Log retention period in days"`
+	client              *cloudwatchlogs.Client
+	CloudWatchRegion    string `env:"MONAD_LOG_REGION"`
+	CloudWatchRetention int32  `env:"MONAD_LOG_RETENTION" flag:"--retention" usage:"CloudWatch log retention" hint:"days"`
+	resource            *resource.Basis
+	caller              *caller.Basis
 }
 
 //
@@ -40,15 +39,24 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		return nil, err
 	}
 
-	cfg.basis = basis
-	cfg.client = cloudwatchlogs.NewFromConfig(basis.AwsConfig())
-
-	if cfg.RegionName == "" {
-		cfg.RegionName = basis.Region()
+	cfg.caller, err = basis.Caller()
+	if err != nil {
+		return nil, err
 	}
 
-	if cfg.RetentionDays == 0 {
-		cfg.RetentionDays = int32(14)
+	cfg.resource, err = basis.Resource()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.client = cloudwatchlogs.NewFromConfig(cfg.caller.AwsConfig())
+
+	if cfg.CloudWatchRegion == "" {
+		cfg.CloudWatchRegion = cfg.caller.AwsConfig().Region
+	}
+
+	if cfg.CloudWatchRetention == 0 {
+		cfg.CloudWatchRetention = int32(14)
 	}
 
 	if err = cfg.Validate(); err != nil {
@@ -64,34 +72,35 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
-		v.Field(&c.basis, v.Required),
 		v.Field(&c.client, v.Required),
-		v.Field(&c.RegionName, v.Required),
-		v.Field(&c.RetentionDays, v.Required),
+		v.Field(&c.CloudWatchRegion, v.Required),
+		v.Field(&c.CloudWatchRetention, v.Required),
 	)
 }
 
 // Accessors
+
+func (c *Config) Region() string { return c.CloudWatchRegion }
 
 // Client returns the AWS CloudWatch service client
 func (c *Config) Client() *cloudwatchlogs.Client { return c.client }
 
 // Name returns the CloudWatch log group name for the Lambda function
 func (c *Config) Name() string {
-	return fmt.Sprintf("/aws/lambda/%s", c.basis.Name())
+	return fmt.Sprintf("/aws/lambda/%s", c.resource.Name())
 }
 
 // Arn returns the complete ARN for the CloudWatch log group
 func (c *Config) Arn() string {
-	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.RegionName, c.basis.AccountId(), c.Name())
+	return fmt.Sprintf("arn:aws:logs:%s:%s:log-group:%s", c.Region(), c.caller.AccountId(), c.Name())
 }
 
 // LogGroupRetention returns the log retention period in days
 func (c *Config) Retention() int32 {
-	return c.RetentionDays
+	return c.CloudWatchRetention
 }
 
 // LogGroupTags returns the CloudWatch log group tags
 func (c *Config) Tags() map[string]string {
-	return c.basis.Tags()
+	return c.resource.Tags()
 }

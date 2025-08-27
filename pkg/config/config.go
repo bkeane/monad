@@ -3,7 +3,12 @@ package config
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/defaults"
+	"github.com/bkeane/monad/pkg/basis/git"
+	"github.com/bkeane/monad/pkg/basis/registry"
+	"github.com/bkeane/monad/pkg/basis/resource"
+	"github.com/bkeane/monad/pkg/basis/service"
 	"github.com/bkeane/monad/pkg/config/apigateway"
 	"github.com/bkeane/monad/pkg/config/cloudwatch"
 	"github.com/bkeane/monad/pkg/config/ecr"
@@ -18,20 +23,13 @@ import (
 //
 
 type Basis interface {
-	AwsConfig() aws.Config
-	AccountId() string
-	RegistryId() string
-	RegistryRegion() string
-	Region() string
-	Name() string
-	Path() string
-	Image() string
-	Tags() map[string]string
-	PolicyTemplate() string
-	RoleTemplate() string
-	EnvTemplate() string
+	Git() (*git.Basis, error)
+	Caller() (*caller.Basis, error)
+	Service() (*service.Basis, error)
+	Resource() (*resource.Basis, error)
+	Registry() (*registry.Basis, error)
+	Defaults() (*defaults.Basis, error)
 	Render(string) (string, error)
-	Validate() error
 }
 
 //
@@ -39,17 +37,17 @@ type Basis interface {
 //
 
 type Config struct {
-	// Fields for cached lazy loading and flag definition
-	ApiGatewayCfg  *apigateway.Config
-	CloudWatchCfg  *cloudwatch.Config
-	EventBridgeCfg *eventbridge.Config
-	IamCfg         *iam.Config
-	LambdaCfg      *lambda.Config
-	EcrCfg         *ecr.Config
-	VpcCfg         *vpc.Config
-
 	// Basis for lazy initialization
 	basis Basis
+
+	// Fields for cached lazy loading and flag definition
+	ApiGatewayConfig  *apigateway.Config
+	CloudWatchConfig  *cloudwatch.Config
+	EventBridgeConfig *eventbridge.Config
+	IamConfig         *iam.Config
+	LambdaConfig      *lambda.Config
+	EcrConfig         *ecr.Config
+	VpcConfig         *vpc.Config
 }
 
 //
@@ -57,14 +55,9 @@ type Config struct {
 //
 
 func Derive(ctx context.Context, basis Basis) (*Config, error) {
-	var err error
 	var cfg Config
 
 	cfg.basis = basis
-
-	if err = cfg.basis.Validate(); err != nil {
-		return nil, err
-	}
 
 	return &cfg, nil
 }
@@ -76,125 +69,125 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 func (c *Config) Lambda(ctx context.Context) (*lambda.Config, error) {
 	var err error
 
-	if c.LambdaCfg == nil {
-		c.LambdaCfg, err = lambda.Derive(ctx, c.basis)
+	if c.LambdaConfig == nil {
+		c.LambdaConfig, err = lambda.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.LambdaCfg.Validate()
+		err = c.LambdaConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.LambdaCfg, nil
+	return c.LambdaConfig, nil
 }
 
 func (c *Config) ApiGateway(ctx context.Context) (*apigateway.Config, error) {
 	var err error
 
-	if c.ApiGatewayCfg == nil {
-		c.ApiGatewayCfg, err = apigateway.Derive(ctx, c.basis)
+	if c.ApiGatewayConfig == nil {
+		c.ApiGatewayConfig, err = apigateway.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.ApiGatewayCfg.Validate()
+		err = c.ApiGatewayConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.ApiGatewayCfg, nil
+	return c.ApiGatewayConfig, nil
 }
 
 func (c *Config) EventBridge(ctx context.Context) (*eventbridge.Config, error) {
 	var err error
 
-	if c.EventBridgeCfg == nil {
-		c.EventBridgeCfg, err = eventbridge.Derive(ctx, c.basis)
+	if c.EventBridgeConfig == nil {
+		c.EventBridgeConfig, err = eventbridge.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.EventBridgeCfg.Validate()
+		err = c.EventBridgeConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.EventBridgeCfg, nil
+	return c.EventBridgeConfig, nil
 }
 
 func (c *Config) CloudWatch(ctx context.Context) (*cloudwatch.Config, error) {
 	var err error
 
-	if c.CloudWatchCfg == nil {
-		c.CloudWatchCfg, err = cloudwatch.Derive(ctx, c.basis)
+	if c.CloudWatchConfig == nil {
+		c.CloudWatchConfig, err = cloudwatch.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.CloudWatchCfg.Validate()
+		err = c.CloudWatchConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.CloudWatchCfg, nil
+	return c.CloudWatchConfig, nil
 }
 
 func (c *Config) Ecr(ctx context.Context) (*ecr.Config, error) {
 	var err error
 
-	if c.EcrCfg == nil {
-		c.EcrCfg, err = ecr.Derive(ctx, c.basis)
+	if c.EcrConfig == nil {
+		c.EcrConfig, err = ecr.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.EcrCfg.Validate()
+		err = c.EcrConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.EcrCfg, nil
+	return c.EcrConfig, nil
 }
 
 func (c *Config) Iam(ctx context.Context) (*iam.Config, error) {
 	var err error
 
-	if c.IamCfg == nil {
-		c.IamCfg, err = iam.Derive(ctx, c.basis)
+	if c.IamConfig == nil {
+		c.IamConfig, err = iam.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.IamCfg.Validate()
+		err = c.IamConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.IamCfg, nil
+	return c.IamConfig, nil
 }
 
 func (c *Config) Vpc(ctx context.Context) (*vpc.Config, error) {
 	var err error
 
-	if c.VpcCfg == nil {
-		c.VpcCfg, err = vpc.Derive(ctx, c.basis)
+	if c.VpcConfig == nil {
+		c.VpcConfig, err = vpc.Derive(ctx, c.basis)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.VpcCfg.Validate()
+		err = c.VpcConfig.Validate()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return c.VpcCfg, nil
+	return c.VpcConfig, nil
 }

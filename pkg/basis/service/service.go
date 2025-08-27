@@ -8,10 +8,12 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
+//
 // Basis
+//
 
 type Basis struct {
-	Name string `env:"MONAD_SERVICE" flag:"--service" usage:"Service name"`
+	ServiceName string `env:"MONAD_SERVICE" flag:"--service" usage:"Service name" hint:"name"`
 }
 
 //
@@ -26,13 +28,18 @@ func Derive() (*Basis, error) {
 		return nil, err
 	}
 
-	if basis.Name == "" {
+	if basis.ServiceName == "" {
 		wd, err := os.Getwd()
 		if err != nil {
 			return nil, err
 		}
 
-		basis.Name = filepath.Base(wd)
+		basis.ServiceName = filepath.Base(wd)
+	}
+
+	err = basis.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	return &basis, nil
@@ -44,6 +51,14 @@ func Derive() (*Basis, error) {
 
 func (s *Basis) Validate() error {
 	return v.ValidateStruct(s,
-		v.Field(&s.Name, v.Required),
+		v.Field(&s.ServiceName, v.Required),
 	)
+}
+
+//
+// Accessors
+//
+
+func (s *Basis) Name() string {
+	return s.ServiceName
 }
