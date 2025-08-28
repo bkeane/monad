@@ -11,7 +11,26 @@ env:
   RELEVANT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
+  test:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEVANT_BRANCH }}
+
+      - name: setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: run unit tests
+        run: go test ./pkg/... -v
+
   integration:
+    needs: test
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read

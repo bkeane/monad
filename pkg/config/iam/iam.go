@@ -97,7 +97,7 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		cfg.IamRolePath = string(bytes)
+		cfg.IamRoleTemplate = string(bytes)
 	}
 
 	cfg.IamRoleDocument, err = basis.Render(cfg.IamRoleTemplate)

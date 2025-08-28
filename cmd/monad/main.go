@@ -213,15 +213,20 @@ func main() {
 			{
 				Name:   "logs",
 				Usage:  "stream logs from monad",
-				Flags:  flag.Flags[monadlog.Log](),
-				Before: flag.Before[monadlog.Log](),
+				Flags:  flag.Flags[monadlog.LogGroup](),
+				Before: flag.Before[monadlog.LogGroup](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					logs, err := pkg.Log(ctx)
 					if err != nil {
 						return err
 					}
 
-					return logs.Fetch(ctx)
+					if logs.LogGroupTail {
+						return logs.Tail(ctx)
+					}
+
+					return logs.Dump(ctx)
+
 				},
 			},
 		},

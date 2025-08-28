@@ -72,7 +72,7 @@ func State(ctx context.Context) (*state.State, error) {
 	return state.Init(ctx, basis)
 }
 
-func Log(ctx context.Context) (*log.Log, error) {
+func Log(ctx context.Context) (*log.LogGroup, error) {
 	config, err := Config(ctx)
 	if err != nil {
 		return nil, err
@@ -83,5 +83,5 @@ func Log(ctx context.Context) (*log.Log, error) {
 		return nil, err
 	}
 
-	return log.Derive(cloudwatchConfig), nil
+	return log.Derive(cloudwatchConfig)
 }

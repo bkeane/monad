@@ -399,8 +399,9 @@ func exportType(typ reflect.Type, visited map[reflect.Type]bool, cmd *cli.Comman
 		
 		// If field has both flag and env annotations, check if flag is set
 		if flagTag != "" && flagTag != "-" && envVar != "" {
-			// Clean the flag name (remove -- prefix if present)
-			cleanFlagName := strings.TrimPrefix(flagTag, "--")
+			// Parse the flag name (handle aliases by taking first name)
+			flagNames := strings.Split(flagTag, ",")
+			cleanFlagName := strings.TrimPrefix(strings.TrimSpace(flagNames[0]), "--")
 			
 			if cmd.IsSet(cleanFlagName) {
 				value := getFlagValue(cmd, cleanFlagName, field.Type)
