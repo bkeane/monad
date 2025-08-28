@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bkeane/monad/cmd/monad/desc"
 	"github.com/bkeane/monad/cmd/monad/pkg"
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/config"
@@ -38,11 +39,12 @@ func main() {
 		Before: flag.Before[basis.Basis](),
 		Commands: []*cli.Command{
 			{
-				Name:      "init",
-				Usage:     "scaffold a monad",
-				UsageText: "monad init <LANGUAGE> [LOCATION]",
-				Flags:     flag.Flags[scaffold.Scaffold](),
-				Before:    flag.Before[scaffold.Scaffold](),
+				Name:        "init",
+				Usage:       "scaffold a monad",
+				UsageText:   "monad init <LANGUAGE> [LOCATION]",
+				Description: desc.Init(),
+				Flags:       flag.Flags[scaffold.Scaffold](),
+				Before:      flag.Before[scaffold.Scaffold](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					language := cmd.Args().Get(0)
 					targetDir := cmd.Args().Get(1)
@@ -105,8 +107,10 @@ func main() {
 				},
 			},
 			{
-				Name:  "ecr",
-				Usage: "monad artifacts",
+				Name:   "ecr",
+				Usage:  "monad artifacts",
+				Flags:  flag.Flags[basis.Basis](),
+				Before: flag.Before[basis.Basis](),
 				Commands: []*cli.Command{
 					{
 						Name:  "login",
@@ -159,8 +163,10 @@ func main() {
 				},
 			},
 			{
-				Name:  "data",
-				Usage: "contextual templating",
+				Name:   "render",
+				Usage:  "contextual templating",
+				Flags:  flag.Flags[basis.Basis](),
+				Before: flag.Before[basis.Basis](),
 				Commands: []*cli.Command{
 					{
 						Name:  "list",
@@ -181,7 +187,7 @@ func main() {
 						},
 					},
 					{
-						Name:  "render",
+						Name:  "file",
 						Usage: "render file to stdout",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							file := cmd.Args().First()
@@ -200,6 +206,29 @@ func main() {
 							}
 
 							result, err := basis.Render(string(content))
+							if err != nil {
+								return err
+							}
+
+							fmt.Print(result)
+							return nil
+						},
+					},
+					{
+						Name:  "string",
+						Usage: "render string to stdout",
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							input := cmd.Args().First()
+							if input == "" {
+								return fmt.Errorf("input required")
+							}
+
+							basis, err := pkg.Basis(ctx)
+							if err != nil {
+								return err
+							}
+
+							result, err := basis.Render(input)
 							if err != nil {
 								return err
 							}
