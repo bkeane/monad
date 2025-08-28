@@ -7,24 +7,28 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bkeane/monad/pkg/basis/defaults"
 	"github.com/rs/zerolog/log"
 )
 
 type Basis interface {
-	PolicyTemplate() string
-	RoleTemplate() string
-	EnvTemplate() string
+	Defaults() (*defaults.Basis, error)
 }
 
 type Scaffold struct {
-	basis       Basis
 	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY"`
 	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE"`
 	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV"`
+	defaults    *defaults.Basis
 }
 
-func Derive(basis Basis) *Scaffold {
-	return &Scaffold{basis: basis}
+func Derive(basis Basis) (*Scaffold, error) {
+	defaults, err := basis.Defaults()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Scaffold{defaults: defaults}, nil
 }
 
 func (s *Scaffold) Create(language, targetDir string) error {
@@ -96,15 +100,15 @@ func (s *Scaffold) copyScaffold(scaffoldPath, targetDir string) error {
 }
 
 func (s *Scaffold) writePolicy(targetDir string) error {
-	return s.writeTemplate("policy.json.tmpl", s.basis.PolicyTemplate(), targetDir)
+	return s.writeTemplate("policy.json.tmpl", s.defaults.PolicyTemplate(), targetDir)
 }
 
 func (s *Scaffold) writeRole(targetDir string) error {
-	return s.writeTemplate("role.json.tmpl", s.basis.RoleTemplate(), targetDir)
+	return s.writeTemplate("role.json.tmpl", s.defaults.RoleTemplate(), targetDir)
 }
 
 func (s *Scaffold) writeEnv(targetDir string) error {
-	return s.writeTemplate(".env.tmpl", s.basis.EnvTemplate(), targetDir)
+	return s.writeTemplate(".env.tmpl", s.defaults.EnvTemplate(), targetDir)
 }
 
 func (s *Scaffold) writeTemplate(filename, content, targetDir string) error {

@@ -8,18 +8,15 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/bkeane/monad/pkg/basis/caller"
 	"github.com/bkeane/monad/pkg/basis/defaults"
-	"github.com/bkeane/monad/pkg/basis/ecr"
 	"github.com/bkeane/monad/pkg/basis/git"
+	"github.com/bkeane/monad/pkg/basis/registry"
 	"github.com/bkeane/monad/pkg/basis/resource"
 	"github.com/bkeane/monad/pkg/basis/service"
-	"github.com/rs/zerolog/log"
 
-	"github.com/charmbracelet/lipgloss/table"
 	env "github.com/caarlos0/env/v11"
-	v "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 //
@@ -27,11 +24,11 @@ import (
 //
 
 type Basis struct {
-	Chdir         string `env:"MONAD_CHDIR" flag:"--chdir" usage:"Change working directory"`
+	Chdir         string `env:"MONAD_CHDIR" flag:"--chdir" usage:"Change working directory" hint:"path"`
 	GitBasis      *git.Basis
 	CallerBasis   *caller.Basis
 	ServiceBasis  *service.Basis
-	EcrBasis      *ecr.Basis
+	RegistryBasis *registry.Basis
 	ResourceBasis *resource.Basis
 	DefaultBasis  *defaults.Basis
 }
@@ -78,95 +75,112 @@ func Derive(ctx context.Context) (*Basis, error) {
 		}
 	}
 
-	basis.GitBasis, err = git.Derive()
-	if err != nil {
-		return nil, err
-	}
-
-	basis.CallerBasis, err = caller.Derive(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	basis.ServiceBasis, err = service.Derive()
-	if err != nil {
-		return nil, err
-	}
-
-	basis.DefaultBasis, err = defaults.Derive()
-	if err != nil {
-		return nil, err
-	}
-
-	basis.ResourceBasis, err = resource.Derive(basis.GitBasis, basis.ServiceBasis)
-	if err != nil {
-		return nil, err
-	}
-
-	basis.EcrBasis, err = ecr.Derive(basis.CallerBasis, basis.GitBasis, basis.ServiceBasis)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = basis.Validate(); err != nil {
-		return nil, err
-	}
-
-	log.Info().
-		Str("owner", basis.GitBasis.Owner).
-		Str("repo", basis.GitBasis.Repository).
-		Str("branch", basis.GitBasis.Branch).
-		Str("sha", truncate(basis.GitBasis.Sha)).
-		Msg("git")
-
-	log.Info().
-		Str("account", basis.CallerBasis.AccountId).
-		Str("region", basis.CallerBasis.AwsConfig.Region).
-		Msg("caller")
-
-	log.Info().
-		Str("id", basis.EcrBasis.RegistryId).
-		Str("region", basis.EcrBasis.RegistryRegion).
-		Str("image", basis.EcrBasis.Image).
-		Msg("ecr")
-
 	return basis, nil
-}
-
-//
-// Validations
-//
-
-func (b *Basis) Validate() error {
-	return v.ValidateStruct(b,
-		v.Field(&b.GitBasis),
-		v.Field(&b.CallerBasis),
-		v.Field(&b.ServiceBasis),
-		v.Field(&b.DefaultBasis),
-		v.Field(&b.ResourceBasis),
-		v.Field(&b.EcrBasis),
-	)
 }
 
 //
 // Accessors
 //
 
-func (b *Basis) AwsConfig() aws.Config { return b.CallerBasis.AwsConfig }
-func (b *Basis) AccountId() string     { return b.CallerBasis.AccountId }
-func (b *Basis) Region() string        { return b.CallerBasis.AwsConfig.Region }
+func (b *Basis) Git() (*git.Basis, error) {
+	var err error
 
-func (b *Basis) Name() string            { return b.ResourceBasis.Name }
-func (b *Basis) Path() string            { return b.ResourceBasis.Path }
-func (b *Basis) Tags() map[string]string { return b.ResourceBasis.Tags }
+	if b.GitBasis == nil {
+		b.GitBasis, err = git.Derive()
+		if err != nil {
+			return nil, err
+		}
+	}
 
-func (b *Basis) Image() string          { return b.EcrBasis.Image }
-func (b *Basis) RegistryId() string     { return b.EcrBasis.RegistryId }
-func (b *Basis) RegistryRegion() string { return b.EcrBasis.RegistryRegion }
+	return b.GitBasis, nil
+}
 
-func (b *Basis) PolicyTemplate() string { return b.DefaultBasis.Policy }
-func (b *Basis) RoleTemplate() string   { return b.DefaultBasis.Role }
-func (b *Basis) EnvTemplate() string    { return b.DefaultBasis.Env }
+func (b *Basis) Caller() (*caller.Basis, error) {
+	var err error
+
+	if b.CallerBasis == nil {
+		ctx := context.Background()
+		b.CallerBasis, err = caller.Derive(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.CallerBasis, nil
+}
+
+func (b *Basis) Service() (*service.Basis, error) {
+	var err error
+
+	if b.ServiceBasis == nil {
+		b.ServiceBasis, err = service.Derive()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.ServiceBasis, nil
+}
+
+func (b *Basis) Resource() (*resource.Basis, error) {
+	if b.ResourceBasis == nil {
+		gitBasis, err := b.Git()
+		if err != nil {
+			return nil, err
+		}
+
+		serviceBasis, err := b.Service()
+		if err != nil {
+			return nil, err
+		}
+
+		b.ResourceBasis, err = resource.Derive(gitBasis, serviceBasis)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.ResourceBasis, nil
+}
+
+func (b *Basis) Registry() (*registry.Basis, error) {
+	if b.RegistryBasis == nil {
+		callerBasis, err := b.Caller()
+		if err != nil {
+			return nil, err
+		}
+
+		gitBasis, err := b.Git()
+		if err != nil {
+			return nil, err
+		}
+
+		serviceBasis, err := b.Service()
+		if err != nil {
+			return nil, err
+		}
+
+		b.RegistryBasis, err = registry.Derive(callerBasis, gitBasis, serviceBasis)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.RegistryBasis, nil
+}
+
+func (b *Basis) Defaults() (*defaults.Basis, error) {
+	var err error
+
+	if b.DefaultBasis == nil {
+		b.DefaultBasis, err = defaults.Derive()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.DefaultBasis, nil
+}
 
 //
 // Templating
@@ -174,15 +188,36 @@ func (b *Basis) EnvTemplate() string    { return b.DefaultBasis.Env }
 
 func (b *Basis) Render(input string) (string, error) {
 	data := TemplateData{}
-	data.Account.Id = b.CallerBasis.AccountId
-	data.Account.Region = b.CallerBasis.AwsConfig.Region
-	data.Git.Repo = b.GitBasis.Repository
-	data.Git.Owner = b.GitBasis.Owner
-	data.Git.Branch = b.GitBasis.Branch
-	data.Git.Sha = b.GitBasis.Sha
-	data.Service.Name = b.ServiceBasis.Name
-	data.Resource.Name = b.ResourceBasis.Name
-	data.Resource.Path = b.ResourceBasis.Path
+
+	caller, err := b.Caller()
+	if err != nil {
+		return "", err
+	}
+
+	git, err := b.Git()
+	if err != nil {
+		return "", err
+	}
+
+	service, err := b.Service()
+	if err != nil {
+		return "", err
+	}
+
+	resource, err := b.Resource()
+	if err != nil {
+		return "", err
+	}
+
+	data.Account.Id = caller.AccountId()
+	data.Account.Region = caller.AwsConfig().Region
+	data.Git.Repo = git.Repo()
+	data.Git.Owner = git.Owner()
+	data.Git.Branch = git.Branch()
+	data.Git.Sha = git.Sha()
+	data.Service.Name = service.Name()
+	data.Resource.Name = resource.Name()
+	data.Resource.Path = resource.Path()
 
 	tmpl, err := template.New("template").Parse(input)
 	if err != nil {
@@ -199,14 +234,14 @@ func (b *Basis) Render(input string) (string, error) {
 
 func (b *Basis) Table() (string, error) {
 	vars := []string{
-		"{{.Account.Id}}", 
-		"{{.Account.Region}}", 
-		"{{.Git.Repo}}", 
-		"{{.Git.Owner}}", 
-		"{{.Git.Branch}}", 
-		"{{.Git.Sha}}", 
-		"{{.Service.Name}}", 
-		"{{.Resource.Name}}", 
+		"{{.Account.Id}}",
+		"{{.Account.Region}}",
+		"{{.Git.Repo}}",
+		"{{.Git.Owner}}",
+		"{{.Git.Branch}}",
+		"{{.Git.Sha}}",
+		"{{.Service.Name}}",
+		"{{.Resource.Name}}",
 		"{{.Resource.Path}}",
 	}
 
@@ -222,16 +257,4 @@ func (b *Basis) Table() (string, error) {
 	}
 
 	return tbl.Render(), nil
-}
-
-//
-// Helpers
-//
-
-// truncate shortens git SHA to 7 characters for display
-func truncate(s string) string {
-	if len(s) <= 7 {
-		return s
-	}
-	return s[:7]
 }

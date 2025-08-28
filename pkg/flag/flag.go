@@ -11,6 +11,94 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// CustomIntFlag embeds cli.IntFlag and allows overriding the type name
+type CustomIntFlag struct {
+	*cli.IntFlag
+	typeName string
+}
+
+// TypeName returns the custom type name if set, otherwise falls back to default
+func (f *CustomIntFlag) TypeName() string {
+	if f.typeName != "" {
+		return f.typeName
+	}
+	return f.IntFlag.TypeName()
+}
+
+// String overrides the string representation to use custom type name
+func (f *CustomIntFlag) String() string {
+	if f.typeName != "" {
+		original := f.IntFlag.String()
+		// Replace " int\t" with our custom type name
+		return strings.ReplaceAll(original, " int\t", " "+f.typeName+"\t")
+	}
+	return f.IntFlag.String()
+}
+
+// CustomStringFlag embeds cli.StringFlag and allows overriding the type name
+type CustomStringFlag struct {
+	*cli.StringFlag
+	typeName string
+}
+
+// TypeName returns the custom type name if set, otherwise falls back to default
+func (f *CustomStringFlag) TypeName() string {
+	if f.typeName != "" {
+		return f.typeName
+	}
+	return f.StringFlag.TypeName()
+}
+
+// String overrides the string representation to use custom type name
+func (f *CustomStringFlag) String() string {
+	if f.typeName != "" {
+		original := f.StringFlag.String()
+		// Replace " string\t" with our custom type name
+		return strings.ReplaceAll(original, " string\t", " "+f.typeName+"\t")
+	}
+	return f.StringFlag.String()
+}
+
+// CustomBoolFlag embeds cli.BoolFlag and allows overriding the type name
+type CustomBoolFlag struct {
+	*cli.BoolFlag
+	typeName string
+}
+
+// TypeName returns the custom type name if set, otherwise falls back to default
+func (f *CustomBoolFlag) TypeName() string {
+	if f.typeName != "" {
+		return f.typeName
+	}
+	return f.BoolFlag.TypeName()
+}
+
+// CustomStringSliceFlag embeds cli.StringSliceFlag and allows overriding the type name
+type CustomStringSliceFlag struct {
+	*cli.StringSliceFlag
+	typeName string
+}
+
+// TypeName returns the custom type name if set, otherwise falls back to default
+func (f *CustomStringSliceFlag) TypeName() string {
+	if f.typeName != "" {
+		return f.typeName
+	}
+	return f.StringSliceFlag.TypeName()
+}
+
+// String overrides the string representation to use custom type name
+func (f *CustomStringSliceFlag) String() string {
+	if f.typeName != "" {
+		original := f.StringSliceFlag.String()
+		// Replace " string " or " string\t" with our custom type name for slice flags
+		result := strings.ReplaceAll(original, " string\t", " "+f.typeName+"\t")
+		result = strings.ReplaceAll(result, " string ", " "+f.typeName+" ")
+		return result
+	}
+	return f.StringSliceFlag.String()
+}
+
 // Global configuration for flag behavior
 var (
 	disableDefaults bool
@@ -79,11 +167,23 @@ func parseType(typ reflect.Type, visited map[reflect.Type]bool) []cli.Flag {
 			usage := field.Tag.Get("usage")
 			envVar := field.Tag.Get("env")
 			defaultValue := field.Tag.Get("default")
+			hint := field.Tag.Get("hint")
 			
-			// Clean the flag name (remove -- prefix if present)
-			cleanFlagName := strings.TrimPrefix(flagTag, "--")
+			// Parse flag name and aliases (comma-separated)
+			flagParts := strings.Split(flagTag, ",")
+			var cleanFlagName string
+			var aliases []string
 			
-			flag := createFlag(field.Type, cleanFlagName, usage, envVar, defaultValue)
+			for i, part := range flagParts {
+				cleanPart := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(part, "--"), "-"))
+				if i == 0 {
+					cleanFlagName = cleanPart
+				} else {
+					aliases = append(aliases, cleanPart)
+				}
+			}
+			
+			flag := createFlag(field.Type, cleanFlagName, usage, envVar, defaultValue, hint, aliases)
 			if flag != nil {
 				flags = append(flags, flag)
 			}
@@ -107,7 +207,7 @@ func parseType(typ reflect.Type, visited map[reflect.Type]bool) []cli.Flag {
 }
 
 // createFlag creates the appropriate cli.Flag based on the field type
-func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string) cli.Flag {
+func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue, hint string, aliases []string) cli.Flag {
 	var sources cli.ValueSourceChain
 	if envVar != "" {
 		sources = cli.EnvVars(envVar)
@@ -122,13 +222,24 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		} else if disableDefaults {
 			hideDefault = true
 		}
-		return &cli.StringFlag{
+		
+		baseFlag := &cli.StringFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       value,
 			HideDefault: hideDefault,
 		}
+		
+		// Use custom flag if hint is provided
+		if hint != "" {
+			return &CustomStringFlag{
+				StringFlag: baseFlag,
+				typeName:   hint,
+			}
+		}
+		return baseFlag
 		
 	case reflect.Int, reflect.Int32, reflect.Int64:
 		var defaultInt int
@@ -140,13 +251,24 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		} else if disableDefaults {
 			hideDefault = true
 		}
-		return &cli.IntFlag{
+		
+		baseFlag := &cli.IntFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       defaultInt,
 			HideDefault: hideDefault,
 		}
+		
+		// Use custom flag if hint is provided
+		if hint != "" {
+			return &CustomIntFlag{
+				IntFlag:  baseFlag,
+				typeName: hint,
+			}
+		}
+		return baseFlag
 		
 	case reflect.Bool:
 		var defaultBool bool
@@ -158,13 +280,24 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 		} else if disableDefaults {
 			hideDefault = true
 		}
-		return &cli.BoolFlag{
+		
+		baseFlag := &cli.BoolFlag{
 			Name:        name,
+			Aliases:     aliases,
 			Usage:       usage,
 			Sources:     sources,
 			Value:       defaultBool,
 			HideDefault: hideDefault,
 		}
+		
+		// Use custom flag if hint is provided
+		if hint != "" {
+			return &CustomBoolFlag{
+				BoolFlag: baseFlag,
+				typeName: hint,
+			}
+		}
+		return baseFlag
 		
 	case reflect.Slice:
 		// Handle string slices
@@ -176,18 +309,29 @@ func createFlag(fieldType reflect.Type, name, usage, envVar, defaultValue string
 			} else if disableDefaults {
 				hideDefault = true
 			}
-			return &cli.StringSliceFlag{
+			
+			baseFlag := &cli.StringSliceFlag{
 				Name:        name,
+				Aliases:     aliases,
 				Usage:       usage,
 				Sources:     sources,
 				Value:       defaultSlice,
 				HideDefault: hideDefault,
 			}
+			
+			// Use custom flag if hint is provided
+			if hint != "" {
+				return &CustomStringSliceFlag{
+					StringSliceFlag: baseFlag,
+					typeName:        hint,
+				}
+			}
+			return baseFlag
 		}
 		
 	case reflect.Ptr:
 		// Handle pointer types by checking the underlying type
-		return createFlag(fieldType.Elem(), name, usage, envVar, defaultValue)
+		return createFlag(fieldType.Elem(), name, usage, envVar, defaultValue, hint, aliases)
 	}
 	
 	// For unsupported types, return nil and log a warning
@@ -255,8 +399,9 @@ func exportType(typ reflect.Type, visited map[reflect.Type]bool, cmd *cli.Comman
 		
 		// If field has both flag and env annotations, check if flag is set
 		if flagTag != "" && flagTag != "-" && envVar != "" {
-			// Clean the flag name (remove -- prefix if present)
-			cleanFlagName := strings.TrimPrefix(flagTag, "--")
+			// Parse the flag name (handle aliases by taking first name)
+			flagNames := strings.Split(flagTag, ",")
+			cleanFlagName := strings.TrimPrefix(strings.TrimSpace(flagNames[0]), "--")
 			
 			if cmd.IsSet(cleanFlagName) {
 				value := getFlagValue(cmd, cleanFlagName, field.Type)

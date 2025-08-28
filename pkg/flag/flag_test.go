@@ -16,6 +16,9 @@ type TestConfig struct {
 	// Int field
 	Memory int32 `env:"TEST_MEMORY" flag:"--memory" usage:"Memory in MB" default:"128"`
 	
+	// Int field with custom hint
+	Retention int32 `env:"TEST_RETENTION" flag:"--retention" usage:"Log retention period" default:"7" hint:"days"`
+	
 	// Bool field
 	Verbose bool `env:"TEST_VERBOSE" flag:"--verbose" usage:"Enable verbose logging" default:"false"`
 	
@@ -35,8 +38,8 @@ type TestConfig struct {
 func TestFlags(t *testing.T) {
 	flags := Flags[TestConfig]()
 	
-	// Should have 4 flags (Region, Memory, Verbose, Tags)
-	expectedCount := 4
+	// Should have 5 flags (Region, Memory, Retention, Verbose, Tags)
+	expectedCount := 5
 	if len(flags) != expectedCount {
 		t.Errorf("Expected %d flags, got %d", expectedCount, len(flags))
 	}
@@ -47,11 +50,19 @@ func TestFlags(t *testing.T) {
 		switch f := flag.(type) {
 		case *cli.StringFlag:
 			flagMap[f.Name] = f
+		case *CustomStringFlag:
+			flagMap[f.Name] = f
 		case *cli.IntFlag:
+			flagMap[f.Name] = f
+		case *CustomIntFlag:
 			flagMap[f.Name] = f
 		case *cli.BoolFlag:
 			flagMap[f.Name] = f
+		case *CustomBoolFlag:
+			flagMap[f.Name] = f
 		case *cli.StringSliceFlag:
+			flagMap[f.Name] = f
+		case *CustomStringSliceFlag:
 			flagMap[f.Name] = f
 		}
 	}
@@ -79,6 +90,18 @@ func TestFlags(t *testing.T) {
 		}
 	} else {
 		t.Error("Expected memory to be an IntFlag")
+	}
+	
+	// Test custom int flag with hint
+	if retentionFlag, ok := flagMap["retention"].(*CustomIntFlag); ok {
+		if retentionFlag.Value != 7 {
+			t.Errorf("Expected default 7, got %d", retentionFlag.Value)
+		}
+		if retentionFlag.TypeName() != "days" {
+			t.Errorf("Expected type name 'days', got '%s'", retentionFlag.TypeName())
+		}
+	} else {
+		t.Error("Expected retention to be a CustomIntFlag")
 	}
 	
 	// Test bool flag
@@ -119,7 +142,7 @@ func TestParseNil(t *testing.T) {
 	flags := Flags[TestConfig]()
 	
 	// Should find flags from the type even if the pointer is nil
-	expectedCount := 4 // Region, Memory, Verbose, Tags
+	expectedCount := 5 // Region, Memory, Retention, Verbose, Tags
 	if len(flags) != expectedCount {
 		t.Errorf("Expected %d flags for nil pointer (type-based), got %d", expectedCount, len(flags))
 	}

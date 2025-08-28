@@ -5,6 +5,7 @@ import (
 
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/config"
+	"github.com/bkeane/monad/pkg/log"
 	"github.com/bkeane/monad/pkg/registry"
 	"github.com/bkeane/monad/pkg/saga"
 	"github.com/bkeane/monad/pkg/scaffold"
@@ -45,7 +46,7 @@ func Scaffold(ctx context.Context) (*scaffold.Scaffold, error) {
 		return nil, err
 	}
 
-	return scaffold.Derive(basis), nil
+	return scaffold.Derive(basis)
 }
 
 func Registry(ctx context.Context) (*registry.Client, error) {
@@ -69,4 +70,18 @@ func State(ctx context.Context) (*state.State, error) {
 	}
 
 	return state.Init(ctx, basis)
+}
+
+func Log(ctx context.Context) (*log.LogGroup, error) {
+	config, err := Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudwatchConfig, err := config.CloudWatch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return log.Derive(cloudwatchConfig)
 }

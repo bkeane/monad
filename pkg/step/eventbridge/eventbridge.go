@@ -247,12 +247,6 @@ func (s *Step) PutRule(ctx context.Context, rule EventBridgeRule) error {
 func (s *Step) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 	var apiErr smithy.APIError
 
-	log.Info().
-		Str("bus", s.eventbridge.BusName()).
-		Str("rule", s.eventbridge.RuleName()).
-		Str("action", "delete").
-		Msg("eventbridge")
-
 	deletePermissionInput := lambda.RemovePermissionInput{
 		FunctionName: aws.String(s.lambda.FunctionName()),
 		StatementId:  aws.String(s.eventbridge.PermissionStatementId()),
