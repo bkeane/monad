@@ -127,7 +127,7 @@ func main() {
 					},
 					{
 						Name:  "init",
-						Usage: "initialize service repository",
+						Usage: "initialize image repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
@@ -139,7 +139,7 @@ func main() {
 					},
 					{
 						Name:  "destroy",
-						Usage: "destroy a service repository",
+						Usage: "destroy image repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
@@ -151,7 +151,7 @@ func main() {
 					},
 					{
 						Name:  "untag",
-						Usage: "untag a service image",
+						Usage: "untag image",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
