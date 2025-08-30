@@ -15,7 +15,7 @@ import (
 // Data
 
 type Basis struct {
-	EcrImage  string `env:"MONAD_IMAGE" flag:"--image" usage:"ECR image path:tag" hint:"path:tag"`
+	EcrImage  string `env:"MONAD_IMAGE" flag:"--image" usage:"ECR image path" hint:"path[:tag]"`
 	EcrId     string `env:"MONAD_REGISTRY_ID" flag:"--ecr-id" usage:"ECR registry ID" hint:"id"`
 	EcrRegion string `env:"MONAD_REGISTRY_REGION" flag:"--ecr-region" usage:"ECR registry region" hint:"name"`
 }

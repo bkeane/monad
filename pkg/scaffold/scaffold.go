@@ -5,9 +5,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bkeane/monad/pkg/basis/defaults"
+	"github.com/caarlos0/env/v11"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,24 +18,58 @@ type Basis interface {
 }
 
 type Scaffold struct {
-	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY"`
-	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE"`
-	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV"`
+	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY" flag:"--policy" usage:"write out the default policy.json"`
+	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE" flag:"--role" usage:"write out the default role.json"`
+	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV" flag:"--env" usage:"write out the default .env"`
 	defaults    *defaults.Basis
 }
 
 func Derive(basis Basis) (*Scaffold, error) {
+	var s Scaffold
+
+	// Parse environment variables into struct fields
+	if err := env.Parse(&s); err != nil {
+		return nil, err
+	}
+
 	defaults, err := basis.Defaults()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Scaffold{defaults: defaults}, nil
+	s.defaults = defaults
+	return &s, nil
+}
+
+func (s *Scaffold) List() ([]string, error) {
+	entries, err := Templates.ReadDir("templates")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read templates directory: %w", err)
+	}
+
+	var languages []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			languages = append(languages, entry.Name())
+		}
+	}
+
+	return languages, nil
 }
 
 func (s *Scaffold) Create(language, targetDir string) error {
 	if targetDir == "" {
 		targetDir = "."
+	}
+
+	languages, err := s.List()
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(languages, language) {
+		log.Error().Strs("valid", languages).Str("given", language).Msg("scaffold")
+		return fmt.Errorf("invalid language type '%s'", language)
 	}
 
 	scaffoldPath := filepath.Join("templates", language)

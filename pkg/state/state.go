@@ -7,6 +7,7 @@ import (
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/basis/caller"
 	"github.com/bkeane/monad/pkg/basis/git"
+	"github.com/bkeane/monad/pkg/basis/service"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/charmbracelet/lipgloss/table"
@@ -17,8 +18,9 @@ import (
 //
 
 type Basis interface {
-	Caller() (caller.Basis, error)
-	Git() (git.Basis, error)
+	Caller() (*caller.Basis, error)
+	Git() (*git.Basis, error)
+	Service() (*service.Basis, error)
 }
 
 //
@@ -38,6 +40,7 @@ type StateMetadata struct {
 //
 
 type State struct {
+	basis  Basis
 	client *lambda.Client
 	caller *caller.Basis
 	git    *git.Basis
@@ -47,6 +50,7 @@ func Init(ctx context.Context, basis *basis.Basis) (*State, error) {
 	var err error
 	var state State
 
+	state.basis = basis
 	state.caller, err = basis.Caller()
 	if err != nil {
 		return nil, err
@@ -72,7 +76,10 @@ func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
 	var services []*StateMetadata
 	for _, function := range functions.Functions {
 		if metadata := s.extractFromTags(ctx, *function.FunctionArn); metadata != nil {
-			services = append(services, metadata)
+			// Apply filtering based on basis values (* means all)
+			if s.matchesFilter(metadata) {
+				services = append(services, metadata)
+			}
 		}
 	}
 
@@ -160,6 +167,33 @@ func (s *State) extractFromTags(ctx context.Context, functionArn string) *StateM
 	}
 
 	return metadata
+}
+
+// matchesFilter checks if metadata matches the basis filter values
+// * means match all for that field
+func (s *State) matchesFilter(metadata *StateMetadata) bool {
+	gitBasis := s.git
+	
+	// Check owner filter
+	if gitBasis.Owner() != "*" && gitBasis.Owner() != metadata.Owner {
+		return false
+	}
+	
+	// Check repo filter
+	if gitBasis.Repo() != "*" && gitBasis.Repo() != metadata.Repo {
+		return false
+	}
+	
+	// Check branch filter
+	if gitBasis.Branch() != "*" && gitBasis.Branch() != metadata.Branch {
+		return false
+	}
+	
+	// Service filtering is disabled for now since there's no clean way to distinguish
+	// between explicitly set service names vs defaults from directory name
+	// Users can still filter manually after getting the results
+	
+	return true
 }
 
 // truncate shortens git SHA to 7 characters for display
