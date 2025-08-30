@@ -18,9 +18,9 @@ type Basis interface {
 }
 
 type Scaffold struct {
-	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY"`
-	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE"`
-	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV"`
+	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY" flag:"--policy" usage:"write out the default policy.json"`
+	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE" flag:"--role" usage:"write out the default role.json"`
+	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV" flag:"--env" usage:"write out the default .env"`
 	defaults    *defaults.Basis
 }
 

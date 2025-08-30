@@ -34,13 +34,13 @@ func main() {
 
 	cmd := &cli.Command{
 		Name:   "monad",
-		Usage:  "management plane",
+		Usage:  "service management",
 		Flags:  flag.Flags[basis.Basis](),
 		Before: flag.Before[basis.Basis](),
 		Commands: []*cli.Command{
 			{
 				Name:        "init",
-				Usage:       "scaffold a monad",
+				Usage:       "scaffold a service",
 				UsageText:   "monad init <LANGUAGE> [LOCATION]",
 				Description: desc.Init(),
 				Flags:       flag.Flags[scaffold.Scaffold](),
@@ -63,7 +63,7 @@ func main() {
 			},
 			{
 				Name:   "deploy",
-				Usage:  "deploy a monad",
+				Usage:  "deploy a service",
 				Flags:  flag.Flags[config.Config](),
 				Before: flag.Before[config.Config](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -77,7 +77,7 @@ func main() {
 			},
 			{
 				Name:  "destroy",
-				Usage: "destroy a monad",
+				Usage: "destroy a service",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					saga, err := pkg.Saga(ctx)
 					if err != nil {
@@ -88,8 +88,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "list",
-				Usage: "list monads",
+				Name:        "list",
+				Usage:       "list services",
+				Description: desc.List(),
 				Action: func(ctx context.Context, c *cli.Command) error {
 					state, err := pkg.State(ctx)
 					if err != nil {
@@ -108,7 +109,7 @@ func main() {
 			},
 			{
 				Name:   "ecr",
-				Usage:  "monad artifacts",
+				Usage:  "service artifacts",
 				Flags:  flag.Flags[basis.Basis](),
 				Before: flag.Before[basis.Basis](),
 				Commands: []*cli.Command{
@@ -126,7 +127,7 @@ func main() {
 					},
 					{
 						Name:  "init",
-						Usage: "initialize monad repository",
+						Usage: "initialize service repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
@@ -138,7 +139,7 @@ func main() {
 					},
 					{
 						Name:  "destroy",
-						Usage: "destroy a monad repository",
+						Usage: "destroy a service repository",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
@@ -150,7 +151,7 @@ func main() {
 					},
 					{
 						Name:  "untag",
-						Usage: "untag a monad image",
+						Usage: "untag a service image",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							registry, err := pkg.Registry(ctx)
 							if err != nil {
@@ -187,8 +188,9 @@ func main() {
 						},
 					},
 					{
-						Name:  "file",
-						Usage: "render file to stdout",
+						Name:      "file",
+						Usage:     "render file to stdout",
+						UsageText: "monad render file <PATH>",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							file := cmd.Args().First()
 							if file == "" {
@@ -215,8 +217,9 @@ func main() {
 						},
 					},
 					{
-						Name:  "string",
-						Usage: "render string to stdout",
+						Name:      "string",
+						Usage:     "render string to stdout",
+						UsageText: "monad render string <STRING>",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							input := cmd.Args().First()
 							if input == "" {
@@ -241,7 +244,7 @@ func main() {
 			},
 			{
 				Name:   "logs",
-				Usage:  "stream logs from monad",
+				Usage:  "fetch service logs",
 				Flags:  flag.Flags[monadlog.LogGroup](),
 				Before: flag.Before[monadlog.LogGroup](),
 				Action: func(ctx context.Context, cmd *cli.Command) error {

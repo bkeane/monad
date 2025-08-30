@@ -34,3 +34,15 @@ func Init() string {
 	return fmt.Sprintf("Create a new monad project from a template.\n\nAvailable languages: %s",
 		strings.Join(languages, ", "))
 }
+
+// List returns a description for the list command with filtering information
+func List() string {
+	return `List deployed services filtered by current git context.
+
+Examples:
+  monad list                              # Current repo/branch only
+  monad list --branch='*'                 # All branches (note quotes)
+  monad list --owner='*' --repo='*' --branch='*'  # All deployments
+
+Use --owner='*', --repo='*', --branch='*' for unfiltered results (quotes required).`
+}
