@@ -91,3 +91,8 @@ func (c *Config) ImageTag() string {
 	parts := strings.Split(c.registry.Image(), ":")
 	return parts[1]
 }
+
+// RegistryId returns the registry ID
+func (c *Config) RegistryId() string {
+	return c.registry.Id()
+}

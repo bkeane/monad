@@ -161,6 +161,24 @@ func main() {
 							return registry.Untag(ctx)
 						},
 					},
+					{
+						Name:  "tag",
+						Usage: "print basis image",
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							basis, err := pkg.Basis(ctx)
+							if err != nil {
+								return err
+							}
+
+							registry, err := basis.Registry()
+							if err != nil {
+								return err
+							}
+
+							fmt.Println(registry.ImageUrl())
+							return nil
+						},
+					},
 				},
 			},
 			{

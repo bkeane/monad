@@ -1,10 +1,7 @@
 import { createApp } from 'vue'
+import VueTufte from 'vue-tufte'
 import App from './App.vue'
-import highlight from 'highlight.js/lib/core';
-import bash from 'highlight.js/lib/languages/bash';
-import dockerfile from 'highlight.js/lib/languages/dockerfile';
 
-highlight.registerLanguage('bash', bash);
-highlight.registerLanguage('dockerfile', dockerfile);
-
-createApp(App).mount('#app')
+const app = createApp(App)
+app.use(VueTufte)
+app.mount('#app')
