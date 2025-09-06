@@ -15,48 +15,33 @@ import worker from '../../assets/diagrams/deployment-worker-1.png';
         <h2>Bus</h2>
         <p>The bus flag wires the lambda up to a named bus:</p>
         <CodeBlock language="bash">
-{{`monad deploy --bus production`}}
+{{`monad deploy --bus $bus`}}
         </CodeBlock>
     </section>
     
-    <section id="subscribe">
-        <h2>Subscribe</h2>
-        <p>The rule flag can be used to customize event filter rules:</p>
+    <section id="rule">
+        <h2>Rule</h2>
+        <p>The rule flag can be used to customize eventing rules:</p>
         <CodeBlock language="bash">
-{{`monad deploy --bus default --rule rule.json.tmpl`}}
+{{`monad deploy --bus $bus --rule ./rule.json.tmpl`}}
         </CodeBlock>
-    </section>
-    
-    <section id="publish">
-        <h2>Publish</h2>
-        <p>Functions can publish events to EventBridge buses using the AWS SDK.</p>
     </section>
     
     <section id="convention">
         <h2>Convention</h2>
-        <h3>Subscribe</h3>
-        <p>By default the lambda will be invoked by events with...</p>
-        <ul>
-          <li>Source: `/{repo}/{branch}/*`</li>
-          <li>!Source: `/{repo}/{branch}/{service}`</li>
-        </ul>
-        <p>ie: it will be invoked by events within the repository/branch namespace, but not by iteself.</p>
-        <h3>Publish</h3>
-        <p>There is no permission allowing eventbridge emit by default.</p>
+        <h3>Rules</h3>
+        <p>By default the lambda will be invoked by events matching <code>{ Source: /$repo/$branch/* }</code>.</p>
     </section>
     
     <section id="configuration">
         <h2>Configuration</h2>
         
         <h3>Event Rules</h3>
-        <p>Define EventBridge rules using cron strings or JSON templates:</p>
+        <p>At init time you can generate the default rule template for modification:</p>
         <CodeBlock language="bash">
-{{`# Schedule-based (cron/rate)
-monad deploy --bus production --rule "rate(5 minutes)"
-
-# Event pattern (JSON file)
-monad deploy --bus production --rule ./event-pattern.json
-`}}
+{{`monad init go --rule # output: rule.json.tmpl
+monad deploy --bus $bus --rule ./rule.json.tmpl`}}
         </CodeBlock>
+        <p>...Or you can create a valid rule json by hand.</p>
     </section>
 </template>

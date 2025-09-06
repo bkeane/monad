@@ -33,8 +33,7 @@
 
       <li><a href="#/event">Event</a><ul>
         <li><a href="#/event/bus">Bus</a></li>
-        <li><a href="#/event/subscribe">Subscribe</a></li>
-        <li><a href="#/event/publish">Publish</a></li>
+        <li><a href="#/event/rule">Rule</a></li>
       </ul></li>
 
     </ul>

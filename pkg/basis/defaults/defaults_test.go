@@ -17,6 +17,7 @@ func TestDerive_Success(t *testing.T) {
 	// Validate that all templates are loaded and non-empty
 	assert.NotEmpty(t, basis.PolicyTemplate())
 	assert.NotEmpty(t, basis.RoleTemplate())
+	assert.NotEmpty(t, basis.RuleTemplate())
 	assert.NotEmpty(t, basis.EnvTemplate())
 
 	// Validate that templates contain expected content
@@ -27,6 +28,10 @@ func TestDerive_Success(t *testing.T) {
 	assert.Contains(t, basis.RoleTemplate(), "Version")
 	assert.Contains(t, basis.RoleTemplate(), "TrustLambda")
 	assert.Contains(t, basis.RoleTemplate(), "lambda.amazonaws.com")
+
+	assert.Contains(t, basis.RuleTemplate(), "source")
+	assert.Contains(t, basis.RuleTemplate(), "detail-type")
+	assert.Contains(t, basis.RuleTemplate(), "{{.Git.Repo}}")
 
 	assert.Contains(t, basis.EnvTemplate(), "GIT_REPO")
 	assert.Contains(t, basis.EnvTemplate(), "GIT_BRANCH")
@@ -89,6 +94,35 @@ func TestDerive_RoleTemplate(t *testing.T) {
 	assert.Contains(t, role, "TrustLambda")
 }
 
+func TestDerive_RuleTemplate(t *testing.T) {
+	basis, err := Derive()
+	require.NoError(t, err)
+
+	rule := basis.RuleTemplate()
+
+	// Should be valid JSON (even with template variables)
+	var ruleJSON interface{}
+	// Replace template variables with dummy values for JSON validation
+	validationRule := strings.ReplaceAll(rule, "{{.Git.Repo}}", "test-repo")
+	validationRule = strings.ReplaceAll(validationRule, "{{.Git.Branch}}", "main")
+	validationRule = strings.ReplaceAll(validationRule, "{{.Service.Name}}", "test-service")
+	
+	err = json.Unmarshal([]byte(validationRule), &ruleJSON)
+	assert.NoError(t, err, "Rule template should be valid JSON after variable substitution")
+
+	// Should contain template variables
+	assert.Contains(t, rule, "{{.Git.Repo}}")
+	assert.Contains(t, rule, "{{.Git.Branch}}")
+	assert.Contains(t, rule, "{{.Service.Name}}")
+
+	// Should contain expected EventBridge rule structure
+	assert.Contains(t, rule, "\"source\"")
+	assert.Contains(t, rule, "\"detail-type\"")
+	assert.Contains(t, rule, "\"prefix\"")
+	assert.Contains(t, rule, "\"destination\"")
+	assert.Contains(t, rule, "\"equals-ignore-case\"")
+}
+
 func TestDerive_EnvTemplate(t *testing.T) {
 	basis, err := Derive()
 	require.NoError(t, err)
@@ -122,11 +156,13 @@ func TestBasis_Accessors(t *testing.T) {
 	basis := &Basis{
 		Policy: "test-policy",
 		Role:   "test-role",
+		Rule:   "test-rule",
 		Env:    "test-env",
 	}
 
 	assert.Equal(t, "test-policy", basis.PolicyTemplate())
 	assert.Equal(t, "test-role", basis.RoleTemplate())
+	assert.Equal(t, "test-rule", basis.RuleTemplate())
 	assert.Equal(t, "test-env", basis.EnvTemplate())
 }
 
@@ -141,6 +177,7 @@ func TestBasis_Validate(t *testing.T) {
 			basis: &Basis{
 				Policy: "policy-content",
 				Role:   "role-content",
+				Rule:   "rule-content",
 				Env:    "env-content",
 			},
 			wantErr: false,
@@ -149,6 +186,7 @@ func TestBasis_Validate(t *testing.T) {
 			name: "missing policy",
 			basis: &Basis{
 				Role: "role-content",
+				Rule: "rule-content",
 				Env:  "env-content",
 			},
 			wantErr: true,
@@ -157,6 +195,16 @@ func TestBasis_Validate(t *testing.T) {
 			name: "missing role",
 			basis: &Basis{
 				Policy: "policy-content",
+				Rule:   "rule-content",
+				Env:    "env-content",
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing rule",
+			basis: &Basis{
+				Policy: "policy-content",
+				Role:   "role-content",
 				Env:    "env-content",
 			},
 			wantErr: true,
@@ -166,6 +214,7 @@ func TestBasis_Validate(t *testing.T) {
 			basis: &Basis{
 				Policy: "policy-content",
 				Role:   "role-content",
+				Rule:   "rule-content",
 			},
 			wantErr: true,
 		},
@@ -174,6 +223,7 @@ func TestBasis_Validate(t *testing.T) {
 			basis: &Basis{
 				Policy: "",
 				Role:   "role-content",
+				Rule:   "rule-content",
 				Env:    "env-content",
 			},
 			wantErr: true,
@@ -183,6 +233,17 @@ func TestBasis_Validate(t *testing.T) {
 			basis: &Basis{
 				Policy: "policy-content",
 				Role:   "",
+				Rule:   "rule-content",
+				Env:    "env-content",
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty rule",
+			basis: &Basis{
+				Policy: "policy-content",
+				Role:   "role-content",
+				Rule:   "",
 				Env:    "env-content",
 			},
 			wantErr: true,
@@ -192,6 +253,7 @@ func TestBasis_Validate(t *testing.T) {
 			basis: &Basis{
 				Policy: "policy-content",
 				Role:   "role-content",
+				Rule:   "rule-content",
 				Env:    "",
 			},
 			wantErr: true,
@@ -241,6 +303,17 @@ func TestRead_Success(t *testing.T) {
 				"TrustLambda",
 				"lambda.amazonaws.com",
 				"sts:AssumeRole",
+			},
+		},
+		{
+			name: "rule template",
+			path: "embed/rule.json.tmpl",
+			contains: []string{
+				"source",
+				"detail-type",
+				"{{.Git.Repo}}",
+				"{{.Git.Branch}}",
+				"{{.Service.Name}}",
 			},
 		},
 		{
@@ -296,6 +369,13 @@ func TestDerive_TemplateVariables(t *testing.T) {
 		assert.Contains(t, policy, v, "Policy template should contain %s", v)
 	}
 
+	// Rule template should contain git and service variables
+	rule := basis.RuleTemplate()
+	ruleVars := []string{"{{.Git.Repo}}", "{{.Git.Branch}}", "{{.Service.Name}}"}
+	for _, v := range ruleVars {
+		assert.Contains(t, rule, v, "Rule template should contain %s", v)
+	}
+
 	// Env template should contain git variables (only those actually present)
 	env := basis.EnvTemplate()
 	envVars := []string{"{{.Git.Repo}}", "{{.Git.Branch}}", "{{.Git.Sha}}"}
@@ -321,5 +401,6 @@ func TestDerive_Consistency(t *testing.T) {
 	// Should return identical content
 	assert.Equal(t, basis1.PolicyTemplate(), basis2.PolicyTemplate())
 	assert.Equal(t, basis1.RoleTemplate(), basis2.RoleTemplate())
+	assert.Equal(t, basis1.RuleTemplate(), basis2.RuleTemplate())
 	assert.Equal(t, basis1.EnvTemplate(), basis2.EnvTemplate())
 }

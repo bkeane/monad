@@ -1,0 +1,10 @@
+{
+  "source": [{
+    "prefix": {
+      "equals-ignore-case": "/{{.Git.Repo}}/{{.Git.Branch}}"
+    }
+  }],
+  "detail-type": {
+    "destination": [ { "equals-ignore-case": "/{{.Git.Repo}}/{{.Git.Branch}}/{{.Service.Name}}" } ]
+  }
+}

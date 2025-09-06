@@ -31,7 +31,7 @@ func TestDerive_Success(t *testing.T) {
 	// Verify components are properly set
 	assert.NotNil(t, config.Client())
 	assert.Equal(t, "us-east-1", config.Region())
-	assert.Equal(t, "default", config.BusName())
+	assert.Equal(t, "", config.BusName()) // No longer defaults to "default"
 	assert.Equal(t, "test-repo-test-branch-test-service", config.RuleName())
 }
 
@@ -49,7 +49,7 @@ func TestDerive_DefaultValues(t *testing.T) {
 
 	// Test default values are applied
 	assert.Equal(t, "us-east-1", config.Region()) // From caller
-	assert.Equal(t, "default", config.BusName())   // Default bus
+	assert.Equal(t, "", config.BusName())   // Empty when not set
 	assert.Equal(t, "test-repo-test-branch-test-service", config.RuleName()) // From resource
 }
 
@@ -185,7 +185,7 @@ func TestPermissionStatementId(t *testing.T) {
 	assert.Equal(t, expected, statementId)
 }
 
-func TestPermissionStatementId_DefaultBus(t *testing.T) {
+func TestPermissionStatementId_EmptyBus(t *testing.T) {
 	setup := mock.NewTestSetup()
 	setup.Apply(t)
 	ctx := context.Background()
@@ -198,7 +198,7 @@ func TestPermissionStatementId_DefaultBus(t *testing.T) {
 	}
 
 	statementId := config.PermissionStatementId()
-	expected := "eventbridge-default-test-repo-test-branch-test-service"
+	expected := "eventbridge--test-repo-test-branch-test-service"
 	assert.Equal(t, expected, statementId)
 }
 
@@ -304,7 +304,7 @@ func TestDerive_TemplateRenderingError(t *testing.T) {
 	assert.Contains(t, err.Error(), "mock:")
 }
 
-func TestRuleDocument_Empty(t *testing.T) {
+func TestRuleDocument_Default(t *testing.T) {
 	setup := mock.NewTestSetup()
 	setup.Apply(t)
 	ctx := context.Background()
@@ -316,10 +316,12 @@ func TestRuleDocument_Empty(t *testing.T) {
 		return
 	}
 
-	// When no rule template is provided, document should be empty or default
+	// When no rule template path is provided, should use default rule template
 	document := config.RuleDocument()
-	// The document will be rendered from an empty template, so it should be empty
-	assert.Empty(t, strings.TrimSpace(document))
+	// The document will be rendered from the default rule template, so it should contain expected structure
+	assert.NotEmpty(t, strings.TrimSpace(document))
+	assert.Contains(t, document, "source")
+	assert.Contains(t, document, "detail-type")
 }
 
 func TestBusName_Formatting(t *testing.T) {
@@ -329,9 +331,9 @@ func TestBusName_Formatting(t *testing.T) {
 		expectedBus string
 	}{
 		{
-			name:        "default bus when empty",
+			name:        "empty bus when not set",
 			busName:     "",
-			expectedBus: "default",
+			expectedBus: "",
 		},
 		{
 			name:        "custom bus name",

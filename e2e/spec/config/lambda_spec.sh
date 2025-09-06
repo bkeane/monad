@@ -80,6 +80,12 @@ Describe "Lambda"
             The output should eq "${MONAD_BRANCH}"
             The status should be success
         End
+
+        It "MONAD_SERVICE"
+            When call curl_sigv4 $target/env/MONAD_SERVICE
+            The output should eq "${MONAD_SERVICE}"
+            The status should be success
+        End
     End
 
     Describe "Tags"

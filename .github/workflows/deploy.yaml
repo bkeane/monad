@@ -96,7 +96,7 @@ jobs:
             --chdir e2e/echo \
             --env .env.tmpl \
             --policy policy.json.tmpl \
-            --rule rule.json.tmpl \
+            --bus default \
             --memory 256 \
             --disk 1024 \
             --timeout 10 \

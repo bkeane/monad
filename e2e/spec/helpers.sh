@@ -116,12 +116,15 @@ curl_oauth_until() {
 }
 
 emit_test_event() {
-  local string=$1
+  local event_id=$1
+  local source="/${MONAD_REPO}/${MONAD_BRANCH}/shellspec"
+  local destination="/${MONAD_REPO}/${MONAD_BRANCH}/${MONAD_SERVICE}"
+
   aws events put-events --entries '[
     {
-      "Source": "shellspec",
-      "DetailType": "TestEvent", 
-      "Detail": "{\"Message\": \"'$string'\"}",
+      "source": "'${source}'",
+      "detail-type": "TestEvent", 
+      "detail": "{\"destination\": \"'${destination}'\", \"event_id\": \"'${event_id}'\"}",
       "EventBusName": "default"
     }
   ]'

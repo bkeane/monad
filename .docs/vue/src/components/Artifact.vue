@@ -10,16 +10,18 @@ import { CodeBlock } from 'vue-tufte';
 
     <section id="init">
         <h2>Init</h2>
+        <p>Create a new monad project from a template with available language scaffolds:</p>
+        <CodeBlock language="bash">
+{{`monad init $language`}}
+        </CodeBlock>
     </section>
 
     <section id="publish">
         <h2>Publish</h2>
         <p>Monad provides a simple means to produce conventional image tags for builds.</p>
-        <code-block language="bash">
-{{`# Default gist:
-tag=$(monad ecr tag)  # {id}.dkr.ecr.{region}.amazonaws.com/{owner}/{repo}/{service}:{branch}
-docker build -t $tag . --push`}}
-        </code-block>
+        <CodeBlock language="bash">
+{{`docker build -t $(monad ecr tag) . --push`}}
+        </CodeBlock>
     </section>
     
     <section id="deploy">
@@ -35,21 +37,13 @@ docker build -t $tag . --push`}}
         <h3>Registry</h3>
         <p>The default target registry is set to that of the caller AWS account and caller region.</p>
         <CodeBlock language="bash">
-{{`# Default gist:
-ecr_id=$(aws sts get-caller-identity --query Account --output text)
-ecr_region=$(aws configure get region)
-echo "\${ecr_id}.dkr.ecr.\${ecr_region}.amazonaws.com"`}}      
+{{`"$ecr_id.dkr.ecr.$ecr_region.amazonaws.com"`}}      
         </CodeBlock>
 
         <h3>Image</h3>
-        <p>The default image path and tag are constructed from git data.</p>
+        <p>The default image path and tag are constructed from git data and service name.</p>
         <CodeBlock language="bash">
-{{`# Default gist:
-owner=$(git config --get remote.origin.url | cut -d: -f2 | cut -d/ -f1)
-repo=$(basename -s .git "$(git config --get remote.origin.url)")
-branch=$(git rev-parse --abbrev-ref HEAD)
-service=$(basename "$PWD")
-echo "\${owner}/\${repo}/\${service}:\${branch}"`}}
+{{`"$owner/$repo/$service:$branch"`}}
         </CodeBlock>
     </section>
     
@@ -59,22 +53,22 @@ echo "\${owner}/\${repo}/\${service}:\${branch}"`}}
         <h3>Registry</h3>
         <p>Generate publish tag for central repository:</p>
         <CodeBlock language="bash">
-{{`monad ecr tag --ecr-id 123456789012 --service myapp`}}
+{{`monad ecr tag --ecr-id 123456789012`}}
         </CodeBlock>
 
         <p>Deploy artifact from a central repository:</p>
         <CodeBlock language="bash">
-            {{`monad deploy --ecr-id 123456789012 --service myapp`}}
+{{`monad deploy --ecr-id 123456789012`}}
         </CodeBlock>
         
         <h3>Image</h3>
         <p>Mutate image path and tag by overriding git data:</p>
         <CodeBlock language="bash">
-{{`monad ecr tag --owner myorg --repo myproject --branch production --service myapp`}}
+{{`monad ecr tag --owner $owner --repo $repo --branch $branch`}}
         </CodeBlock>
         <p>Or provide a full image path:</p>
         <CodeBlock language="bash">
-{{`monad deploy --image myorg/myproject/myservice:v1.0.0 --service myapp`}}
+{{`monad deploy --image bkeane/cowsay:1.0.0 --service cowsay`}}
         </CodeBlock>
     </section>
 </template>

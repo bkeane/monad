@@ -77,21 +77,21 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		cfg.EventBridgeRegionName = cfg.caller.AwsConfig().Region
 	}
 
-	if cfg.EventBridgeBusName == "" {
-		cfg.EventBridgeBusName = "default"
-	}
-
 	if cfg.EventBridgeRuleName == "" {
 		cfg.EventBridgeRuleName = cfg.resource.Name()
 	}
 
-	if cfg.EventBridgeRulePath != "" {
+	if cfg.EventBridgeRulePath == "" {
+		cfg.EventBridgeRuleTemplate = cfg.defaults.RuleTemplate()
+
+	} else {
 		bytes, err := os.ReadFile(cfg.EventBridgeRulePath)
 		if err != nil {
 			return nil, err
 		}
 
 		cfg.EventBridgeRuleTemplate = string(bytes)
+
 	}
 
 	cfg.EventBridgeRuleDocument, err = basis.Render(cfg.EventBridgeRuleTemplate)
@@ -113,17 +113,25 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
 		v.Field(&c.client, v.Required),
-		v.Field(&c.EventBridgeBusName, v.By(c.exists)),
+		v.Field(&c.EventBridgeBusName, v.By(c.emptyOrExists)),
+		v.Field(&c.EventBridgeRuleName, v.Required),
+		v.Field(&c.EventBridgeRuleTemplate, v.Required),
+		v.Field(&c.EventBridgeRuleDocument, v.Required),
+		v.Field(&c.EventBridgeRegionName, v.Required),
 	)
 }
 
 // exists is a validation to ensure the bus provided is present.
-func (c *Config) exists(value interface{}) error {
+func (c *Config) emptyOrExists(value interface{}) error {
 	ctx := context.Background()
 
 	busName, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("invalid bus name format: %s", c.EventBridgeBusName)
+	}
+
+	if busName == "" {
+		return nil
 	}
 
 	var validBusNames []string
@@ -159,7 +167,9 @@ func (c *Config) Client() *eventbridge.Client { return c.client }
 func (c *Config) Region() string { return c.EventBridgeRegionName }
 
 // BusName returns the EventBridge custom bus name
-func (c *Config) BusName() string { return c.EventBridgeBusName }
+func (c *Config) BusName() string { 
+	return c.EventBridgeBusName 
+}
 
 // RuleTemplate returns the EventBridge rule name
 func (c *Config) RuleName() string { return c.EventBridgeRuleName }
