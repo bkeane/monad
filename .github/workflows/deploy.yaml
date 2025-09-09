@@ -58,6 +58,7 @@ jobs:
       - name: build
         run: |
           GIT_BRANCH=${{ env.RELEVANT_BRANCH }} \
+          GIT_SHA=${{ env.RELEVANT_SHA }} \
           docker buildx bake echo --push
 
   deployment:

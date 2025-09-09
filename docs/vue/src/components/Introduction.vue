@@ -22,10 +22,12 @@ import monad from '../../assets/diagrams/deployment-complete-1.png'
         </p>
         <p>
             Monad uses two core data sources to drive it's conventions:
-            <ol>
-                <li>Git context</li>
-                <li>AWS caller context<Sidenote><a href="https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html">aws credential chain</a></Sidenote></li>
-            </ol>
+        </p>
+        <ol>
+            <li>Git context</li>
+            <li>AWS caller context<Sidenote><a href="https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html">aws credential chain</a></Sidenote></li>
+        </ol>
+        <p>
             The data from these two sources forms the basis<Sidenote>
                 <a href="https://en.wikipedia.org/wiki/Basis_(linear_algebra)">
                     As in maths
