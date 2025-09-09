@@ -34,12 +34,17 @@ import worker from '../../assets/diagrams/deployment-event-1.png';
     
     <section id="rule">
         <h2>Rule</h2>
-        <p>By default the lambda will be invoked by events matching these keys/values...</p>
-        <CodeBlock language="json">{{`{
-    "source": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/*",
-    "detail": {
-        "destination": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/\{\{.Service.Name\}\}"
+        <p>By default the lambda will be invoked by events matching a unicast pattern...</p>
+        <CodeBlock language="json">
+{{`{
+  "source": [{
+    "prefix": {
+      "equals-ignore-case": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}"
     }
+  }],
+  "detail": {
+    "destination": [ { "equals-ignore-case": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/\{\{.Service.Name\}\}" } ]
+  }
 }`}}
         </CodeBlock>
                 <p>... roughly translated:</p>
@@ -51,6 +56,26 @@ import worker from '../../assets/diagrams/deployment-event-1.png';
         <CodeBlock language="bash">
 {{`monad deploy --bus $bus --rule ./rule.json.tmpl`}}
         </CodeBlock>
+        <h3>Example</h3>
+        <p>Let's say you wanted broadcast behavior instead of the afformentioned unicast behavior</p>
+        <CodeBlock language="json">
+{{`{
+  "source": [{
+    "anything-but": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/\{\{.Service.Name\}\}"
+  }],
+  "detail": {
+    "destination": [{
+      "wildcard": "/\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/*"
+    }]
+  }
+}
+`}}
+        </CodeBlock>
+                <p>... roughly translated:</p>
+        <ul>
+            <li>source: any service except for itself</li>
+            <li>destination: any service within this repository & branch</li>
+        </ul>
     </section>
     
     <section id="configuration">
