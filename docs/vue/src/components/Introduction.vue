@@ -4,8 +4,8 @@ import monad from '../../assets/diagrams/deployment-complete-1.png'
 </script>
 
 <template>
-    <section>
-        <h2 id="introduction">What is it?</h2>
+    <section id="about">
+        <h2>What is it?</h2>
         <p>
             <NewThought>Monad<Sidenote><a href="https://en.wikipedia.org/wiki/Monadology">monadology</a></Sidenote> is a declarative CLI tool</NewThought> for deploying an OCI image whose entrypoint is a webserver.
         </p>

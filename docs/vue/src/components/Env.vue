@@ -3,8 +3,8 @@ import { CodeBlock, NewThought, Sidenote } from 'vue-tufte';
 </script>
 
 <template>
-    <section>
-        <h2>Environment Variables</h2>
+    <section id="about">
+        <h2>About Environment</h2>
         <p>
         <NewThought>Environment configuration</NewThought> allows you to pass runtime configuration 
         to your Lambda functions without hardcoding values in your application code.
@@ -43,7 +43,7 @@ CMD ["python", "main.py"]`}}
         </CodeBlock>
         <p>
             Here we see the use of Chamber<Sidenote><a href="https://github.com/segmentio/chamber?tab=readme-ov-file">chamber docs</a></Sidenote>
-            as a container execution manager. In this configuration it is exporting variables under the `service` namespace
+            as a container entrypoint middleware. In this configuration it is exporting variables under the `service` namespace
             in AWS ssm parameter store<Sidenote><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html">parameter store docs</a></Sidenote>.
         </p>
         <p>

@@ -4,7 +4,7 @@ import basic from '../../assets/diagrams/deployment-basic-1.png'
 </script>
 
 <template>
-    <section>
+    <section id="about">
         <h2>About Artifacts</h2>
         <p>
         <NewThought>OCI Images stored on ECR</NewThought> are the deployable artifact of Monad. 
