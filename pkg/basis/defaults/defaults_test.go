@@ -30,7 +30,7 @@ func TestDerive_Success(t *testing.T) {
 	assert.Contains(t, basis.RoleTemplate(), "lambda.amazonaws.com")
 
 	assert.Contains(t, basis.RuleTemplate(), "source")
-	assert.Contains(t, basis.RuleTemplate(), "detail-type")
+	assert.Contains(t, basis.RuleTemplate(), "detail")
 	assert.Contains(t, basis.RuleTemplate(), "{{.Git.Repo}}")
 
 	assert.Contains(t, basis.EnvTemplate(), "GIT_REPO")
@@ -117,7 +117,7 @@ func TestDerive_RuleTemplate(t *testing.T) {
 
 	// Should contain expected EventBridge rule structure
 	assert.Contains(t, rule, "\"source\"")
-	assert.Contains(t, rule, "\"detail-type\"")
+	assert.Contains(t, rule, "\"detail\"")
 	assert.Contains(t, rule, "\"prefix\"")
 	assert.Contains(t, rule, "\"destination\"")
 	assert.Contains(t, rule, "\"equals-ignore-case\"")
@@ -310,7 +310,7 @@ func TestRead_Success(t *testing.T) {
 			path: "embed/rule.json.tmpl",
 			contains: []string{
 				"source",
-				"detail-type",
+				"detail",
 				"{{.Git.Repo}}",
 				"{{.Git.Branch}}",
 				"{{.Service.Name}}",

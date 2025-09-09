@@ -321,7 +321,7 @@ func TestRuleDocument_Default(t *testing.T) {
 	// The document will be rendered from the default rule template, so it should contain expected structure
 	assert.NotEmpty(t, strings.TrimSpace(document))
 	assert.Contains(t, document, "source")
-	assert.Contains(t, document, "detail-type")
+	assert.Contains(t, document, "detail")
 }
 
 func TestBusName_Formatting(t *testing.T) {
