@@ -93,3 +93,7 @@ func (e *Basis) Id() string {
 func (e *Basis) Region() string {
 	return e.EcrRegion
 }
+
+func (e *Basis) ImageUrl() string {
+	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", e.EcrId, e.EcrRegion, e.EcrImage)
+}

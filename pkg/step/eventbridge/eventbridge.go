@@ -59,6 +59,12 @@ func Derive(eventbridge EventBridgeConfig, lambda LambdaConfig) *Step {
 }
 
 func (s *Step) Mount(ctx context.Context) error {
+	// Call internal unmount silently (don't log deletes) to clean up existing resources
+	if _, err := s.unmount(ctx); err != nil {
+		return err
+	}
+
+	// Call internal mount and log only the creates as action=put
 	summary, err := s.mount(ctx)
 	if err != nil {
 		return err
@@ -295,19 +301,21 @@ func (s *Step) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 // GET Operations
 func (s *Step) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
 	// This code _can_ handle many defined rules, but monad currently will only support one until more are necessary.
-	document := s.eventbridge.RuleDocument()
+	busName := s.eventbridge.BusName()
 
-	if document == "" {
+	// Only create rules if a bus is explicitly configured
+	if busName == "" {
 		return map[string]map[string]EventBridgeRule{}, nil
 	}
 
+	document := s.eventbridge.RuleDocument()
 	ruleMap := map[string]map[string]EventBridgeRule{}
 	// Initialize the inner map if it doesn't exist
-	if _, exists := ruleMap[s.eventbridge.BusName()]; !exists {
-		ruleMap[s.eventbridge.BusName()] = make(map[string]EventBridgeRule)
+	if _, exists := ruleMap[busName]; !exists {
+		ruleMap[busName] = make(map[string]EventBridgeRule)
 	}
-	ruleMap[s.eventbridge.BusName()][s.eventbridge.RuleName()] = EventBridgeRule{
-		BusName:  s.eventbridge.BusName(),
+	ruleMap[busName][s.eventbridge.RuleName()] = EventBridgeRule{
+		BusName:  busName,
 		RuleName: s.eventbridge.RuleName(),
 		Document: document,
 	}

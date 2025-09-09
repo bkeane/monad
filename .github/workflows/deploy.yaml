@@ -57,7 +57,8 @@ jobs:
 
       - name: build
         run: |
-          BRANCH=${{ env.RELEVANT_BRANCH }} \
+          GIT_BRANCH=${{ env.RELEVANT_BRANCH }} \
+          GIT_SHA=${{ env.RELEVANT_SHA }} \
           docker buildx bake echo --push
 
   deployment:
@@ -96,7 +97,7 @@ jobs:
             --chdir e2e/echo \
             --env .env.tmpl \
             --policy policy.json.tmpl \
-            --rule rule.json.tmpl \
+            --bus default \
             --memory 256 \
             --disk 1024 \
             --timeout 10 \

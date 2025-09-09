@@ -1,10 +1,21 @@
-# group "default" {
-#   targets = ["echo"]
-# }
+group "default" {
+  targets = ["monad", "echo"]
+}
 
-variable "BRANCH" {
-  description = "Branch name"
-  required = true
+variable "GIT_SHA" {
+  description = "Git Sha"
+  validation {
+    condition     = GIT_SHA != null && GIT_SHA != ""
+    error_message = "GIT_SHA must be provided and cannot be empty."
+  }
+}
+
+variable "GIT_BRANCH" {
+  description = "Git Branch"
+  validation {
+    condition     = GIT_BRANCH != null && GIT_BRANCH != ""
+    error_message = "GIT_BRANCH must be provided and cannot be empty."
+  }
 }
 
 target "monad" {
@@ -14,7 +25,7 @@ target "monad" {
   load = true
 
   output = [
-    "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/cmd:${BRANCH}",
+    "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/cmd:${GIT_BRANCH}",
   ]
 }
 
@@ -25,6 +36,6 @@ target "echo" {
   load = true
 
   output = [
-    "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:${BRANCH}"
+    "type=image,name=677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/monad/echo:${GIT_BRANCH}"
   ]
 }

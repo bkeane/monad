@@ -20,6 +20,7 @@ type EcrConfig interface {
 	Clients() (*ecr.Client, *registryv2.Client)
 	ImagePath() string
 	ImageTag() string
+	RegistryId() string
 }
 
 type ImageRegistry interface {
@@ -64,7 +65,7 @@ func (c *Client) ImageTag() string {
 
 func (c *Client) Login(ctx context.Context) error {
 	input := &ecr.GetAuthorizationTokenInput{
-		RegistryIds: []string{},
+		RegistryIds: []string{c.config.RegistryId()},
 	}
 
 	if c.registryv2.Url == "" {

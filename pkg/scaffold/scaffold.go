@@ -20,6 +20,7 @@ type Basis interface {
 type Scaffold struct {
 	WritePolicy bool `env:"MONAD_SCAFFOLD_POLICY" flag:"--policy" usage:"write out the default policy.json"`
 	WriteRole   bool `env:"MONAD_SCAFFOLD_ROLE" flag:"--role" usage:"write out the default role.json"`
+	WriteRule   bool `env:"MONAD_SCAFFOLD_RULE" flag:"--rule" usage:"write out the default rule.json"`
 	WriteEnv    bool `env:"MONAD_SCAFFOLD_ENV" flag:"--env" usage:"write out the default .env"`
 	defaults    *defaults.Basis
 }
@@ -93,6 +94,12 @@ func (s *Scaffold) Create(language, targetDir string) error {
 		}
 	}
 
+	if s.WriteRule {
+		if err := s.writeRule(targetDir); err != nil {
+			return err
+		}
+	}
+
 	if s.WriteEnv {
 		if err := s.writeEnv(targetDir); err != nil {
 			return err
@@ -141,6 +148,10 @@ func (s *Scaffold) writePolicy(targetDir string) error {
 
 func (s *Scaffold) writeRole(targetDir string) error {
 	return s.writeTemplate("role.json.tmpl", s.defaults.RoleTemplate(), targetDir)
+}
+
+func (s *Scaffold) writeRule(targetDir string) error {
+	return s.writeTemplate("rule.json.tmpl", s.defaults.RuleTemplate(), targetDir)
 }
 
 func (s *Scaffold) writeEnv(targetDir string) error {

@@ -1,0 +1,60 @@
+/* Import vue-tufte fonts from GitHub */
+@import url('https://raw.githubusercontent.com/bkeane/vue-tufte/main/dist/style.css');
+
+/* Mermaid-specific styles */
+svg {
+    margin: 0 !important;
+}
+
+svg path {
+    filter: grayscale(100%) brightness(1.5) contrast(1.5);
+}
+
+.architecture-service>g>g>svg>rect,
+.architecture-service>g>g>svg>g>rect:first-child,
+.architecture-service svg path[d^="M0 0h"] {
+    fill: transparent !important;
+    opacity: 0.2 !important;
+}
+
+.architecture-service path:not([d^="M0 0h"]) {
+    stroke: white;
+}
+
+.node-bkg {
+    stroke-dasharray: none !important;
+    stroke: transparent !important;
+}
+
+/* Apply vue-tufte typography to mermaid elements */
+.nodeLabel, 
+.node text,
+.edgeLabel,
+.edgeLabels text,
+.relation text,
+.architecture-service text,
+.architecture-junction text,
+.architecture-group text,
+text {
+    font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif !important;
+    font-size: 16px !important;
+    font-weight: normal;
+}
+
+.cluster-label text,
+.section text,
+.architecture-group .architecture-group-title {
+    font-family: "Gill Sans", "Gill Sans MT", Calibri, sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 600;
+}
+
+/* Target edge/relationship labels specifically */
+.edgePath .edgeLabel,
+.edgePath text,
+.edge-thickness-normal text,
+.edge-thickness-thick text {
+    font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif !important;
+    font-size: 16px !important;
+    font-weight: normal;
+}

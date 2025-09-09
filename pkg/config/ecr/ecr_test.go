@@ -192,6 +192,72 @@ func TestClients_BothReturned(t *testing.T) {
 	assert.NotEqual(t, ecrClient, registryClient, "Clients should be different instances")
 }
 
+func TestRegistryId_ReturnsBasisId(t *testing.T) {
+	setup := mock.NewTestSetup()
+	setup.Apply(t)
+	ctx := context.Background()
+
+	config, err := Derive(ctx, setup.Basis)
+	if err != nil {
+		// Should be an AWS-related error, not a configuration error
+		assert.NotContains(t, err.Error(), "mock:")
+		return
+	}
+
+	registryId := config.RegistryId()
+	assert.NotEmpty(t, registryId)
+	
+	// Should match the account ID from the setup
+	assert.Equal(t, "123456789012", registryId)
+}
+
+func TestRegistryId_WithCustomId(t *testing.T) {
+	opts := mock.BasisOptions{
+		Owner:     "custom-owner",
+		Repo:      "custom-repo", 
+		Branch:    "custom-branch",
+		Service:   "custom-service",
+		AccountId: "555666777888",
+		Region:    "eu-west-1",
+	}
+	setup := mock.NewTestSetupWithOptions(opts)
+	setup.Apply(t)
+	ctx := context.Background()
+
+	config, err := Derive(ctx, setup.Basis)
+	if err != nil {
+		// Should be an AWS-related error, not a configuration error
+		assert.NotContains(t, err.Error(), "mock:")
+		return
+	}
+
+	registryId := config.RegistryId()
+	
+	// Should match the custom account ID
+	assert.Equal(t, "555666777888", registryId)
+}
+
+func TestRegistryId_WithEnvironmentVariable(t *testing.T) {
+	// Test that registry ID can be overridden with environment variable
+	t.Setenv("MONAD_REGISTRY_ID", "999888777666")
+	
+	setup := mock.NewTestSetup()
+	setup.Apply(t)
+	ctx := context.Background()
+
+	config, err := Derive(ctx, setup.Basis)
+	if err != nil {
+		// Should be an AWS-related error, not a configuration error
+		assert.NotContains(t, err.Error(), "mock:")
+		return
+	}
+
+	registryId := config.RegistryId()
+	
+	// Should use the environment variable value
+	assert.Equal(t, "999888777666", registryId)
+}
+
 func TestImageParsing_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name         string

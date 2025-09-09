@@ -14,6 +14,7 @@ var defaults embed.FS
 type Basis struct {
 	Policy string
 	Role   string
+	Rule string
 	Env    string
 }
 
@@ -31,6 +32,11 @@ func Derive() (*Basis, error) {
 	}
 
 	basis.Role, err = read("embed/role.json.tmpl")
+	if err != nil {
+		return nil, err
+	}
+
+	basis.Rule, err = read("embed/rule.json.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +62,7 @@ func (s *Basis) Validate() error {
 	return v.ValidateStruct(s,
 		v.Field(&s.Policy, v.Required),
 		v.Field(&s.Role, v.Required),
+		v.Field(&s.Rule, v.Required),
 		v.Field(&s.Env, v.Required),
 	)
 }
@@ -68,6 +75,10 @@ func (s *Basis) PolicyTemplate() string {
 
 func (s *Basis) RoleTemplate() string {
 	return s.Role
+}
+
+func (s *Basis) RuleTemplate() string {
+	return s.Rule
 }
 
 func (s *Basis) EnvTemplate() string {

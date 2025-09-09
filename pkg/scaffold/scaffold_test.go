@@ -242,6 +242,7 @@ func TestCreate_WithTemplateOptions(t *testing.T) {
 	scaffold := &Scaffold{
 		WritePolicy: true,
 		WriteRole:   true,
+		WriteRule:   true,
 		WriteEnv:    true,
 	}
 
@@ -253,7 +254,7 @@ func TestCreate_WithTemplateOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify template files were created
-	expectedFiles := []string{"policy.json.tmpl", "role.json.tmpl", ".env.tmpl"}
+	expectedFiles := []string{"policy.json.tmpl", "role.json.tmpl", "rule.json.tmpl", ".env.tmpl"}
 	for _, filename := range expectedFiles {
 		filePath := filepath.Join(tempDir, filename)
 		_, err := os.Stat(filePath)
@@ -313,6 +314,7 @@ func TestScaffold_EnvironmentVariables(t *testing.T) {
 		envVars     map[string]string
 		expectPolicy bool
 		expectRole   bool
+		expectRule   bool
 		expectEnv    bool
 	}{
 		{
@@ -320,6 +322,7 @@ func TestScaffold_EnvironmentVariables(t *testing.T) {
 			envVars:      map[string]string{},
 			expectPolicy: false,
 			expectRole:   false,
+			expectRule:   false,
 			expectEnv:    false,
 		},
 		{
@@ -329,6 +332,7 @@ func TestScaffold_EnvironmentVariables(t *testing.T) {
 			},
 			expectPolicy: true,
 			expectRole:   false,
+			expectRule:   false,
 			expectEnv:    false,
 		},
 		{
@@ -336,10 +340,12 @@ func TestScaffold_EnvironmentVariables(t *testing.T) {
 			envVars: map[string]string{
 				"MONAD_SCAFFOLD_POLICY": "true",
 				"MONAD_SCAFFOLD_ROLE":   "true",
+				"MONAD_SCAFFOLD_RULE":   "true",
 				"MONAD_SCAFFOLD_ENV":    "true",
 			},
 			expectPolicy: true,
 			expectRole:   true,
+			expectRule:   true,
 			expectEnv:    true,
 		},
 	}
@@ -361,6 +367,7 @@ func TestScaffold_EnvironmentVariables(t *testing.T) {
 
 			assert.Equal(t, tt.expectPolicy, scaffold.WritePolicy)
 			assert.Equal(t, tt.expectRole, scaffold.WriteRole)
+			assert.Equal(t, tt.expectRule, scaffold.WriteRule)
 			assert.Equal(t, tt.expectEnv, scaffold.WriteEnv)
 		})
 	}
