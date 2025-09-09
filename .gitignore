@@ -16,6 +16,9 @@ node_modules
 dist-ssr
 *.local
 
+# Vue build output
+docs/vue/dist/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

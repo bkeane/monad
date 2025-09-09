@@ -160,6 +160,12 @@ func TestBasis_TemplateRendering(t *testing.T) {
 			notEmpty: true,
 		},
 		{
+			name:     "ecr template variables",
+			template: "{{.Ecr.Id}}.dkr.ecr.{{.Ecr.Region}}.amazonaws.com",
+			contains: []string{".dkr.ecr.", ".amazonaws.com"},
+			notEmpty: true,
+		},
+		{
 			name:     "simple text",
 			template: "hello world",
 			contains: []string{"hello", "world"},
@@ -285,6 +291,8 @@ func TestBasis_TableGeneration(t *testing.T) {
 	// Should contain some template variables
 	assert.Contains(t, table, "{{.Git.Repo}}")
 	assert.Contains(t, table, "{{.Service.Name}}")
+	assert.Contains(t, table, "{{.Ecr.Id}}")
+	assert.Contains(t, table, "{{.Ecr.Region}}")
 }
 
 func TestBasis_ErrorPropagation(t *testing.T) {
@@ -377,7 +385,7 @@ func TestBasis_RenderIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test a realistic template that would be used in the app
-	template := "arn:aws:lambda:{{.Account.Region}}:{{.Account.Id}}:function:{{.Resource.Name}}"
+	template := "{{.Ecr.Id}}.dkr.ecr.{{.Ecr.Region}}.amazonaws.com/{{.Git.Owner}}/{{.Git.Repo}}/{{.Service.Name}}:{{.Git.Branch}}"
 	
 	result, err := basis.Render(template)
 	
@@ -393,8 +401,8 @@ func TestBasis_RenderIntegration(t *testing.T) {
 	}
 
 	require.NoError(t, err)
-	assert.Contains(t, result, "arn:aws:lambda:")
-	assert.Contains(t, result, ":function:")
+	assert.Contains(t, result, ".dkr.ecr.")
+	assert.Contains(t, result, ".amazonaws.com/")
 
 	// Verify no template variables remain
 	assert.NotContains(t, result, "{{")

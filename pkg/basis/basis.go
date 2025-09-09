@@ -54,6 +54,11 @@ type TemplateData struct {
 		Name string
 		Path string
 	}
+
+	Ecr struct {
+		Id     string
+		Region string
+	}
 }
 
 //
@@ -209,6 +214,11 @@ func (b *Basis) Render(input string) (string, error) {
 		return "", err
 	}
 
+	registry, err := b.Registry()
+	if err != nil {
+		return "", err
+	}
+
 	data.Account.Id = caller.AccountId()
 	data.Account.Region = caller.AwsConfig().Region
 	data.Git.Repo = git.Repo()
@@ -218,6 +228,8 @@ func (b *Basis) Render(input string) (string, error) {
 	data.Service.Name = service.Name()
 	data.Resource.Name = resource.Name()
 	data.Resource.Path = resource.Path()
+	data.Ecr.Id = registry.Id()
+	data.Ecr.Region = registry.Region()
 
 	tmpl, err := template.New("template").Parse(input)
 	if err != nil {
@@ -243,6 +255,8 @@ func (b *Basis) Table() (string, error) {
 		"{{.Service.Name}}",
 		"{{.Resource.Name}}",
 		"{{.Resource.Path}}",
+		"{{.Ecr.Id}}",
+		"{{.Ecr.Region}}",
 	}
 
 	tbl := table.New()

@@ -1,0 +1,17 @@
+set unstable
+
+[private]
+default:
+    @just --list --unsorted
+
+# start dev server
+serve:
+    cd vue && npm run dev
+
+# build assets
+build:
+    cd vue && npm run build:assets
+
+[private]
+ci:
+    cd vue && npm install && npm run build

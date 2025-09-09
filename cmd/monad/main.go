@@ -201,7 +201,7 @@ func main() {
 								return err
 							}
 
-							fmt.Print(table)
+							fmt.Println(table)
 							return nil
 						},
 					},

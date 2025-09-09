@@ -1,0 +1,22 @@
+{
+  "name": "docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:assets": "./build-assets.sh",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "endent": "^2.1.0",
+    "vue": "^3.5.13",
+    "vue-tufte": "^0.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.2",
+    "vite": "^6.3.0",
+    "vite-svg-loader": "^5.1.0"
+  }
+}
