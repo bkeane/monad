@@ -122,9 +122,9 @@ emit_test_event() {
 
   aws events put-events --entries '[
     {
-      "source": "'${source}'",
-      "detail-type": "TestEvent", 
-      "detail": "{\"destination\": \"'${destination}'\", \"event_id\": \"'${event_id}'\"}",
+      "Source": "'${source}'",
+      "DetailType": "TestEvent", 
+      "Detail": "{\"destination\": \"'${destination}'\", \"event_id\": \"'${event_id}'\"}",
       "EventBusName": "default"
     }
   ]'
