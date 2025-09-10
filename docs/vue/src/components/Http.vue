@@ -22,22 +22,20 @@ import webserver from '../../assets/diagrams/deployment-http-1.png';
         <CodeBlock language="bash">
 {{`monad deploy --api $name`}}
         </CodeBlock>
-        <p>The default route pattern uses Git context for automatic path generation:</p>
-        <CodeBlock language="bash">{{`monad render string "ANY /\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/\{\{.Service.Name\}\}/{proxy+}""`}}
-        </CodeBlock>
     </section>
 
     <section id="auth">
         <h2>Auth</h2>
+        <p>By default the auth type is AWS_IAM
+            <Sidenote><a href="https://how.wtf/aws-sigv4-requests-with-curl.html">curl sigv4</a></Sidenote>
+            <Sidenote><a href="https://github.com/legal90/awscurl">awscurl</a></Sidenote>.</p>
         <p>Providing the auth flag allows for setting the authorization<Sidenote><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control.html">
             api gateway authorizers
         </a></Sidenote> type:</p>
         <CodeBlock language="bash">
 {{`monad deploy --api $name --auth $type`}}
         </CodeBlock>
-        <p>by default the auth type is AWS_IAM
-            <Sidenote><a href="https://how.wtf/aws-sigv4-requests-with-curl.html">curl sigv4</a></Sidenote>
-            <Sidenote><a href="https://github.com/legal90/awscurl">awscurl</a></Sidenote>.</p>
+
         <h3>Examples</h3>
         <CodeBlock language="bash">
 {{`# Fully public
@@ -55,9 +53,12 @@ monad deploy --api my-gateway --auth bearer
     
     <section id="route">
         <h2>Route</h2>
-        <p>Providing the route<Sidenote>
+        <p>The default route pattern<Sidenote>
             <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-routes.html">greedy proxy route keys</a>
-        </Sidenote> flag allows for setting the proxy path:</p>
+        </Sidenote> uses Git context ensuring deployments do not conflict:</p>
+        <CodeBlock language="bash">{{`monad render string "ANY /\{\{.Git.Repo\}\}/\{\{.Git.Branch\}\}/\{\{.Service.Name\}\}/{proxy+}"`}}
+        </CodeBlock>
+        <p>Providing the route flag allows for setting the proxy path:</p>
         <CodeBlock language="bash">
 {{`monad deploy --api $name --route $pattern`}}
         </CodeBlock>
