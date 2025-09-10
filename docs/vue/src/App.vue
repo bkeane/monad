@@ -5,7 +5,7 @@
     <component :is="currentView" />
   </article>
 
-  <Nav github="https://github.com/bkeane/monad">
+  <Nav github="https://github.com/bkeane/monad" sticky title-align>
     <ul>
       <li><a href="#/introduction/about">Introduction</a><ul>
         <li><a href="#/introduction/installation">Install</a></li>
