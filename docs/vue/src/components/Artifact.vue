@@ -9,7 +9,7 @@ import basic from '../../assets/diagrams/deployment-basic-1.png'
         <p>
         <NewThought>OCI Images stored on ECR</NewThought> are the deployable artifact of Monad. 
         If convention is followed these artifacts have an entrypoint of a webserver. So
-        even though Monad is a serverless deployment approach, it's standard artifact is compatible
+        even though Monad is a serverless deployment approach, its standard artifact is compatible
         with any container runtime capable of managing containerized webservers<Sidenote>
                 <a href="https://github.com/awslabs/aws-lambda-web-adapter">AWS Lambda Web Adapter</a>
         </Sidenote>.

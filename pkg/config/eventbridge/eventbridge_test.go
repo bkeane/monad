@@ -32,7 +32,10 @@ func TestDerive_Success(t *testing.T) {
 	assert.NotNil(t, config.Client())
 	assert.Equal(t, "us-east-1", config.Region())
 	assert.Equal(t, "", config.BusName()) // No longer defaults to "default"
-	assert.Equal(t, "test-repo-test-branch-test-service", config.RuleName())
+	// Test default rule is created with resource name
+	rules := config.Rules()
+	assert.Len(t, rules, 1)
+	assert.Contains(t, rules, "test-repo-test-branch-test-service")
 }
 
 func TestDerive_DefaultValues(t *testing.T) {
@@ -50,7 +53,10 @@ func TestDerive_DefaultValues(t *testing.T) {
 	// Test default values are applied
 	assert.Equal(t, "us-east-1", config.Region()) // From caller
 	assert.Equal(t, "", config.BusName())   // Empty when not set
-	assert.Equal(t, "test-repo-test-branch-test-service", config.RuleName()) // From resource
+	// Test default rule is created with resource name
+	rules := config.Rules()
+	assert.Len(t, rules, 1)
+	assert.Contains(t, rules, "test-repo-test-branch-test-service")
 }
 
 func TestDerive_CustomValues(t *testing.T) {
@@ -101,7 +107,12 @@ func TestDerive_WithCustomRuleTemplate(t *testing.T) {
 		return
 	}
 
-	document := config.RuleDocument()
+	rules := config.Rules()
+	assert.Len(t, rules, 1)
+	// The rule name should be prefixed with resource name and extracted from the filename
+	expectedRuleName := "test-repo-test-branch-test-service-custom-rule"
+	assert.Contains(t, rules, expectedRuleName)
+	document := rules[expectedRuleName]
 	assert.Contains(t, document, "test-service-rule")
 	assert.Contains(t, document, `"source": ["test-service"]`)
 }
@@ -131,7 +142,10 @@ func TestDerive_WithCustomBusAndRule(t *testing.T) {
 
 	assert.Equal(t, "eu-west-1", config.Region())
 	assert.Equal(t, "custom-event-bus", config.BusName())
-	assert.Equal(t, "custom-repo-custom-branch-custom-service", config.RuleName())
+	// Test default rule is created with resource name
+	rules := config.Rules()
+	assert.Len(t, rules, 1)
+	assert.Contains(t, rules, "custom-repo-custom-branch-custom-service")
 }
 
 func TestDerive_Tags(t *testing.T) {
@@ -317,7 +331,13 @@ func TestRuleDocument_Default(t *testing.T) {
 	}
 
 	// When no rule template path is provided, should use default rule template
-	document := config.RuleDocument()
+	rules := config.Rules()
+	assert.Len(t, rules, 1)
+	// Get the single default rule document
+	var document string
+	for _, doc := range rules {
+		document = doc
+	}
 	// The document will be rendered from the default rule template, so it should contain expected structure
 	assert.NotEmpty(t, strings.TrimSpace(document))
 	assert.Contains(t, document, "source")
@@ -367,6 +387,233 @@ func TestBusName_Formatting(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expectedBus, config.BusName())
+		})
+	}
+}
+
+func TestExtractRuleName(t *testing.T) {
+	tests := []struct {
+		name     string
+		filePath string
+		expected string
+	}{
+		{
+			name:     "single extension",
+			filePath: "rule.json",
+			expected: "rule",
+		},
+		{
+			name:     "multiple extensions",
+			filePath: "s3.json.tmpl",
+			expected: "s3",
+		},
+		{
+			name:     "many extensions",
+			filePath: "schedule.yaml.template.backup",
+			expected: "schedule",
+		},
+		{
+			name:     "path with directory",
+			filePath: "/path/to/rules/my-rule.json",
+			expected: "my-rule",
+		},
+		{
+			name:     "path with multiple dots in directory",
+			filePath: "/path.to/rules/event.pattern.json.tmpl",
+			expected: "event",
+		},
+		{
+			name:     "no extension",
+			filePath: "rulename",
+			expected: "rulename",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractRuleName(tt.filePath)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDerive_MultipleRules(t *testing.T) {
+	setup := mock.NewTestSetup()
+
+	// Create multiple temp rule files
+	tmpDir := t.TempDir()
+	
+	// First rule file
+	s3Rule := `{
+		"source": ["aws.s3"],
+		"detail-type": ["Object Created"]
+	}`
+	s3File := tmpDir + "/s3.json.tmpl"
+	require.NoError(t, os.WriteFile(s3File, []byte(s3Rule), 0644))
+	
+	// Second rule file
+	scheduleRule := `rate(5 minutes)`
+	scheduleFile := tmpDir + "/schedule.yaml"
+	require.NoError(t, os.WriteFile(scheduleFile, []byte(scheduleRule), 0644))
+
+	// Apply with multiple rule files
+	setup.ApplyWithOverrides(t, map[string]string{
+		"MONAD_RULE": s3File + "," + scheduleFile,
+	})
+	ctx := context.Background()
+
+	config, err := Derive(ctx, setup.Basis)
+	if err != nil {
+		// Should be an AWS-related error, not a configuration error
+		assert.NotContains(t, err.Error(), "mock:")
+		return
+	}
+
+	rules := config.Rules()
+	assert.Len(t, rules, 2)
+	
+	// Check both rules exist with correct names (prefixed with resource name)
+	s3RuleName := "test-repo-test-branch-test-service-s3"
+	scheduleRuleName := "test-repo-test-branch-test-service-schedule"
+	assert.Contains(t, rules, s3RuleName)
+	assert.Contains(t, rules, scheduleRuleName)
+	
+	// Check rule content
+	assert.Contains(t, rules[s3RuleName], "aws.s3")
+	assert.Contains(t, rules[scheduleRuleName], "rate(5 minutes)")
+}
+
+func TestDerive_DuplicateRuleNames(t *testing.T) {
+	setup := mock.NewTestSetup()
+
+	// Create multiple temp rule files with same base name
+	tmpDir := t.TempDir()
+	
+	// First rule file
+	rule1 := `{"source": ["test1"]}`
+	file1 := tmpDir + "/rule.json"
+	require.NoError(t, os.WriteFile(file1, []byte(rule1), 0644))
+	
+	// Second rule file with different extension but same base name
+	rule2 := `{"source": ["test2"]}`
+	file2 := tmpDir + "/rule.yaml"
+	require.NoError(t, os.WriteFile(file2, []byte(rule2), 0644))
+
+	// Apply with multiple rule files that would create duplicate names
+	setup.ApplyWithOverrides(t, map[string]string{
+		"MONAD_RULE": file1 + "," + file2,
+	})
+	ctx := context.Background()
+
+	_, err := Derive(ctx, setup.Basis)
+	assert.Error(t, err)
+	// The error should include the prefixed rule name
+	assert.Contains(t, err.Error(), "duplicate rule name 'test-repo-test-branch-test-service-rule'")
+}
+
+func TestProcessRuleContent(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "cron expression with whitespace",
+			input:    "  cron(0 12 * * ? *)  ",
+			expected: "cron(0 12 * * ? *)",
+		},
+		{
+			name:     "rate expression with whitespace",
+			input:    "\t\nrate(5 minutes)\n\t",
+			expected: "rate(5 minutes)",
+		},
+		{
+			name:     "cron expression without whitespace",
+			input:    "cron(0 12 * * ? *)",
+			expected: "cron(0 12 * * ? *)",
+		},
+		{
+			name:     "rate expression without whitespace",
+			input:    "rate(5 minutes)",
+			expected: "rate(5 minutes)",
+		},
+		{
+			name:     "JSON event pattern with whitespace (not chomped)",
+			input:    "  {\"source\": [\"aws.s3\"]}  ",
+			expected: "  {\"source\": [\"aws.s3\"]}  ",
+		},
+		{
+			name:     "JSON event pattern without whitespace",
+			input:    "{\"source\": [\"aws.s3\"]}",
+			expected: "{\"source\": [\"aws.s3\"]}",
+		},
+		{
+			name:     "complex JSON with newlines (not chomped)",
+			input:    "{\n  \"source\": [\"aws.s3\"],\n  \"detail\": {}\n}",
+			expected: "{\n  \"source\": [\"aws.s3\"],\n  \"detail\": {}\n}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := processRuleContent(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRulesMap_Validation(t *testing.T) {
+	tests := []struct {
+		name      string
+		rulesMap  map[string]string
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name:      "valid rules",
+			rulesMap:  map[string]string{"rule1": "content1", "rule2": "content2"},
+			expectErr: false,
+		},
+		{
+			name:      "empty map is valid (no rules configured)",
+			rulesMap:  map[string]string{},
+			expectErr: false,
+		},
+		{
+			name:      "nil map is valid (no rules configured)",
+			rulesMap:  nil,
+			expectErr: false,
+		},
+		{
+			name:      "empty rule name",
+			rulesMap:  map[string]string{"": "content"},
+			expectErr: true,
+			errMsg:    "rule name cannot be empty",
+		},
+		{
+			name:      "empty rule content",
+			rulesMap:  map[string]string{"rule1": ""},
+			expectErr: true,
+			errMsg:    "rule content cannot be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &Config{
+				EventBridgeRulesMap: tt.rulesMap,
+			}
+			
+			err := config.validateRulesMap(config.EventBridgeRulesMap)
+			
+			if tt.expectErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
