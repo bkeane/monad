@@ -109,9 +109,10 @@ func TestDerive_WithCustomRuleTemplate(t *testing.T) {
 
 	rules := config.Rules()
 	assert.Len(t, rules, 1)
-	// The rule name should be extracted from the filename
-	assert.Contains(t, rules, "custom-rule")
-	document := rules["custom-rule"]
+	// The rule name should be prefixed with resource name and extracted from the filename
+	expectedRuleName := "test-repo-test-branch-test-service-custom-rule"
+	assert.Contains(t, rules, expectedRuleName)
+	document := rules[expectedRuleName]
 	assert.Contains(t, document, "test-service-rule")
 	assert.Contains(t, document, `"source": ["test-service"]`)
 }
@@ -471,13 +472,15 @@ func TestDerive_MultipleRules(t *testing.T) {
 	rules := config.Rules()
 	assert.Len(t, rules, 2)
 	
-	// Check both rules exist with correct names
-	assert.Contains(t, rules, "s3")
-	assert.Contains(t, rules, "schedule")
+	// Check both rules exist with correct names (prefixed with resource name)
+	s3RuleName := "test-repo-test-branch-test-service-s3"
+	scheduleRuleName := "test-repo-test-branch-test-service-schedule"
+	assert.Contains(t, rules, s3RuleName)
+	assert.Contains(t, rules, scheduleRuleName)
 	
 	// Check rule content
-	assert.Contains(t, rules["s3"], "aws.s3")
-	assert.Contains(t, rules["schedule"], "rate(5 minutes)")
+	assert.Contains(t, rules[s3RuleName], "aws.s3")
+	assert.Contains(t, rules[scheduleRuleName], "rate(5 minutes)")
 }
 
 func TestDerive_DuplicateRuleNames(t *testing.T) {
@@ -504,7 +507,8 @@ func TestDerive_DuplicateRuleNames(t *testing.T) {
 
 	_, err := Derive(ctx, setup.Basis)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "duplicate rule name 'rule'")
+	// The error should include the prefixed rule name
+	assert.Contains(t, err.Error(), "duplicate rule name 'test-repo-test-branch-test-service-rule'")
 }
 
 func TestProcessRuleContent(t *testing.T) {

@@ -124,7 +124,9 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	} else {
 		// Process multiple rule files with duplicate name detection
 		for _, path := range cfg.EventBridgeRulePaths {
-			ruleName := extractRuleName(path)
+			baseRuleName := extractRuleName(path)
+			// Prefix with resource name to avoid cross-repo/branch collisions
+			ruleName := fmt.Sprintf("%s-%s", cfg.resource.Name(), baseRuleName)
 			
 			// Check for duplicate names
 			if _, exists := cfg.EventBridgeRulesMap[ruleName]; exists {
