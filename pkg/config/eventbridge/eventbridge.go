@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
@@ -34,13 +36,45 @@ type Config struct {
 	client                  *eventbridge.Client
 	EventBridgeRegionName   string `env:"MONAD_BUS_REGION"`
 	EventBridgeBusName      string `env:"MONAD_BUS_NAME" flag:"--bus" usage:"EventBridge bus name" hint:"name"`
-	EventBridgeRuleName     string
-	EventBridgeRulePath     string `env:"MONAD_RULE" flag:"--rule" usage:"EventBridge rule template file path" hint:"path"`
-	EventBridgeRuleTemplate string
-	EventBridgeRuleDocument string
+	EventBridgeRulePaths    []string `env:"MONAD_RULE" flag:"--rule" usage:"EventBridge rule template file paths" hint:"path"`
+	EventBridgeRulesMap     map[string]string
 	caller                  *caller.Basis
 	defaults                *defaults.Basis
 	resource                *resource.Basis
+}
+
+//
+// Helper functions
+//
+
+// extractRuleName converts filename to rule name by removing all extensions
+// e.g., "s3.json.tmpl" -> "s3", "schedule.yaml" -> "schedule"
+func extractRuleName(filePath string) string {
+	filename := filepath.Base(filePath)
+	// Keep removing extensions until no more dots
+	for strings.Contains(filename, ".") {
+		filename = strings.TrimSuffix(filename, filepath.Ext(filename))
+	}
+	return filename
+}
+
+// chomp removes leading and trailing whitespace
+func chomp(s string) string {
+	s = strings.TrimLeftFunc(s, unicode.IsSpace)
+	s = strings.TrimRightFunc(s, unicode.IsSpace)
+	return s
+}
+
+// processRuleContent applies chomping to schedule expressions
+func processRuleContent(content string) string {
+	// First chomp to check the prefix without leading whitespace
+	chomped := chomp(content)
+	// If it's a schedule expression, return the chomped version
+	if strings.HasPrefix(chomped, "cron(") || strings.HasPrefix(chomped, "rate(") {
+		return chomped
+	}
+	// Leave event patterns as-is (JSON should not be chomped)
+	return content
 }
 
 //
@@ -77,26 +111,39 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 		cfg.EventBridgeRegionName = cfg.caller.AwsConfig().Region
 	}
 
-	if cfg.EventBridgeRuleName == "" {
-		cfg.EventBridgeRuleName = cfg.resource.Name()
-	}
+	cfg.EventBridgeRulesMap = make(map[string]string)
 
-	if cfg.EventBridgeRulePath == "" {
-		cfg.EventBridgeRuleTemplate = cfg.defaults.RuleTemplate()
-
-	} else {
-		bytes, err := os.ReadFile(cfg.EventBridgeRulePath)
+	if len(cfg.EventBridgeRulePaths) == 0 {
+		// Use default rule
+		defaultTemplate := cfg.defaults.RuleTemplate()
+		defaultDocument, err := basis.Render(defaultTemplate)
 		if err != nil {
 			return nil, err
 		}
-
-		cfg.EventBridgeRuleTemplate = string(bytes)
-
-	}
-
-	cfg.EventBridgeRuleDocument, err = basis.Render(cfg.EventBridgeRuleTemplate)
-	if err != nil {
-		return nil, err
+		cfg.EventBridgeRulesMap[cfg.resource.Name()] = processRuleContent(defaultDocument)
+	} else {
+		// Process multiple rule files with duplicate name detection
+		for _, path := range cfg.EventBridgeRulePaths {
+			ruleName := extractRuleName(path)
+			
+			// Check for duplicate names
+			if _, exists := cfg.EventBridgeRulesMap[ruleName]; exists {
+				return nil, fmt.Errorf("duplicate rule name '%s' derived from file '%s'", ruleName, path)
+			}
+			
+			bytes, err := os.ReadFile(path)
+			if err != nil {
+				return nil, err
+			}
+			
+			template := string(bytes)
+			document, err := basis.Render(template)
+			if err != nil {
+				return nil, err
+			}
+			
+			cfg.EventBridgeRulesMap[ruleName] = processRuleContent(document)
+		}
 	}
 
 	if err = cfg.Validate(); err != nil {
@@ -114,9 +161,9 @@ func (c *Config) Validate() error {
 	return v.ValidateStruct(c,
 		v.Field(&c.client, v.Required),
 		v.Field(&c.EventBridgeBusName, v.By(c.emptyOrExists)),
-		v.Field(&c.EventBridgeRuleName, v.Required),
-		v.Field(&c.EventBridgeRuleTemplate, v.Required),
-		v.Field(&c.EventBridgeRuleDocument, v.Required),
+		v.Field(&c.EventBridgeRulesMap, 
+			v.By(c.validateRulesMap),
+		),
 		v.Field(&c.EventBridgeRegionName, v.Required),
 	)
 }
@@ -156,6 +203,22 @@ func (c *Config) emptyOrExists(value interface{}) error {
 	return nil
 }
 
+func (c *Config) validateRulesMap(value interface{}) error {
+	rules, ok := value.(map[string]string)
+	if !ok {
+		return fmt.Errorf("rules must be a map[string]string")
+	}
+	for name, content := range rules {
+		if name == "" {
+			return fmt.Errorf("rule name cannot be empty")
+		}
+		if content == "" {
+			return fmt.Errorf("rule content cannot be empty for rule '%s'", name)
+		}
+	}
+	return nil
+}
+
 //
 // Accessors
 //
@@ -171,17 +234,14 @@ func (c *Config) BusName() string {
 	return c.EventBridgeBusName 
 }
 
-// RuleTemplate returns the EventBridge rule name
-func (c *Config) RuleName() string { return c.EventBridgeRuleName }
+// Rules returns all configured EventBridge rules as name->content map
+func (c *Config) Rules() map[string]string {
+	return c.EventBridgeRulesMap
+}
 
 // PermissionStatementId returns the Lambda permission statement ID for EventBridge
 func (c *Config) PermissionStatementId() string {
 	return strings.Join([]string{"eventbridge", c.BusName(), c.resource.Name()}, "-")
-}
-
-// RuleDocument returns the eventbridge rule definition
-func (c *Config) RuleDocument() string {
-	return c.EventBridgeRuleDocument
 }
 
 // Tags returns standardized EventBridge resource tags
