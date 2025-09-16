@@ -30,39 +30,6 @@ jobs:
         run: go test ./pkg/... -v
 
   integration:
-    needs: test
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ env.RELEVANT_BRANCH }}
-
-      - name: setup docker
-        uses: ./.github/actions/docker
-
-      - name: setup stage
-        uses: ./.github/actions/stages
-        with:
-          stage: build
-          account: prod
-
-      - name: ecr login
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: build
-        run: |
-          GIT_BRANCH=${{ env.RELEVANT_BRANCH }} \
-          GIT_SHA=${{ env.RELEVANT_SHA }} \
-          docker buildx bake echo --push
-
-  deployment:
-    needs: integration
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
@@ -95,6 +62,7 @@ jobs:
         run: |
           go run cmd/monad/main.go deploy \
             --chdir e2e/echo \
+            --image 677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/actress \
             --env .env.tmpl \
             --policy policy.json.tmpl \
             --bus default \
