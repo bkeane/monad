@@ -38,6 +38,10 @@ resource "aws_ecr_repository" "echo" {
   name = "bkeane/monad/echo"
 }
 
+data "aws_ecr_repository" "actress" {
+  name = "bkeane/actress"
+}
+
 module "topology" {
   source = "github.com/bkeane/stage/topology?ref=v0.1.0"
   depends_on = [aws_iam_openid_connect_provider.github]
@@ -50,6 +54,7 @@ module "topology" {
 
   ecr_repositories = [
     aws_ecr_repository.echo,
+    data.aws_ecr_repository.actress
   ]
 
   stages = [
