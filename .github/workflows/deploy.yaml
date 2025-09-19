@@ -63,7 +63,7 @@ jobs:
         run: |
           go run cmd/monad/main.go deploy \
             --chdir e2e/echo \
-            --image 677771948337.dkr.ecr.us-west-2.amazonaws.com/bkeane/actress:main \
+            --image bkeane/actress:main \
             --env .env.tmpl \
             --policy policy.json.tmpl \
             --bus default \
