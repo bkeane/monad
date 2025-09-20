@@ -62,7 +62,7 @@ jobs:
       - name: deploy
         run: |
           go run cmd/monad/main.go deploy \
-            --chdir e2e/echo \
+            --chdir e2e \
             --image bkeane/actress:main \
             --env .env.tmpl \
             --policy policy.json.tmpl \

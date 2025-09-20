@@ -41,7 +41,7 @@ jobs:
       - name: destroy
         run: |
           go run cmd/monad/main.go \
-          --chdir e2e/echo \
+          --chdir e2e \
           --branch ${{ env.RELEVANT_BRANCH }} \
           destroy
 
