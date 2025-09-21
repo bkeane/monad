@@ -163,7 +163,7 @@ func main() {
 					},
 					{
 						Name:  "tag",
-						Usage: "print basis image",
+						Usage: "print tag",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							basis, err := pkg.Basis(ctx)
 							if err != nil {
@@ -176,6 +176,25 @@ func main() {
 							}
 
 							fmt.Println(registry.ImageUrl())
+							return nil
+						},
+					},
+					{
+						Name:        "list",
+						Usage:       "list artifacts",
+						Description: desc.EcrList(),
+						Action: func(ctx context.Context, cmd *cli.Command) error {
+							registry, err := pkg.Registry(ctx)
+							if err != nil {
+								return err
+							}
+
+							table, err := registry.Table(ctx)
+							if err != nil {
+								return err
+							}
+
+							fmt.Println(table)
 							return nil
 						},
 					},

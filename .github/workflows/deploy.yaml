@@ -29,7 +29,7 @@ jobs:
       - name: run unit tests
         run: go test ./pkg/... -v
 
-  actress:
+  deploy:
     needs: test
     runs-on: ubuntu-24.04-arm
     permissions:
@@ -59,13 +59,13 @@ jobs:
           ecr_registry_id: 677771948337
           ecr_registry_region: us-west-2
 
-      - name: deploy
+      - name: deploy e2e actor
         run: |
           go run cmd/monad/main.go deploy \
-            --chdir e2e \
+            --service e2e \
             --image bkeane/actress:main \
-            --env .env.tmpl \
-            --policy policy.json.tmpl \
+            --env e2e/.env.tmpl \
+            --policy e2e/policy.json.tmpl \
             --bus default \
             --memory 256 \
             --disk 1024 \
@@ -78,7 +78,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-24.04-arm
-    needs: actress
+    needs: deploy
     env:
       TERM: xterm-color
     permissions:

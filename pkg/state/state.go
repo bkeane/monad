@@ -3,11 +3,13 @@ package state
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/bkeane/monad/pkg/basis"
 	"github.com/bkeane/monad/pkg/basis/caller"
 	"github.com/bkeane/monad/pkg/basis/git"
 	"github.com/bkeane/monad/pkg/basis/service"
+	"github.com/dustin/go-humanize"
 
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/charmbracelet/lipgloss/table"
@@ -28,11 +30,12 @@ type Basis interface {
 //
 
 type StateMetadata struct {
-	Service string
-	Owner   string
-	Repo    string
-	Branch  string
-	Sha     string
+	Service      string
+	Owner        string
+	Repo         string
+	Branch       string
+	Sha          string
+	LastModified *time.Time
 }
 
 //
@@ -76,6 +79,14 @@ func (s *State) List(ctx context.Context) ([]*StateMetadata, error) {
 	var services []*StateMetadata
 	for _, function := range functions.Functions {
 		if metadata := s.extractFromTags(ctx, *function.FunctionArn); metadata != nil {
+			// Add LastModified timestamp from function data
+			if function.LastModified != nil {
+				// Parse the LastModified timestamp
+				if lastModified, err := time.Parse("2006-01-02T15:04:05.000+0000", *function.LastModified); err == nil {
+					metadata.LastModified = &lastModified
+				}
+			}
+
 			// Apply filtering based on basis values (* means all)
 			if s.matchesFilter(metadata) {
 				services = append(services, metadata)
@@ -113,10 +124,11 @@ func (s *State) Table(ctx context.Context) (string, error) {
 	})
 
 	tbl := table.New()
-	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha")
+	tbl.Headers("Service", "Owner", "Repo", "Branch", "Sha", "Deployed")
 
 	for _, service := range services {
-		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, truncate(service.Sha))
+		deployedDisplay := formatTime(service.LastModified)
+		tbl.Row(service.Service, service.Owner, service.Repo, service.Branch, truncate(service.Sha), deployedDisplay)
 	}
 
 	return tbl.Render(), nil
@@ -202,4 +214,12 @@ func truncate(s string) string {
 		return s
 	}
 	return s[:7]
+}
+
+// formatTime formats time for display using human-friendly format
+func formatTime(t *time.Time) string {
+	if t == nil {
+		return "-"
+	}
+	return humanize.Time(*t)
 }

@@ -6,7 +6,9 @@ import (
 
 	"github.com/bkeane/monad/internal/registryv2"
 	"github.com/bkeane/monad/pkg/basis/caller"
+	"github.com/bkeane/monad/pkg/basis/git"
 	"github.com/bkeane/monad/pkg/basis/registry"
+	"github.com/bkeane/monad/pkg/basis/service"
 
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	v "github.com/go-ozzo/ozzo-validation/v4"
@@ -15,6 +17,8 @@ import (
 type Basis interface {
 	Caller() (*caller.Basis, error)
 	Registry() (*registry.Basis, error)
+	Git() (*git.Basis, error)
+	Service() (*service.Basis, error)
 }
 
 //
@@ -26,6 +30,8 @@ type Config struct {
 	registryv2 *registryv2.Client
 	caller     *caller.Basis
 	registry   *registry.Basis
+	git        *git.Basis
+	service    *service.Basis
 }
 
 //
@@ -42,6 +48,16 @@ func Derive(ctx context.Context, basis Basis) (*Config, error) {
 	}
 
 	cfg.registry, err = basis.Registry()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.git, err = basis.Git()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.service, err = basis.Service()
 	if err != nil {
 		return nil, err
 	}
@@ -95,4 +111,14 @@ func (c *Config) ImageTag() string {
 // RegistryId returns the registry ID
 func (c *Config) RegistryId() string {
 	return c.registry.Id()
+}
+
+// Git returns the git basis
+func (c *Config) Git() *git.Basis {
+	return c.git
+}
+
+// Service returns the service basis
+func (c *Config) Service() *service.Basis {
+	return c.service
 }
