@@ -63,7 +63,7 @@ jobs:
         run: |
           go run cmd/monad/main.go deploy \
             --service e2e \
-            --image bkeane/actress:main \
+            --image bkeane/actress/src:main \
             --env e2e/.env.tmpl \
             --policy e2e/policy.json.tmpl \
             --bus default \
