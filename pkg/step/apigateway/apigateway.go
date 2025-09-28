@@ -81,6 +81,11 @@ func Derive(apigateway ApiGatewayConfig, lambda LambdaConfig) *Step {
 }
 
 func (s *Step) Mount(ctx context.Context) error {
+	// Skip API Gateway setup if no API ID is configured
+	if s.apigateway.ApiId() == "" {
+		return nil
+	}
+
 	// Call internal unmount silently (don't log deletes)
 	if _, err := s.unmount(ctx); err != nil {
 		return err

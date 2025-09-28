@@ -34,7 +34,7 @@ import worker from '../../assets/diagrams/deployment-event-1.png';
     
     <section id="rule">
         <h2>Rule</h2>
-        <p>By default the lambda will be invoked by events matching a unicast pattern...</p>
+        <p>The default rule used provided you have also declared a bus is:</p>
         <CodeBlock language="json">
 {{`{
   "source": [{
@@ -47,17 +47,18 @@ import worker from '../../assets/diagrams/deployment-event-1.png';
   }
 }`}}
         </CodeBlock>
-                <p>... roughly translated:</p>
-        <ul>
-            <li>source: any service within this repository & branch</li>
-            <li>destination: this service on this branch</li>
-        </ul>
-        <p>The rule flag can be used to customize event matching rules<Sidenote><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html">eventbridge rule</a></Sidenote><Sidenote><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-pattern-sandbox.html">eventBridge sandbox</a></Sidenote>:</p>
+        <p>Which approximates unicast behavior.</p>
+        <p>The rule flag can be used to provide your own custom event matching rule:<Sidenote><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html">eventbridge rule</a></Sidenote><Sidenote><a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-pattern-sandbox.html">eventbridge sandbox</a></Sidenote>:</p>
         <CodeBlock language="bash">
 {{`monad deploy --bus $bus --rule ./rule.json.tmpl`}}
         </CodeBlock>
-        <h3>Example</h3>
-        <p>Let's say you wanted broadcast behavior instead of the afformentioned unicast behavior</p>
+          <p>Or rules:</p>
+        <CodeBlock language="bash">
+{{`monad deploy --bus $bus --rule ./s3_events.json.tmpl --rule cron.tmpl`}}
+        </CodeBlock>
+        <h3>Unicast & Multicast</h3>
+        <p>The default rule above is a unicast style rule, with a broadcast domain of the repo & branch.</p>
+        <p>Let's say you wanted multicast behavior instead of the afformentioned unicast behavior:</p>
         <CodeBlock language="json">
 {{`{
   "source": [{
@@ -71,11 +72,6 @@ import worker from '../../assets/diagrams/deployment-event-1.png';
 }
 `}}
         </CodeBlock>
-                <p>... roughly translated:</p>
-        <ul>
-            <li>source: any service except for itself</li>
-            <li>destination: any service within this repository & branch</li>
-        </ul>
     </section>
     
     <section id="configuration">

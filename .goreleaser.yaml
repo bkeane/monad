@@ -35,12 +35,26 @@ archives:
       - goos: windows
         formats: [zip]
 
-brews:
+homebrew_casks:
   - name: monad
     repository:
       owner: bkeane
       name: taps
       token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/bkeane/monad"
+    description: "Monad CLI tool"
+    license: "MIT"
+    binary: monad
+    url:
+      verified: github.com/bkeane/monad
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew cask update for {{ .ProjectName }} version {{ .Tag }}"
+    skip_upload: auto
+    test: |
+      system "#{bin}/monad", "--version"
 
 changelog:
   sort: asc

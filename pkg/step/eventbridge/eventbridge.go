@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
@@ -16,8 +15,7 @@ import (
 
 type EventBridgeConfig interface {
 	BusName() string
-	RuleName() string
-	RuleDocument() string
+	Rules() map[string]string
 	PermissionStatementId() string
 	Client() *eventbridge.Client
 	Tags() []eventbridgetypes.Tag
@@ -191,15 +189,14 @@ func (s *Step) PutRule(ctx context.Context, rule EventBridgeRule) error {
 	// The ScheduleExpression is the odd one out (always a stringy cron-type expression).
 
 	if strings.HasPrefix(rule.Document, "cron(") || strings.HasPrefix(rule.Document, "rate(") {
-		scheduleExpression := chomp(rule.Document)
-		putRuleInput.ScheduleExpression = aws.String(scheduleExpression)
+		putRuleInput.ScheduleExpression = aws.String(rule.Document)
 	} else {
 		putRuleInput.EventPattern = aws.String(rule.Document)
 	}
 
 	putTargetsInput := eventbridge.PutTargetsInput{
-		EventBusName: aws.String(s.eventbridge.BusName()),
-		Rule:         aws.String(s.eventbridge.RuleName()),
+		EventBusName: aws.String(rule.BusName),
+		Rule:         aws.String(rule.RuleName),
 		Targets: []eventbridgetypes.Target{
 			{
 				Id:  aws.String(s.lambda.FunctionName()),
@@ -300,24 +297,33 @@ func (s *Step) DeleteRule(ctx context.Context, rule EventBridgeRule) error {
 
 // GET Operations
 func (s *Step) GetDefinedRules(ctx context.Context) (map[string]map[string]EventBridgeRule, error) {
-	// This code _can_ handle many defined rules, but monad currently will only support one until more are necessary.
+	// This code can now handle multiple defined rules
 	busName := s.eventbridge.BusName()
+	rules := s.eventbridge.Rules()
 
-	// Only create rules if a bus is explicitly configured
-	if busName == "" {
+	// Only create rules if rules are defined
+	if len(rules) == 0 {
 		return map[string]map[string]EventBridgeRule{}, nil
 	}
 
-	document := s.eventbridge.RuleDocument()
+	// If no bus is explicitly configured, use default bus
+	if busName == "" {
+		busName = "default"
+	}
+
 	ruleMap := map[string]map[string]EventBridgeRule{}
 	// Initialize the inner map if it doesn't exist
 	if _, exists := ruleMap[busName]; !exists {
 		ruleMap[busName] = make(map[string]EventBridgeRule)
 	}
-	ruleMap[busName][s.eventbridge.RuleName()] = EventBridgeRule{
-		BusName:  busName,
-		RuleName: s.eventbridge.RuleName(),
-		Document: document,
+
+	// Create EventBridgeRule for each defined rule
+	for ruleName, document := range rules {
+		ruleMap[busName][ruleName] = EventBridgeRule{
+			BusName:  busName,
+			RuleName: ruleName,
+			Document: document,
+		}
 	}
 
 	return ruleMap, nil
@@ -406,9 +412,3 @@ func (s *Step) GetAssociatedRules(ctx context.Context) (map[string]map[string]Ev
 	return associatedRules, nil
 }
 
-// Utility
-func chomp(s string) string {
-	s = strings.TrimLeftFunc(s, unicode.IsSpace)
-	s = strings.TrimRightFunc(s, unicode.IsSpace)
-	return s
-}

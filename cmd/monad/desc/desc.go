@@ -46,3 +46,15 @@ Examples:
 
 Use --owner='*', --repo='*', --branch='*' for unfiltered results (quotes required).`
 }
+
+// EcrList returns a description for the ecr list command with filtering information
+func EcrList() string {
+	return `List ECR artifacts filtered by current git context.
+
+Examples:
+  monad ecr list                              # Current repo/service only
+  monad ecr list --service='*'                # All services (note quotes)
+  monad ecr list --owner='*' --repo='*' --service='*'  # All artifacts
+
+Use --owner='*', --repo='*', --service='*' for unfiltered results (quotes required).`
+}

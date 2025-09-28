@@ -29,40 +29,8 @@ jobs:
       - name: run unit tests
         run: go test ./pkg/... -v
 
-  integration:
+  deploy:
     needs: test
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ env.RELEVANT_BRANCH }}
-
-      - name: setup docker
-        uses: ./.github/actions/docker
-
-      - name: setup stage
-        uses: ./.github/actions/stages
-        with:
-          stage: build
-          account: prod
-
-      - name: ecr login
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: build
-        run: |
-          GIT_BRANCH=${{ env.RELEVANT_BRANCH }} \
-          GIT_SHA=${{ env.RELEVANT_SHA }} \
-          docker buildx bake echo --push
-
-  deployment:
-    needs: integration
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
@@ -91,12 +59,13 @@ jobs:
           ecr_registry_id: 677771948337
           ecr_registry_region: us-west-2
 
-      - name: deploy
+      - name: deploy e2e actor
         run: |
           go run cmd/monad/main.go deploy \
-            --chdir e2e/echo \
-            --env .env.tmpl \
-            --policy policy.json.tmpl \
+            --service e2e \
+            --image bkeane/actress/src:main \
+            --env e2e/.env.tmpl \
+            --policy e2e/policy.json.tmpl \
             --bus default \
             --memory 256 \
             --disk 1024 \
@@ -109,10 +78,9 @@ jobs:
 
   e2e:
     runs-on: ubuntu-24.04-arm
-    needs: deployment
+    needs: deploy
     env:
       TERM: xterm-color
-      MONAD_SERVICE: echo
     permissions:
       contents: read
       id-token: write

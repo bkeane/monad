@@ -6,6 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/bkeane/monad/internal/registryv2"
+	"github.com/bkeane/monad/pkg/basis/git"
+	"github.com/bkeane/monad/pkg/basis/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -33,6 +35,16 @@ func (m *MockEcrConfig) ImageTag() string {
 func (m *MockEcrConfig) RegistryId() string {
 	args := m.Called()
 	return args.String(0)
+}
+
+func (m *MockEcrConfig) Git() *git.Basis {
+	args := m.Called()
+	return args.Get(0).(*git.Basis)
+}
+
+func (m *MockEcrConfig) Service() *service.Basis {
+	args := m.Called()
+	return args.Get(0).(*service.Basis)
 }
 
 // MockEcrClient for testing ECR calls
