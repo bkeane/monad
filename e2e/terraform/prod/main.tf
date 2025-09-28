@@ -34,12 +34,8 @@ module "api_gateway" {
   }
 }
 
-resource "aws_ecr_repository" "echo" {
-  name = "bkeane/monad/echo"
-}
-
 data "aws_ecr_repository" "actress" {
-  name = "bkeane/actress"
+  name = "bkeane/actress/src"
 }
 
 module "topology" {
@@ -53,7 +49,6 @@ module "topology" {
   }
 
   ecr_repositories = [
-    aws_ecr_repository.echo,
     data.aws_ecr_repository.actress
   ]
 
